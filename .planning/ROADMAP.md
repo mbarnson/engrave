@@ -34,11 +34,11 @@ Decimal phases appear between their surrounding integers in numeric order.
   2. A deliberately broken LilyPond file triggers the compile-check-fix retry loop, which feeds the error back to the LLM and produces a compilable result within 5 attempts
   3. LilyPond is installed and `lilypond --version` succeeds from the project environment
   4. Project runs with `uv`, linting passes with `ruff`, and a basic test suite executes
-**Plans**: TBD
+**Plans:** 2 plans
 
 Plans:
-- [ ] 01-01: TBD
-- [ ] 01-02: TBD
+- [ ] 01-01-PLAN.md -- Project scaffolding, config system, inference router, CLI entry point
+- [ ] 01-02-PLAN.md -- LilyPond compiler wrapper, error parser, compile-fix retry loop, Gherkin tests
 
 ### Phase 2: RAG Corpus & Retrieval
 **Goal**: The system can retrieve relevant LilyPond examples from a curated corpus to provide few-shot context for code generation
@@ -174,7 +174,7 @@ Phases execute in numeric order: 1 -> 2 -> 3 -> 4 -> 5 -> 6 -> 7 -> 8 -> 9
 
 | Phase | Plans Complete | Status | Completed |
 |-------|----------------|--------|-----------|
-| 1. Project Scaffolding & Inference Router | 0/TBD | Not started | - |
+| 1. Project Scaffolding & Inference Router | 0/2 | Planned | - |
 | 2. RAG Corpus & Retrieval | 0/TBD | Not started | - |
 | 3. MIDI-to-LilyPond Generation | 0/TBD | Not started | - |
 | 4. Rendering & Output Packaging | 0/TBD | Not started | - |
