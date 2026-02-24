@@ -12,7 +12,7 @@ Engrave transforms audio recordings, MIDI files, and YouTube URLs into publicati
 
 Decimal phases appear between their surrounding integers in numeric order.
 
-- [ ] **Phase 1: Project Scaffolding & Inference Router** - Python project structure, LLM multi-provider routing, LilyPond installation, compile-check-fix loop
+- [x] **Phase 1: Project Scaffolding & Inference Router** - Python project structure, LLM multi-provider routing, LilyPond installation, compile-check-fix loop (completed 2026-02-24)
 - [ ] **Phase 2: RAG Corpus & Retrieval** - Ingest open-source LilyPond scores, build ChromaDB index, phrase-level chunking, metadata-filtered retrieval
 - [ ] **Phase 3: MIDI-to-LilyPond Generation** - Core code generation from MIDI input via RAG-augmented LLM, section-by-section with coherence state, concert-pitch storage
 - [ ] **Phase 4: Rendering & Output Packaging** - LilyPond-to-PDF rendering, conductor score, extracted transposed parts, ZIP packaging with LilyPond source
@@ -34,7 +34,7 @@ Decimal phases appear between their surrounding integers in numeric order.
   2. A deliberately broken LilyPond file triggers the compile-check-fix retry loop, which feeds the error back to the LLM and produces a compilable result within 5 attempts
   3. LilyPond is installed and `lilypond --version` succeeds from the project environment
   4. Project runs with `uv`, linting passes with `ruff`, and a basic test suite executes
-**Plans:** 2 plans
+**Plans:** 2/2 plans complete
 
 Plans:
 - [ ] 01-01-PLAN.md -- Project scaffolding, config system, inference router, CLI entry point
@@ -185,7 +185,7 @@ Phases execute in numeric order: 1 -> 2 -> 3 -> 4 -> 5 -> 6 -> 7 -> 8 -> 9 -> 10
 
 | Phase | Plans Complete | Status | Completed |
 |-------|----------------|--------|-----------|
-| 1. Project Scaffolding & Inference Router | 0/2 | Planned | - |
+| 1. Project Scaffolding & Inference Router | 0/2 | Complete    | 2026-02-24 |
 | 2. RAG Corpus & Retrieval | 0/TBD | Not started | - |
 | 3. MIDI-to-LilyPond Generation | 0/TBD | Not started | - |
 | 4. Rendering & Output Packaging | 0/TBD | Not started | - |
