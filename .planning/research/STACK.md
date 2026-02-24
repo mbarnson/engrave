@@ -14,7 +14,7 @@
 | FastAPI | 0.132.0 | HTTP API server | De facto Python API framework for ML apps. Async-native, Pydantic v2 integration, OpenAPI auto-docs. Install as `fastapi[standard]`. |
 | Pydantic | 2.12.x | Data validation / config | Required by FastAPI. Use v2 -- significant perf gains over v1. Drives request/response schemas and pipeline config. |
 | Uvicorn | latest | ASGI server | Ships with `fastapi[standard]`. Use `uvicorn[standard]` for uvloop on macOS. |
-| PyTorch | 2.10.0 | ML framework | Required by Demucs, MT3, Basic Pitch, and Qwen2-Audio. MPS backend for Apple Silicon GPU acceleration. |
+| PyTorch | 2.10.0 | ML framework | Required by Demucs, MT3, Basic Pitch, and Qwen3-Omni. MPS backend for Apple Silicon GPU acceleration. |
 
 ### Source Separation (Stage 1)
 
@@ -39,12 +39,12 @@
 
 | Technology | Version | Purpose | Why Recommended |
 |------------|---------|---------|-----------------|
-| Qwen2-Audio-7B-Instruct | 7B | Local audio language model | Runs locally on M4 Max via Hugging Face transformers or GGUF. Handles audio + text input, produces structured musical descriptions (key, tempo, instrumentation, style, dynamics). 7B fits comfortably in 128GB unified memory alongside other pipeline stages. |
-| Qwen2.5-Omni-7B | 7B | Upgraded audio LM (evaluate) | Successor to Qwen2-Audio with better audio reasoning. Thinker-Talker architecture. SOTA on OmniBench. Evaluate against Qwen2-Audio for music description quality. |
-| Gemini 2.5 Flash | cloud API | Long-form audio understanding | Best for full-length recordings (1M token context). Use for initial audio analysis of complete tracks before separation. Cloud-only. $1.00/M audio tokens input. NOTE: Gemini 2.0 Flash retires June 2026 -- use 2.5 Flash. |
-| LFM2.5-Audio-1.5B | 1.5B | Lightweight local audio model | Liquid AI's tiny audio model. 8x faster than predecessor. llama.cpp compatible GGUFs. Good for quick ASR/description tasks. Matt has prior experience with Liquid models. Use as fast-path for simple audio understanding tasks. |
+| Qwen3-Omni-30B-A3B-Captioner | 30B (3B active) | Primary local audio LM | MoE architecture, only 3B active parameters. SOTA on 32/36 audio benchmarks, beating Gemini 2.5 Pro. Fine-tuned for fine-grained, low-hallucination audio captioning with no prompting required. Auto-parses speech, environmental sounds, music, and mixed audio. Apache 2.0. AWQ 4-bit quantization available (cyankiwi/Qwen3-Omni-30B-A3B-Captioner-AWQ-4bit). On Apple Silicon: use mlx_lm (loads HuggingFace models natively via MLX, no conversion needed) or vllm-mlx for OpenAI-compatible serving. On Linux/GPU: use vLLM. **NOTE:** Standard HuggingFace Transformers on CUDA/CPU is slow for MoE — but the MLX ecosystem (mlx_lm, mlx_vlm) handles MoE natively on Apple Silicon. |
+| Qwen3-Omni-30B-A3B-Instruct | 30B (3B active) | Prompted audio analysis | Same architecture as Captioner but for prompted audio analysis (structured descriptions with specific queries). Use when you need to ask specific questions about audio content rather than open-ended captioning. |
+| Gemini 3 Flash | cloud API | Long-form audio understanding | Best for full-length recordings (1M+ token context). Use for initial audio analysis of complete tracks before separation. Cloud-only. |
+| LFM2.5-Audio-1.5B | 1.5B | Lightweight local audio model | Liquid AI's tiny audio model. 8x faster audio detokenizer vs LFM2 (Jan 2026 update). llama.cpp compatible GGUFs. Good for quick ASR/description tasks. Matt has prior experience with Liquid models. Use as fast-path for simple audio understanding tasks. |
 
-**Strategy:** Use Qwen2-Audio-7B as primary local audio LM for structured music description. Use Gemini 2.5 Flash for complex/long audio when cloud is acceptable. LFM2.5-Audio for lightweight tasks. Evaluate Qwen2.5-Omni-7B as potential upgrade.
+**Strategy:** Use Qwen3-Omni-30B-A3B-Captioner as primary local audio LM for structured music description — it's purpose-built for the "describe what you hear structurally" use case. Use Qwen3-Omni-Instruct for prompted analysis when specific questions are needed. Use Gemini 3 Flash for complex/long audio when cloud is acceptable. LFM2.5-Audio for lightweight tasks.
 
 ### LilyPond Code Generation (Stage 4)
 
@@ -63,7 +63,11 @@
 | Technology | Version | Purpose | Why Recommended |
 |------------|---------|---------|-----------------|
 | LiteLLM | latest (Feb 2026) | Unified LLM interface | Wraps 100+ LLM APIs in OpenAI-compatible format. Call Anthropic, OpenAI, and LMStudio local endpoints through one interface. 8ms P95 latency overhead. Eliminates per-provider client code. |
-| LM Studio | 0.4.x | Local model serving | MLX engine for Apple Silicon. OpenAI-compatible API on localhost:1234. `lms` CLI for model management. Drop-in replacement for OpenAI SDK by changing base_url. Supports GGUF and MLX formats. |
+| LM Studio | 0.4.x | Local model serving (LLMs) | MLX engine for Apple Silicon. OpenAI-compatible API on localhost:1234. `lms` CLI for model management. Drop-in replacement for OpenAI SDK by changing base_url. Supports GGUF and MLX formats. |
+| mlx_lm | latest | Native MLX LLM inference | Apple's official MLX LLM library. Loads HuggingFace models directly on Apple Silicon — no conversion needed. Supports MoE architectures natively. Use for Qwen3-Omni, Qwen3-Coder-Next, and other HF models. Install: `pip install mlx-lm` |
+| mlx_vlm | latest | Vision-language model inference | MLX-native VLM inference and fine-tuning. Loads HuggingFace VLMs directly (Qwen3-VL, DeepSeek-OCR, etc.). OpenAI-compatible API via FastAPI. Use for notation evaluation (visual PDF comparison). Install: `pip install -U mlx-vlm[torch]` |
+| mlx-audio | latest | Audio processing (STT/TTS/STS) | MLX-native audio library. Supports Whisper, Qwen3-ASR, Kokoro TTS, and more. OpenAI-compatible REST API. Useful for audio preprocessing and analysis stages. 6.1k stars, actively maintained. Install: `pip install mlx-audio` |
+| vllm-mlx | latest | OpenAI-compatible model serving | vLLM-like inference server for Apple Silicon via MLX. OpenAI-compatible API. Use when you need an always-on serving layer rather than direct Python inference. Install: `pip install git+https://github.com/waybarrios/vllm-mlx.git` |
 | openai (SDK) | 2.23.0 | OpenAI API client | Also used as client for LMStudio (OpenAI-compatible endpoint). Required project dependency. |
 | anthropic (SDK) | 0.83.0 | Anthropic API client | Required for Claude API access. Used through LiteLLM or directly. |
 
@@ -115,6 +119,10 @@ This means pipeline code calls `litellm.completion()` everywhere, provider selec
 | Audiveris | latest | OMR (PDF to MusicXML) | Open-source optical music recognition. Converts Sam's 350 PDF scores to MusicXML. Java-based, runs as external process. Accuracy is imperfect -- plan for manual corrections. |
 | music21 | latest | MusicXML analysis | MIT Music21 library for computational music analysis. Parse MusicXML, compute structural diffs, compare scores. Use in evaluation pipeline. |
 | pdf2image / Pillow | latest | PDF visual comparison | Render PDFs to images for visual diff in evaluation pipeline. |
+| Qwen3-VL-8B-Thinking | 8B (9B params) | Visual notation evaluation | Vision-language model for evaluating engraved output. Can read lyrics between notes but cannot reliably read musical notes themselves (as of Feb 2026). Use via mlx_vlm on Apple Silicon. 32-language OCR, robust in low light/blur/tilt. Useful for: lyrics verification, layout assessment, structural landmark detection. Musical note reading is an open research area — benchmark multiple VLMs to find what works. |
+| Qwen3-VL-30B-A3B-Instruct | 30B (3B active) | Visual notation evaluation (quality ceiling) | MoE VLM for higher-quality visual analysis. Same OCR/vision capabilities as 8B but with better reasoning. Use for detailed notation evaluation where 8B falls short. Runs via mlx_vlm on M4 Max. |
+
+**Visual evaluation strategy:** VLMs cannot reliably read musical notation pitch-by-pitch (as of Feb 2026), but they CAN evaluate: lyrics accuracy, layout quality, spacing/crowding, structural landmarks (rehearsal marks, repeats, codas), clef/key signature presence, and overall visual presentation. Benchmark Qwen3-VL, DeepSeek-OCR, and other VLMs to discover what precision each model achieves for notation elements. This is an evolving capability — revisit as models improve.
 
 ### Development Tools
 
@@ -148,8 +156,16 @@ uv add basic-pitch
 # Audio processing
 uv add librosa mido pretty_midi
 
-# Audio LM (Stage 3) - Qwen2-Audio via transformers
+# Audio LM (Stage 3) - Qwen3-Omni via MLX ecosystem
 uv add transformers accelerate
+
+# Apple Silicon MLX inference (loads HuggingFace models natively, including MoE)
+pip install mlx-lm                    # LLM inference (Qwen3-Omni, Qwen3-Coder-Next)
+pip install -U mlx-vlm[torch]         # Vision-language models (Qwen3-VL for evaluation)
+pip install mlx-audio                 # Audio processing (STT/TTS/STS)
+# Optional: OpenAI-compatible serving layer
+pip install git+https://github.com/waybarrios/vllm-mlx.git
+# On Linux/GPU: pip install vllm
 
 # Multi-provider LLM (Stage 4)
 uv add litellm openai anthropic
@@ -176,7 +192,10 @@ brew install lilypond ffmpeg
 # Then via CLI:
 # lms get qwen3-coder-next
 # lms get gpt-oss-120b
-# lms get qwen2-audio-7b
+# For Qwen3-Omni-Captioner: use AWQ 4-bit or load directly via mlx_lm
+# cyankiwi/Qwen3-Omni-30B-A3B-Captioner-AWQ-4bit
+# For Qwen3-VL evaluation models:
+# mlx_vlm supports Qwen3-VL-8B-Thinking and Qwen3-VL-30B-A3B-Instruct
 ```
 
 ## Alternatives Considered
@@ -191,16 +210,18 @@ brew install lilypond ffmpeg
 | Qwen3-Coder-Next | gpt-oss-120b | If benchmarks show gpt-oss generates better LilyPond. gpt-oss-120b uses more RAM and is slower on M4 Max. |
 | python-ly | Abjad-only | If you need programmatic score construction from scratch. For our use case (LLM generates LilyPond, we validate), python-ly is lighter. |
 | uv | pip + venv | Never. uv is strictly better (10-100x faster, built-in venv, lockfile). |
-| Qwen2-Audio-7B | Qwen2.5-Omni-7B | When Qwen2.5-Omni proves better at music description in benchmarks. Evaluate both. |
-| Gemini 2.5 Flash | Gemini 2.0 Flash | Never. 2.0 Flash retires June 2026. Use 2.5 Flash for cloud audio understanding. |
+| Qwen3-Omni-Captioner (primary) | Qwen3-Omni-Instruct | When you need prompted analysis with specific questions rather than open-ended captioning. Same model family, different fine-tune. |
+| Gemini 3 Flash | Gemini 2.5 Flash | Never. Use Gemini 3 Flash for cloud audio understanding. |
 
 ## What NOT to Use
 
 | Avoid | Why | Use Instead |
 |-------|-----|-------------|
+| Qwen2-Audio-7B-Instruct | Obsolete (Aug 2024). Two generations behind. | Qwen3-Omni-30B-A3B-Captioner |
+| Qwen2.5-Omni-7B | Superseded (Mar 2025). One generation behind. | Qwen3-Omni-30B-A3B-Captioner |
 | demucs (original PyPI package) | Abandoned Sept 2023. Incompatible with PyTorch 2.x and Python 3.12. | demucs-infer 4.1.2 |
 | LangChain for RAG | Over-abstracted for focused retrieval. LlamaIndex has 35% better retrieval accuracy. | LlamaIndex |
-| Gemini 2.0 Flash | Retires June 2026. | Gemini 2.5 Flash |
+| Gemini 2.5 Flash | Retires June 2026. | Gemini 3 Flash |
 | pip + venv | Slow, no lockfile, no resolver. | uv |
 | black + isort + flake8 | Three tools doing what one does. | ruff |
 | MuseScore / Finale for rendering | GUI-based, not scriptable, not LLM-friendly. | LilyPond (text-based, subprocess) |
@@ -225,9 +246,10 @@ brew install lilypond ffmpeg
 - Benchmark against Claude/GPT-4 cloud APIs for ceiling
 
 **If running full pipeline concurrently:**
-- M4 Max 128GB budget: Demucs (~4GB) + Basic Pitch (~0.5GB) + Qwen2-Audio-7B (~14GB) + Qwen3-Coder-Next-4bit (~46GB) = ~65GB
-- Leaves ~60GB for OS + ChromaDB + LilyPond rendering
+- M4 Max 128GB budget: Demucs (~4GB) + Basic Pitch (~0.5GB) + Qwen3-Omni-Captioner-AWQ-4bit (~18GB) + Qwen3-Coder-Next-4bit (~46GB) = ~69GB
+- Leaves ~56GB for OS + ChromaDB + LilyPond rendering
 - Feasible but avoid running all models simultaneously; pipeline is sequential anyway
+- **NOTE:** On Apple Silicon, use mlx_lm (loads HF models natively, including MoE) or vllm-mlx for serving. On Linux/GPU, use vLLM
 
 ## Version Compatibility
 
@@ -235,7 +257,7 @@ brew install lilypond ffmpeg
 |-----------|-----------------|-------|
 | PyTorch 2.10.0 | Python 3.10-3.12 | MPS backend for Apple Silicon. Avoid Python 3.13+ until torch fully supports it. |
 | demucs-infer 4.1.2 | PyTorch 2.x, Python 3.8-3.12 | Specifically built for modern PyTorch. |
-| basic-pitch 0.4.0 | Python 3.8-3.11 | **WARNING: officially only supports up to Python 3.11.** May work on 3.12 but untested. Mac M1 note: "only support python 3.10." Test on 3.12 early; fall back to 3.11 venv if needed. |
+| basic-pitch 0.4.0 | Python 3.8-3.11 | **WARNING: officially only supports up to Python 3.11.** Frozen since Aug 2024 (Snyk: "Inactive"). Mac Apple Silicon requires Python 3.10 — this is a hard constraint, not a workaround. **Plan a Python 3.10 isolated venv for basic-pitch from day one.** Draft PR for 3.12/3.13 support exists (#187, Nov 2025) but is unmerged. |
 | FastAPI 0.132.0 | Python >=3.10, Pydantic v2 | `fastapi-slim` dropped; use `fastapi[standard]` only. |
 | Abjad 3.31 | LilyPond 2.25.26+, Python 3.12+ | Requires LilyPond *dev* branch. Install alongside stable for rendering. |
 | LlamaIndex 0.14.15 | Python >=3.9 | Modular packages; install integration packages separately. |
@@ -244,13 +266,11 @@ brew install lilypond ffmpeg
 | Qwen3-Coder-Next 4-bit | >46GB unified memory | M4 Max 128GB has ample headroom. 100+ tok/s expected. |
 | gpt-oss-120b 4-bit | ~63GB RAM/VRAM | Fits in 128GB but tight with other models. Slower than Qwen3-Coder-Next. |
 
-## Critical Compatibility Warning
+## Critical Compatibility Warnings
 
-**basic-pitch and Python 3.12:** The basic-pitch package officially supports Python 3.8-3.11 only, with a specific note that Mac M1 (Apple Silicon) only supports Python 3.10. This is the most likely version conflict in the stack. Mitigation options:
-1. Test basic-pitch on Python 3.12 early -- it may work despite official support claims
-2. If it fails, run basic-pitch in a separate Python 3.10 venv, called as subprocess
-3. Watch for a newer release that adds 3.12 support
-4. Consider contributing a 3.12 compatibility fix upstream
+**basic-pitch and Python 3.10 venv (HARD CONSTRAINT):** basic-pitch 0.4.0 requires Python 3.10 on Apple Silicon — this is a known, documented, unresolved limitation. Do NOT try to work around it. Plan a Python 3.10 isolated venv for basic-pitch from day one, called as subprocess from the main Python 3.12 environment. The package is frozen (last release Aug 2024, Snyk rates maintenance as "Inactive"). A draft PR (#187) for Python 3.12/3.13 exists but is unmerged as of Feb 2026. There is also a Dec 2025 open issue about Python 3.12/Colab incompatibility.
+
+**Qwen3-Omni MoE inference on Apple Silicon:** Qwen3-Omni-30B-A3B is a Mixture-of-Experts model. On Apple Silicon, mlx_lm loads HuggingFace MoE models natively via MLX — no conversion needed. For serving, vllm-mlx provides an OpenAI-compatible API layer. On Linux/GPU, use standard vLLM. The Qwen team's warning about "slow" HF Transformers applies to standard CUDA/CPU inference, not to the MLX ecosystem. Validate M4 Max performance before committing to this model.
 
 **MT3 and JAX:** MT3 requires T5X which requires JAX. JAX and PyTorch in the same environment can cause CUDA/Metal conflicts. If using MT3, run it in an isolated environment (separate venv or container).
 
@@ -258,6 +278,8 @@ brew install lilypond ffmpeg
 
 - **PyTorch MPS:** Use `device = "mps"` for GPU acceleration. Not all ops supported; pipeline should gracefully fall back to CPU for unsupported ops.
 - **MLX via LM Studio:** LM Studio's MLX engine is 20-30% faster than llama.cpp for Apple Silicon. Prefer MLX format models when available.
+- **MLX native libraries:** mlx_lm (LLMs), mlx_vlm (vision-language), mlx-audio (STT/TTS/STS) load HuggingFace models directly on Apple Silicon — no conversion needed. Supports MoE architectures natively. Use mlx_lm for Qwen3-Omni, mlx_vlm for Qwen3-VL evaluation, mlx-audio for audio preprocessing.
+- **vllm-mlx:** Use when you need an always-on OpenAI-compatible serving layer rather than direct Python inference via mlx_lm.
 - **Unified memory:** Models share memory with OS. Budget 10-15GB for macOS + apps. Effective ML memory: ~113GB.
 - **Thermal throttling:** M4 Max will throttle under sustained load. Pipeline is sequential (not concurrent model inference), which helps thermal management.
 - **Memory allocation order:** Load models in pipeline order, unload when stage completes. Don't keep all models resident simultaneously.
@@ -268,8 +290,16 @@ brew install lilypond ffmpeg
 - [demucs PyPI](https://pypi.org/project/demucs/) -- Version 4.0.1, Sept 2023, abandoned (HIGH confidence)
 - [Basic Pitch GitHub](https://github.com/spotify/basic-pitch) -- Version 0.4.0, Aug 2024 (HIGH confidence)
 - [MT3 GitHub](https://github.com/magenta/mt3) -- Research code, not pip-installable (HIGH confidence)
-- [Qwen2-Audio HuggingFace](https://huggingface.co/Qwen/Qwen2-Audio-7B-Instruct) -- 7B model (MEDIUM confidence)
-- [Qwen2.5-Omni GitHub](https://github.com/QwenLM/Qwen2.5-Omni) -- 7B model (MEDIUM confidence)
+- [Qwen3-Omni-30B-A3B-Captioner](https://huggingface.co/Qwen/Qwen3-Omni-30B-A3B-Captioner) -- 30B MoE, 3B active, Sep 2025 (HIGH confidence)
+- [Qwen3-Omni-30B-A3B-Instruct](https://huggingface.co/Qwen/Qwen3-Omni-30B-A3B-Instruct) -- 30B MoE, 3B active, Sep 2025 (HIGH confidence)
+- [Qwen3-Omni AWQ 4-bit](https://huggingface.co/cyankiwi/Qwen3-Omni-30B-A3B-Captioner-AWQ-4bit) -- Community quantization (MEDIUM confidence)
+- [mlx_lm GitHub](https://github.com/ml-explore/mlx-lm) -- Apple's official MLX LLM library, loads HF models natively (HIGH confidence)
+- [mlx_vlm GitHub](https://github.com/Blaizzy/mlx-vlm) -- MLX vision-language model inference, supports Qwen3-VL (HIGH confidence)
+- [mlx-audio GitHub](https://github.com/Blaizzy/mlx-audio) -- MLX audio processing (STT/TTS/STS), 6.1k stars (HIGH confidence)
+- [vllm-mlx GitHub](https://github.com/waybarrios/vllm-mlx) -- vLLM-like serving for Apple Silicon via MLX (MEDIUM confidence)
+- [Qwen3-VL-8B-Thinking HuggingFace](https://huggingface.co/Qwen/Qwen3-VL-8B-Thinking) -- 8B VLM with OCR, 32 languages (HIGH confidence)
+- [Qwen3-VL-30B-A3B-Instruct HuggingFace](https://huggingface.co/Qwen/Qwen3-VL-30B-A3B-Instruct) -- 30B MoE VLM (HIGH confidence)
+- [Qwen3-VL Technical Report](https://arxiv.org/abs/2511.21631) -- Peer-reviewed (HIGH confidence)
 - [LFM2.5-Audio HuggingFace](https://huggingface.co/LiquidAI/LFM2.5-Audio-1.5B) -- 1.5B model (MEDIUM confidence)
 - [Gemini API Pricing](https://ai.google.dev/gemini-api/docs/pricing) -- $1.00/M audio tokens (HIGH confidence)
 - [Gemini Audio Docs](https://ai.google.dev/gemini-api/docs/audio) -- Audio understanding API (HIGH confidence)

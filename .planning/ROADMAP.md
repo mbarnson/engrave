@@ -109,7 +109,7 @@ Plans:
 **Depends on**: Phase 5
 **Requirements**: AUDP-03, AUDP-04
 **Success Criteria** (what must be TRUE):
-  1. Audio LM (Qwen2-Audio locally, Gemini 2.5 Flash for long-form) produces structured descriptions from audio capturing key, tempo, style, dynamics, articulation intent, and structural form
+  1. Audio LM (Qwen3-Omni-30B-A3B-Captioner locally, Gemini 3 Flash for long-form) produces structured descriptions from audio capturing key, tempo, style, dynamics, articulation intent, and structural form
   2. User can type natural language hints (e.g., "Soli at bar 17, brass shout chorus bar 33, swing feel") and the system encodes them as structural metadata for the generation stage
   3. When user hints conflict with audio inference, user hints are treated as authoritative
   4. Generated LilyPond output reflects audio understanding (tempo markings, style indications, dynamic contours) that were absent from raw MIDI transcription alone

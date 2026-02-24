@@ -20,7 +20,7 @@ When Sam uploads a rough demo recording and types "Big band, 4 trumpets, 4 bones
 - [ ] MIDI input pipeline: accept MIDI type 0 and 1 files (bypasses audio stages)
 - [ ] Source separation via Demucs v4 (drums, bass, vocals, other stems)
 - [ ] MIDI transcription via MT3 or Basic Pitch from separated stems
-- [ ] Audio understanding via audio LM (Qwen2-Audio, LFM2.5-Audio, Gemini 2.0) producing structured musical descriptions
+- [ ] Audio understanding via audio LM (Qwen3-Omni-30B-A3B-Captioner, LFM2.5-Audio, Gemini 3 Flash) producing structured musical descriptions
 - [ ] Natural language hint layer — user describes ensemble, style, structural markers, articulation intent
 - [ ] Ensemble presets with transposition/clef configuration (big band, small group, rock band, piano solo, string quartet, custom)
 - [ ] LilyPond code generation via RAG-augmented LLM (multi-provider: Anthropic API, OpenAI API, LMStudio local)
@@ -48,7 +48,7 @@ When Sam uploads a rough demo recording and types "Big band, 4 trumpets, 4 bones
 - **Hardware:** Matt's M4 Max, 128GB RAM — local inference preferred, cloud OK when needed
 - **Inference strategy:** Multi-provider — Anthropic API, OpenAI API, LMStudio local endpoints. Pipeline may use different models at different stages. LMStudio is cheapest for prototyping, using `lms` CLI to swap models.
 - **Model candidates for Stage 4 (code gen):** Qwen3.5-Medium (30B-A3B), Qwen3-Coder-Next (80B-A3B), gpt-oss-120b, Claude, GPT-4 — to be benchmarked. ML landscape moves fast — new models drop constantly (Qwen3.5-Medium released Feb 2026). LMStudio + `lms` CLI enables rapid model swapping.
-- **Audio LM candidates (Stage 3):** Qwen2-Audio (local on Apple Silicon), LFM2.5-Audio (Matt has experience), Gemini 2.0 Flash (best for long-form audio, closed API)
+- **Audio LM candidates (Stage 3):** Qwen3-Omni-30B-A3B-Captioner (primary local, MoE 3B active, SOTA audio captioning, Apache 2.0, via vllm-mlx on Apple Silicon), LFM2.5-Audio (lightweight local fallback, Matt has experience), Gemini 3 Flash (best for long-form audio, closed API)
 - **Corpus strategy:** Two complementary layers: (1) PDMX (~220K license-clean scores with MusicXML + PDF + MIDI bundled) teaches general LilyPond syntax/structure via musicxml2ly conversion. Heavily weighted toward piano/pop/solo — weak on jazz ensemble writing. (2) Sam's 350 original arrangements (v1.1 via OMR) provide domain-specific big band articulation conventions for RAG few-shot. Mutopia Project (2,124 human-verified LilyPond scores + MIDI) supplements both layers. Companion paper: "Generating Symbolic Music from Natural Language Prompts using an LLM-Enhanced Dataset" (UCSD, uses PDMX) — directly adjacent to Engrave Stage 4 methodology, read before planning Phase 2.
 - **Training triple format:** (LilyPond source, MIDI tokens, structured text description)
 - **LilyPond:** Not yet installed — needs setup as project dependency

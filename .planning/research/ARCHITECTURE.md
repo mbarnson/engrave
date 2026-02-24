@@ -68,7 +68,7 @@
 | **Stage 0: Ingest** | Accept audio files (MP3/WAV/AIFF/FLAC), YouTube URLs, MIDI files; normalize to WAV | Orchestrator, filesystem | yt-dlp (YouTube), ffmpeg (format conversion), shutil (file copy) |
 | **Stage 1: Source Separation** | Split audio into stems (drums, bass, vocals, other) | Stage 0 output (WAV), filesystem | Demucs v4 Hybrid Transformer via `demucs.api.Separator` |
 | **Stage 2: MIDI Transcription** | Convert each stem to MIDI with pitch, onset, duration, velocity | Stage 1 output (stem WAVs), filesystem | Basic Pitch `predict()` per stem |
-| **Stage 3: Audio Understanding** | Produce structured text description of musical content (key, tempo, form, style, dynamics, articulation patterns) | Stage 0/1 output (audio), Inference Router | Qwen2-Audio (local) or Gemini 2.0 Flash (cloud API) |
+| **Stage 3: Audio Understanding** | Produce structured text description of musical content (key, tempo, form, style, dynamics, articulation patterns) | Stage 0/1 output (audio), Inference Router | Qwen3-Omni-Captioner (local via vllm-mlx) or Gemini 3 Flash (cloud API) |
 | **Stage 4: LilyPond Generation** | Generate LilyPond code from MIDI + description + user hints, section by section, with joint section-part coherence | Stage 2 (MIDI), Stage 3 (description), RAG system, Inference Router | LLM code generation with RAG context |
 | **Rendering Engine** | Compile .ly files to PDF, extract transposed parts, package outputs | Stage 4 output (.ly files), LilyPond CLI | `subprocess.run(["lilypond", ...])` + ZIP packaging |
 | **Evaluation Pipeline** | Automated quality scoring: structural diff, audio envelope, visual comparison | Rendering output, reference corpus | MusicXML tree diff, librosa envelope comparison, PDF image diff |
@@ -525,8 +525,10 @@ Stage 0 -> Stage 1 -> [Stage 2 ┐
 |---------|---------------------|-------|
 | **Anthropic API** | Via LiteLLM `anthropic/claude-*` | Stage 4 code generation. Requires `ANTHROPIC_API_KEY` env var. |
 | **OpenAI API** | Via LiteLLM `openai/gpt-*` | Stage 4 code generation. Requires `OPENAI_API_KEY` env var. |
-| **LMStudio** | Via LiteLLM `openai/...` with `api_base=http://localhost:1234/v1` | Local inference for Stage 3 (Qwen2-Audio) and Stage 4 (Qwen3, gpt-oss). Start with `lms server start`. OpenAI-compatible endpoint. |
-| **Gemini API** | Via LiteLLM `gemini/gemini-2.0-flash` | Stage 3 alternative for long-form audio understanding. Requires `GEMINI_API_KEY`. Best for audio >10 min. |
+| **LMStudio** | Via LiteLLM `openai/...` with `api_base=http://localhost:1234/v1` | Local inference for Stage 4 (Qwen3-Coder-Next, gpt-oss). Start with `lms server start`. OpenAI-compatible endpoint. |
+| **mlx_lm / mlx_vlm** | Direct Python inference or OpenAI-compatible API | Local inference for Stage 3 (Qwen3-Omni-Captioner MoE via mlx_lm) and Evaluation (Qwen3-VL via mlx_vlm). Loads HuggingFace models natively on Apple Silicon — no conversion needed. |
+| **vllm-mlx** | Via OpenAI-compatible API on localhost | Alternative serving layer for Apple Silicon when an always-on OpenAI-compatible endpoint is preferred over direct mlx_lm Python calls. |
+| **Gemini API** | Via LiteLLM `gemini/gemini-3-flash` | Stage 3 alternative for long-form audio understanding. Requires `GEMINI_API_KEY`. Best for audio >10 min. |
 | **YouTube** | Via yt-dlp Python API | Stage 0 ingest. Requires external JS runtime (Deno) for 2025+ YouTube challenges. |
 | **LilyPond CLI** | Via `subprocess.run()` | Rendering stage. Must be installed system-wide (`brew install lilypond`). |
 | **Audiveris** | Via CLI subprocess (Java) | Corpus ingestion only, not runtime pipeline. PDF -> MusicXML for training data. |
@@ -624,8 +626,8 @@ Everything before Stage 4 is plumbing -- important but well-understood. Stage 4 
 - [Basic Pitch GitHub (Spotify)](https://github.com/spotify/basic-pitch) -- HIGH confidence: official repository
 - [Basic Pitch PyPI](https://pypi.org/project/basic-pitch/) -- HIGH confidence: official package
 - [MT3 GitHub (Magenta)](https://github.com/magenta/mt3) -- HIGH confidence: official repository
-- [Qwen2-Audio GitHub](https://github.com/QwenLM/Qwen2-Audio) -- HIGH confidence: official repository
-- [Qwen2-Audio-7B-Instruct (HuggingFace)](https://huggingface.co/Qwen/Qwen2-Audio-7B-Instruct) -- HIGH confidence: official model card
+- [Qwen3-Omni-30B-A3B-Captioner (HuggingFace)](https://huggingface.co/Qwen/Qwen3-Omni-30B-A3B-Captioner) -- HIGH confidence: official model card
+- [vllm-mlx GitHub](https://github.com/waybarrios/vllm-mlx) -- MEDIUM confidence: community project for vLLM on Apple Silicon
 - [LiteLLM Documentation](https://docs.litellm.ai/docs/) -- HIGH confidence: official docs
 - [LiteLLM GitHub](https://github.com/BerriAI/litellm) -- HIGH confidence: official repository
 - [LM Studio OpenAI Compatibility](https://lmstudio.ai/docs/developer/openai-compat) -- HIGH confidence: official docs

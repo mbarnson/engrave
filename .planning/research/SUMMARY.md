@@ -7,7 +7,7 @@
 
 ## Executive Summary
 
-Engrave is an AI-powered music engraving pipeline that transforms audio recordings or MIDI files into publication-quality, transposed sheet music parts. The system combines source separation (Demucs), MIDI transcription (Basic Pitch), audio understanding (Qwen2-Audio), and RAG-augmented LLM code generation (Qwen3-Coder-Next/Claude) to produce LilyPond output. The primary use case is big band arrangements, where the key differentiator is "convergent sight-reading" -- generating section parts jointly so articulations, dynamics, and beam groupings co-vary, enabling musicians to sound like a unified section on first read.
+Engrave is an AI-powered music engraving pipeline that transforms audio recordings or MIDI files into publication-quality, transposed sheet music parts. The system combines source separation (Demucs), MIDI transcription (Basic Pitch), audio understanding (Qwen3-Omni-Captioner), and RAG-augmented LLM code generation (Qwen3-Coder-Next/Claude) to produce LilyPond output. The primary use case is big band arrangements, where the key differentiator is "convergent sight-reading" -- generating section parts jointly so articulations, dynamics, and beam groupings co-vary, enabling musicians to sound like a unified section on first read.
 
 The recommended approach is to build a stage-based pipeline (Ingest -> Separate -> Transcribe -> Describe -> Generate -> Render) with artifact passing through the filesystem. Start with MIDI input to validate the code generation pipeline before tackling the harder audio input path. Use LiteLLM for unified LLM provider routing, ChromaDB for RAG-based few-shot prompting, and section-by-section generation with coherence state passing to handle long scores. Store all music in concert pitch internally and apply transposition deterministically at render time.
 
@@ -17,13 +17,13 @@ The key risks are: (1) LilyPond compilation failures from LLM-generated code -- 
 
 ### Recommended Stack
 
-The stack is PyTorch-centric with Python 3.12 as the runtime. FastAPI handles the web UI, Demucs v4 (htdemucs) for source separation, Basic Pitch for MIDI transcription, Qwen2-Audio-7B for local audio understanding, and Qwen3-Coder-Next (80B MoE, 3B active) for LilyPond code generation. LiteLLM provides unified LLM routing across Anthropic, OpenAI, and LMStudio local endpoints. LlamaIndex + ChromaDB handle RAG retrieval, and LilyPond 2.24.4 renders final PDFs. The M4 Max 128GB provides sufficient memory for concurrent model execution, though sequential execution is recommended for thermal management.
+The stack is PyTorch-centric with Python 3.12 as the runtime. FastAPI handles the web UI, Demucs v4 (htdemucs) for source separation, Basic Pitch for MIDI transcription, Qwen3-Omni-30B-A3B-Captioner for local audio understanding (served via vllm-mlx on Apple Silicon), and Qwen3-Coder-Next (80B MoE, 3B active) for LilyPond code generation. LiteLLM provides unified LLM routing across Anthropic, OpenAI, and LMStudio local endpoints. LlamaIndex + ChromaDB handle RAG retrieval, and LilyPond 2.24.4 renders final PDFs. The M4 Max 128GB provides sufficient memory for concurrent model execution, though sequential execution is recommended for thermal management.
 
 **Core technologies:**
 - **Python 3.12 + PyTorch 2.10.0**: FastAPI, Pydantic v2, MPS acceleration for Apple Silicon
 - **demucs-infer 4.1.2**: Source separation into drums/bass/vocals/other stems (htdemucs_ft model)
 - **basic-pitch 0.4.0**: Lightweight CNN-based MIDI transcription (post-separation, per-stem)
-- **Qwen2-Audio-7B**: Local audio LM for structured musical descriptions (key, tempo, style, articulation intent)
+- **Qwen3-Omni-30B-A3B-Captioner**: Local audio LM for structured musical descriptions (key, tempo, style, articulation intent) — served via vllm-mlx on Apple Silicon
 - **Qwen3-Coder-Next 80B**: Primary local code generation LLM (3B active, 256K context, runs at 100+ tok/s)
 - **LiteLLM**: Unified interface for Anthropic/OpenAI/LMStudio with OpenAI-compatible API
 - **LlamaIndex + ChromaDB**: RAG retrieval of curated LilyPond examples for few-shot prompting
@@ -32,7 +32,7 @@ The stack is PyTorch-centric with Python 3.12 as the runtime. FastAPI handles th
 
 **Critical version notes:**
 - Avoid `demucs` (original PyPI package, abandoned Sept 2023) -- use `demucs-infer` instead
-- basic-pitch officially supports Python 3.8-3.11 only; test on 3.12 early, may need 3.10 fallback
+- basic-pitch requires Python 3.10 isolated venv on Apple Silicon (hard constraint, not a workaround)
 - Abjad requires LilyPond 2.25.26+ (dev branch); install alongside stable 2.24.4 for rendering
 
 ### Expected Features
@@ -73,7 +73,7 @@ The stack is PyTorch-centric with Python 3.12 as the runtime. FastAPI handles th
 
 ### Architecture Approach
 
-The architecture is a stage-based pipeline with artifact passing through the filesystem. Each stage is a pure function: `(job_context, stage_input_dir) -> stage_output_dir`. The orchestrator manages job directories and routes between stages. Stages: (0) Ingest (file/URL intake, normalization), (1) Source Separation (Demucs 4-stem), (2) MIDI Transcription (Basic Pitch per stem), (3) Audio Understanding (Qwen2-Audio structured description), (4) LilyPond Generation (RAG-augmented LLM with section-by-section coherence state passing), (5) Rendering (LilyPond CLI to PDF + ZIP packaging).
+The architecture is a stage-based pipeline with artifact passing through the filesystem. Each stage is a pure function: `(job_context, stage_input_dir) -> stage_output_dir`. The orchestrator manages job directories and routes between stages. Stages: (0) Ingest (file/URL intake, normalization), (1) Source Separation (Demucs 4-stem), (2) MIDI Transcription (Basic Pitch per stem), (3) Audio Understanding (Qwen3-Omni-Captioner structured description), (4) LilyPond Generation (RAG-augmented LLM with section-by-section coherence state passing), (5) Rendering (LilyPond CLI to PDF + ZIP packaging).
 
 **Major components:**
 1. **Pipeline Orchestrator** -- Routes jobs through stages, manages state machine, handles MIDI-skip path, retries failures. In-process async pipeline with stage functions.
@@ -108,7 +108,7 @@ The architecture is a stage-based pipeline with artifact passing through the fil
 
 8. **Audiveris OMR quality too low for automated corpus building** -- OMR output has wrong durations, misread accidentals, missing ties/slurs, confused beams. Mitigation: do NOT use OMR as ground truth without human verification, prioritize MIDI/audio input paths, use OMR only for structural scaffolding (pitches/rhythms), manually annotate articulations/dynamics.
 
-9. **Audio LM 30-second clip limitation misses song-level structure** -- Qwen2-Audio degrades on audio >30s, losing song-level structure (key changes, section relationships). Mitigation: segment audio into structural sections first, process each section with context about its role, treat user hints as authoritative for structure, use Gemini 2.5 Flash for long-form analysis.
+9. **Audio LM clip limitations miss song-level structure** -- Local audio LMs may degrade on long audio, losing song-level structure (key changes, section relationships). Qwen3-Omni-Captioner may handle longer clips than its predecessor but needs validation. Mitigation: segment audio into structural sections first, process each section with context about its role, treat user hints as authoritative for structure, use Gemini 3 Flash for long-form analysis.
 
 ## Implications for Roadmap
 
@@ -165,7 +165,7 @@ Based on research, suggested phase structure:
 **Avoids pitfalls:**
 - Demucs stem limitation (pipeline designed around 4-stem output, not per-instrument)
 - MT3 instrument leakage (use Basic Pitch for pitch/rhythm only, separate instrument assignment)
-- basic-pitch Python 3.12 compatibility (test early, fallback to 3.10 venv if needed)
+- basic-pitch requires Python 3.10 isolated venv on Apple Silicon (hard constraint — plan from day one)
 
 **Research flag:** May need deeper research into Demucs parameters, Basic Pitch tuning, audio preprocessing, and stem-to-instrument mapping strategies.
 
@@ -177,12 +177,12 @@ Based on research, suggested phase structure:
 **Delivers:** Enhanced generation with audio understanding and user-provided structural hints. Better articulation choices, dynamics, style markings.
 
 **Uses stack elements:**
-- Qwen2-Audio-7B (local audio LM for structured descriptions)
-- Gemini 2.5 Flash (cloud API for long-form audio, optional)
+- Qwen3-Omni-30B-A3B-Captioner (local audio LM for structured descriptions, via vllm-mlx)
+- Gemini 3 Flash (cloud API for long-form audio, optional)
 - LFM2.5-Audio-1.5B (lightweight local model for fast tasks, optional)
 
 **Implements architecture component:**
-- Stage 3: Audio Understanding (Qwen2-Audio structured description)
+- Stage 3: Audio Understanding (Qwen3-Omni-Captioner structured description)
 - Natural language hint processing and encoding into Stage 4 prompts
 
 **Addresses features:**
@@ -194,7 +194,7 @@ Based on research, suggested phase structure:
 - Audio LM 30-second clip limitation (segment audio into structural sections first, process with context)
 - Song-level structure loss (supplement with user hints, use Gemini for long-form)
 
-**Research flag:** Needs deeper research into Qwen2-Audio prompting strategies, output format structuring, and audio segmentation approaches. Also research into NL-to-structural-metadata mapping.
+**Research flag:** Needs deeper research into Qwen3-Omni-Captioner output format and audio segmentation approaches. Also research into NL-to-structural-metadata mapping. Validate MoE inference speed on M4 Max via vllm-mlx.
 
 ---
 
@@ -262,7 +262,7 @@ Based on research, suggested phase structure:
 
 - **MIDI-first approach:** Validates code generation without audio complexity. Audio adds transcription error that compounds with engraving error -- tackle sequentially, not simultaneously.
 - **Audio pipeline after MIDI:** Source separation and transcription are well-understood (Demucs, Basic Pitch) but audio quality issues are unpredictable. Prove end-to-end value with MIDI before investing in audio debugging.
-- **Audio understanding after transcription:** Qwen2-Audio provides semantic layer but is not critical for basic MIDI-to-parts. Add once transcription works.
+- **Audio understanding after transcription:** Qwen3-Omni-Captioner provides semantic layer but is not critical for basic MIDI-to-parts. Add once transcription works.
 - **Convergent sight-reading last:** This is the novel, hard problem. Requires stable foundation (Phases 1-3) before experimentation. Dedicated phase with specific evaluation criteria.
 - **Corpus building deferred:** OMR is time-consuming and quality is poor without manual correction. Start with curated open-source corpus (Mutopia, PDMX), add Sam's charts later.
 
@@ -286,7 +286,7 @@ Foundation (Phase 1) -> Audio Pipeline (Phase 2) --+
 Phases likely needing deeper research during planning:
 
 - **Phase 1 (Foundation):** LilyPond engraving conventions (Tim Davies jazz defaults, big band score layout), RAG prompt engineering for code generation, compile-check-fix loop strategies
-- **Phase 3 (Audio Understanding):** Qwen2-Audio prompting and output structuring, audio segmentation approaches, NL-to-structural-metadata mapping
+- **Phase 3 (Audio Understanding):** Qwen3-Omni-Captioner output structuring, vllm-mlx inference validation on M4 Max, audio segmentation approaches, NL-to-structural-metadata mapping
 - **Phase 4 (Convergent Sight-Reading):** Joint section-part generation prompting, section coherence validation, big band articulation conventions (Tim Davies, Evan Rogers, Gould)
 - **Phase 6 (Corpus Building):** Audiveris CLI automation, OMR quality assessment, MusicXML-to-LilyPond conversion
 
@@ -302,7 +302,7 @@ Phases with standard patterns (skip deep research):
 | Stack | HIGH | Core technologies (FastAPI, PyTorch, Demucs, Basic Pitch, LilyPond) are mature and well-documented. LLM landscape is fast-moving but LiteLLM provides abstraction. Qwen models are recent (2025-2026) but Hugging Face releases are stable. |
 | Features | MEDIUM-HIGH | Table stakes features are well-understood from established domain (music engraving conventions). Convergent sight-reading is novel -- no existing tool does this. RAG-augmented LilyPond generation is uncharted (combining existing techniques in new way). |
 | Architecture | MEDIUM | Stage-based pipeline pattern is standard. Section-by-section generation with coherence state is adapted from long-form LLM generation research (Hierarchical Expansion) but not proven for music notation. Joint section-part generation is novel hypothesis -- requires validation. |
-| Pitfalls | MEDIUM-HIGH | LilyPond compilation issues, Demucs limitations, MT3 instrument leakage, transposition errors are verified from multiple sources and practitioner reports. Convergent sight-reading failure mode is logical inference (not empirically tested in this domain). Audio LM limitations verified from Qwen2-Audio technical report. |
+| Pitfalls | MEDIUM-HIGH | LilyPond compilation issues, Demucs limitations, MT3 instrument leakage, transposition errors are verified from multiple sources and practitioner reports. Convergent sight-reading failure mode is logical inference (not empirically tested in this domain). Audio LM limitations need revalidation with Qwen3-Omni-Captioner (successor to Qwen2-Audio). |
 
 **Overall confidence:** MEDIUM-HIGH
 
@@ -310,7 +310,7 @@ The core pipeline (audio -> MIDI -> LilyPond -> PDF) is well-understood with est
 
 ### Gaps to Address
 
-- **basic-pitch Python 3.12 compatibility:** Official support is Python 3.8-3.11 only, with Mac M1 support limited to Python 3.10. Must test on Python 3.12 early in Phase 2. If it fails, run basic-pitch in a separate Python 3.10 venv called as subprocess.
+- **basic-pitch Python 3.10 venv (hard constraint):** basic-pitch 0.4.0 requires Python 3.10 on Apple Silicon. Package is frozen (last release Aug 2024, Snyk: "Inactive"). Plan a Python 3.10 isolated venv for basic-pitch from day one, called as subprocess from the main Python 3.12 environment.
 
 - **Convergent sight-reading validation:** No existing tool or research demonstrates section-joint part generation for music notation. This is a novel hypothesis. Phase 4 must include specific evaluation: compare section coherence (articulation diff, dynamics alignment, beam grouping consistency) between joint generation and independent generation.
 
@@ -320,7 +320,7 @@ The core pipeline (audio -> MIDI -> LilyPond -> PDF) is well-understood with est
 
 - **Demucs "other" stem quality for horn sections:** Demucs groups all brass/woodwinds/keys into "other" stem. Transcription quality from mixed horn section audio is unknown. Basic Pitch was designed for single-instrument audio -- performance on dense harmonic content is untested. May need MT3 fallback or manual MIDI input for complex horn voicings.
 
-- **Audio LM structured output reliability:** Qwen2-Audio can produce text descriptions of audio, but structured JSON output (key, tempo, form, articulation notes) may require prompt engineering and post-processing. Gemini 2.5 Flash has better structured output but is cloud-only. Local model may need format validation and correction loop similar to LilyPond compile-check-fix.
+- **Audio LM structured output reliability:** Qwen3-Omni-Captioner produces fine-grained audio captions with low hallucination, but structured JSON output (key, tempo, form, articulation notes) may require post-processing. The Captioner variant auto-parses without prompting — validate whether its output format is directly usable or needs reformatting. Gemini 3 Flash has better structured output but is cloud-only. Local model may need format validation and correction loop similar to LilyPond compile-check-fix. On Apple Silicon, mlx_lm loads HuggingFace MoE models natively via MLX — no conversion needed.
 
 ## Sources
 
@@ -329,7 +329,8 @@ The core pipeline (audio -> MIDI -> LilyPond -> PDF) is well-understood with est
 - Demucs GitHub (facebookresearch/demucs, adefossez/demucs) -- v4 Hybrid Transformer, demucs-infer PyPI
 - Basic Pitch GitHub (Spotify) -- PyPI 0.4.0, official repository, engineering blog post
 - FastAPI PyPI (0.132.0), PyTorch PyPI (2.10.0), LiteLLM Docs -- official documentation
-- Qwen2-Audio GitHub, HuggingFace (Qwen/Qwen2-Audio-7B-Instruct), Technical Report (arxiv:2407.10759)
+- Qwen3-Omni-30B-A3B-Captioner HuggingFace (Qwen/Qwen3-Omni-30B-A3B-Captioner), Sep 2025
+- vllm-mlx GitHub (waybarrios/vllm-mlx) -- vLLM-like inference for Apple Silicon
 - Qwen3-Coder-Next HuggingFace, LMStudio model page -- 80B MoE, 46GB 4-bit GGUF
 - LlamaIndex PyPI (0.14.15), ChromaDB PyPI (1.5.1) -- official documentation
 - OpenAI SDK PyPI (2.23.0), Anthropic SDK PyPI (0.83.0)

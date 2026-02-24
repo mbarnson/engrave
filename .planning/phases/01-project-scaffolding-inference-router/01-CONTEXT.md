@@ -72,7 +72,7 @@ Python project structure with CLI entry point, multi-provider LLM routing via Li
 <deferred>
 ## Deferred Ideas
 
-- **Phase 0 prerequisite:** Update ALL planning docs (ROADMAP.md, REQUIREMENTS.md, PROJECT.md, research/) to replace specific model names (Qwen2-Audio, Gemini 2.5 Flash, etc.) with generic role references. Many model references are outdated (e.g., Qwen2-Audio is ~2 years old, Qwen3.5-Medium released Feb 2026). Research docs can note candidates but normative docs should be model-agnostic.
+- **Phase 0 prerequisite (DONE):** Updated ALL planning docs (ROADMAP.md, REQUIREMENTS.md, PROJECT.md, research/) with current model references. Qwen2-Audio → Qwen3-Omni-30B-A3B-Captioner, Gemini 2.5 Flash → Gemini 3 Flash. Added vllm-mlx for MoE inference on Apple Silicon. Added basic-pitch Python 3.10 venv hard constraint. Research docs note specific candidates; normative docs reference current models.
 - Specific model benchmarking for compile-fix loop — belongs in Phase 1 research, not context
 - CI/CD pipeline — not scoped for Phase 1
 

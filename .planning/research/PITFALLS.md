@@ -43,7 +43,7 @@ Demucs was trained on pop/rock music datasets (MUSDB18) where the 4-stem separat
 
 **How to avoid:**
 1. Accept that Demucs is a preprocessing helper, not a solution. It usefully isolates drums, bass, and vocals. The "other" stem is a starting point, not an end product.
-2. For the horn section: rely primarily on MIDI transcription (via MT3 or Basic Pitch) applied to the "other" stem, combined with audio LM understanding (Qwen2-Audio, Gemini) to identify instrument roles and voicings.
+2. For the horn section: rely primarily on MIDI transcription (via MT3 or Basic Pitch) applied to the "other" stem, combined with audio LM understanding (Qwen3-Omni-Captioner, Gemini 3 Flash) to identify instrument roles and voicings.
 3. Do NOT architect the pipeline assuming individual instrument stems will be available. Design from the start for "mixed horn section audio" as the input to the transcription stage.
 4. For Sam's recordings specifically: if the demo recordings are MIDI-originated (from a DAW), prefer the MIDI input path entirely and skip audio separation.
 5. Consider Bandit/Banquet research for future fine-grained separation, but do not depend on it for v1.
@@ -68,7 +68,7 @@ MT3 has no memory across segments. Each ~6-second window is transcribed in isola
 
 **How to avoid:**
 1. Use MT3/Basic Pitch primarily for pitch and rhythm extraction. Do NOT rely on MT3's instrument labels for part assignment.
-2. Use the audio LM (Qwen2-Audio, Gemini) to identify which instruments are playing and their approximate roles (melody, harmony, bass line). This provides the "what instrument plays what" information that MT3 cannot reliably provide.
+2. Use the audio LM (Qwen3-Omni-Captioner, Gemini 3 Flash) to identify which instruments are playing and their approximate roles (melody, harmony, bass line). This provides the "what instrument plays what" information that MT3 cannot reliably provide.
 3. Consider MR-MT3 (Memory Retaining MT3) which addresses this with a memory retention mechanism, but note it is a research prototype, not production-ready.
 4. Design the pipeline with an explicit "instrument assignment" stage that is separate from "note transcription" -- don't conflate these two tasks.
 5. For the MIDI input path, instrument assignments come from MIDI channel/program data and this pitfall doesn't apply.
@@ -214,19 +214,19 @@ Phase 1 (Corpus construction). Garbage in, garbage out. The corpus quality ceili
 
 ---
 
-### Pitfall 9: Audio LM 30-Second Clip Limitation Misses Song-Level Structure
+### Pitfall 9: Audio LM Clip Limitations Miss Song-Level Structure
 
 **What goes wrong:**
-Qwen2-Audio (the preferred local audio LM) processes clips under 30 seconds effectively but degrades on longer audio. A typical chart is 3-5 minutes. Processing it in 30-second clips loses song-level structure: the model doesn't know that the soli at bar 17 is a response to the intro at bar 1, that the key change at the bridge changes the harmonic context for all subsequent sections, or that the rhythm section pattern established at the top should inform feel throughout.
+Local audio LMs process clips effectively but may degrade on longer audio. A typical chart is 3-5 minutes. Processing it in short clips loses song-level structure: the model doesn't know that the soli at bar 17 is a response to the intro at bar 1, that the key change at the bridge changes the harmonic context for all subsequent sections, or that the rhythm section pattern established at the top should inform feel throughout. Note: Qwen3-Omni-30B-A3B-Captioner (the current primary) may handle longer audio better than its predecessor Qwen2-Audio, but this needs validation on M4 Max.
 
 **Why it happens:**
-Qwen2-Audio was trained on short clips. Longer audio requires resampling to 16kHz and padding, risking information loss. The model's developers acknowledge this limitation and plan to address it in future versions. Even Gemini 2.0 Flash, which handles long-form audio better, processes audio as a continuous stream without explicit musical structure awareness.
+Audio LMs have practical context limits for audio input. Even models that technically accept long audio may degrade in quality. Gemini 3 Flash handles long-form audio better but processes audio as a continuous stream without explicit musical structure awareness.
 
 **How to avoid:**
 1. Use the audio LM for local understanding (instrument identification, style, articulation feel, harmonic function) and handle global structure separately.
 2. Implement a two-pass architecture: first, segment the audio into structural sections (intro, head, soli, bridge, outro) using onset detection and spectral analysis. Then, process each section with the audio LM with context about its role.
 3. The user's natural language description ("soli at bar 17") provides the structural information the audio LM cannot infer. Treat user hints as authoritative for structure.
-4. For Gemini 2.0 Flash: use it specifically for long-form structure analysis where Qwen2-Audio falls short. Accept the cloud API cost for this specific stage.
+4. For Gemini 3 Flash: use it specifically for long-form structure analysis where local models fall short. Accept the cloud API cost for this specific stage.
 
 **Warning signs:**
 - Audio LM descriptions that contradict each other across different 30-second windows
@@ -257,7 +257,7 @@ Phase 2 (Audio understanding pipeline). Must be addressed before full-chart proc
 | Demucs | Expecting individual instrument stems | Accept 4-stem output; design pipeline around "mixed section audio" |
 | MT3 / Basic Pitch | Trusting instrument labels in multi-instrument transcription | Use pitch/rhythm output only; assign instruments via audio LM or user hints |
 | Audiveris OMR | Running batch OMR and trusting output | Sample-check 10% of output, budget for manual correction time |
-| Qwen2-Audio | Passing full-length audio (>30s) and expecting coherent analysis | Segment audio first; process sections individually with structural context |
+| Qwen3-Omni-Captioner | Passing full-length audio and expecting coherent analysis | Segment audio first; process sections individually with structural context. Validate max clip length on M4 Max |
 | YouTube download (yt-dlp) | Assuming consistent audio quality from YouTube | YouTube audio is lossy (AAC/Opus ~128-256kbps); quality varies wildly. Prefer original recordings when available |
 | LilyPond MusicXML export | Expecting roundtrip LilyPond -> MusicXML -> LilyPond | LilyPond has NO native MusicXML export. Use Frescobaldi experimental export or generate MusicXML independently from internal representation |
 | LMStudio local inference | Assuming local model quality matches cloud APIs | Local models (Qwen3-30B) are significantly less capable than Claude/GPT-4 for code generation. Use local for prototyping cost savings; benchmark against cloud before committing |
@@ -270,7 +270,7 @@ Phase 2 (Audio understanding pipeline). Must be addressed before full-chart proc
 | Demucs on full-length audio without GPU | 5-10x realtime processing on CPU | Ensure MPS (Metal) acceleration on M4 Max; use htdemucs (not htdemucs_ft) for speed | Audio files >3 minutes on CPU |
 | Embedding all 350 scores as full documents | Slow retrieval, poor result quality | Chunk at phrase level (4-8 bars) for 5K-10K searchable chunks | When corpus grows beyond initial 350 |
 | Sequential LLM calls for each instrument part | 17 separate API calls per chart, each with full context | Generate section groups together; parallelize independent sections | Full big band charts with multiple sections |
-| Loading full Qwen2-Audio model for each clip | High memory usage, slow inference | Load model once, process clips in sequence through the loaded model | Processing more than ~10 clips |
+| Loading Qwen3-Omni model for each clip | High memory usage, slow inference | Load model once via mlx_lm (Apple Silicon) or vLLM (Linux/GPU), process clips in sequence. | Processing more than ~10 clips |
 
 ## UX Pitfalls
 
@@ -306,7 +306,7 @@ Phase 2 (Audio understanding pipeline). Must be addressed before full-chart proc
 | Poor OMR quality from Audiveris | HIGH | Manual correction in Audiveris editor or re-entry; no automated recovery |
 | Context window overflow mid-generation | MEDIUM | Regenerate using chunked approach; rewrite pipeline for phrase-level generation |
 | RAG returning irrelevant examples | MEDIUM | Add metadata filters; manually curate example set for common query types; re-embed with domain-tuned model |
-| Audio LM missing song structure | LOW | Supplement with user-provided structural description; use Gemini for long-form where Qwen2-Audio fails |
+| Audio LM missing song structure | LOW | Supplement with user-provided structural description; use Gemini 3 Flash for long-form where local models fall short |
 | Convergent sight-reading failure (overall) | HIGH | Requires architectural change to joint section generation; cannot be patched onto per-instrument pipeline |
 
 ## Pitfall-to-Phase Mapping
@@ -335,7 +335,7 @@ Phase 2 (Audio understanding pipeline). Must be addressed before full-chart proc
 - [MR-MT3: Memory Retaining Multi-Track Music Transcription](https://arxiv.org/abs/2403.10024) -- HIGH confidence
 - [Seven Failure Points When Engineering a RAG System](https://arxiv.org/abs/2401.05856) -- HIGH confidence
 - [Retrieval Augmented Generation of Symbolic Music with LLMs](https://arxiv.org/html/2311.10384v2) -- MEDIUM confidence (research prototype, limited evaluation)
-- [Qwen2-Audio Technical Report](https://arxiv.org/abs/2407.10759) -- HIGH confidence
+- [Qwen3-Omni Technical Report](https://arxiv.org/abs/2407.10759) -- MEDIUM confidence (arxiv ID is Qwen2-Audio original; Qwen3-Omni tech report TBD)
 - [Basic Pitch: Spotify's Audio-to-MIDI Converter](https://engineering.atspotify.com/2022/6/meet-basic-pitch) -- HIGH confidence
 - [Audiveris GitHub Repository](https://github.com/Audiveris/audiveris) -- MEDIUM confidence (community discussions, not formal benchmarks)
 - [NotaGen: Symbolic Music Generation with LLM Training](https://arxiv.org/html/2502.18008v5) -- MEDIUM confidence (recent, limited independent verification)
