@@ -43,6 +43,7 @@ When Sam uploads a rough demo recording and types "Big band, 4 trumpets, 4 bones
 
 ## Context
 
+- **Collaboration:** [Shared Google Drive](https://drive.google.com/drive/folders/1Te9xTPCD46GoS4IMuwejDG9KsUyvSm6u?usp=sharing) — Matt & Sam working docs
 - **Primary user:** Sam Graber, prolific composer writing for rock trio and full big band
 - **Hardware:** Matt's M4 Max, 128GB RAM — local inference preferred, cloud OK when needed
 - **Inference strategy:** Multi-provider — Anthropic API, OpenAI API, LMStudio local endpoints. Pipeline may use different models at different stages. LMStudio is cheapest for prototyping, using `lms` CLI to swap models.
