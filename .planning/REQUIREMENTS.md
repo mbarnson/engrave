@@ -20,9 +20,9 @@ Requirements for initial release. Each maps to roadmap phases.
 ### Audio Processing
 
 - [ ] **AUDP-01**: System performs source separation on audio input via Demucs v4, producing drums, bass, vocals, and other stems
-- [ ] **AUDP-02**: System transcribes separated stems to MIDI via Basic Pitch (default, single-instrument) or MT3 (multi-instrument mode for dense ensemble content), extracting pitch, timing, and velocity per voice — with fallback strategy when primary model produces poor results
-- [ ] **AUDP-03**: System produces structured musical descriptions from audio via audio LM (Qwen2-Audio for local inference, Gemini 2.5 Flash for cloud/long-form — note: 2.0 Flash retires June 2026), capturing key, tempo, style, dynamics, articulation intent, and structural form
-- [ ] **AUDP-04**: User can provide natural language hints describing ensemble composition, style, structural markers, and articulation intent — hints are treated as authoritative when conflicting with audio inference
+- [ ] **AUDP-02**: System transcribes separated stems to MIDI via Basic Pitch (default, single-instrument) or MT3 (multi-instrument mode for dense ensemble content), extracting pitch, timing, and velocity per voice -- with fallback strategy when primary model produces poor results
+- [ ] **AUDP-03**: System produces structured musical descriptions from audio via audio LM (Qwen2-Audio for local inference, Gemini 2.5 Flash for cloud/long-form -- note: 2.0 Flash retires June 2026), capturing key, tempo, style, dynamics, articulation intent, and structural form
+- [ ] **AUDP-04**: User can provide natural language hints describing ensemble composition, style, structural markers, and articulation intent -- hints are treated as authoritative when conflicting with audio inference
 
 ### RAG & Corpus
 
@@ -40,7 +40,7 @@ Requirements for initial release. Each maps to roadmap phases.
 
 ### Engraving Output
 
-- [ ] **ENGR-01**: System renders a full conductor score PDF with standard instrument ordering (woodwinds → brass → percussion → rhythm), system brackets and braces, landscape orientation for big band
+- [ ] **ENGR-01**: System renders a full conductor score PDF with standard instrument ordering (woodwinds, brass, percussion, rhythm), system brackets and braces, landscape orientation for big band
 - [ ] **ENGR-02**: System renders one extracted part PDF per instrument, correctly transposed to the instrument's reading key with proper clef and key signature
 - [ ] **ENGR-03**: Parts include rehearsal marks (every 8-16 bars and at structural landmarks), measure numbers at the start of each line, and multi-bar rests (consolidated)
 - [ ] **ENGR-04**: Parts include dynamic markings with restatement after multi-bar rests
@@ -53,11 +53,11 @@ Requirements for initial release. Each maps to roadmap phases.
 
 ### Ensemble & Articulation
 
-- [ ] **ENSM-01**: System includes a big band ensemble preset encoding: 5 saxes (AATBT), 4 Bb trumpets, 4 trombones (3 tenor + 1 bass), piano, guitar, bass, drums — with correct transpositions, clefs, score order, and staff sizes
-- [ ] **ENSM-02**: System generates section parts jointly (e.g., all 4 trumpets in one LLM call) so articulations, dynamics, and beam groupings co-vary — enabling convergent sight-reading
+- [ ] **ENSM-01**: System includes a big band ensemble preset encoding: 5 saxes (AATBT), 4 Bb trumpets, 4 trombones (3 tenor + 1 bass), piano, guitar, bass, drums -- with correct transpositions, clefs, score order, and staff sizes
+- [ ] **ENSM-02**: System generates section parts jointly (e.g., all 4 trumpets in one LLM call) so articulations, dynamics, and beam groupings co-vary -- enabling convergent sight-reading
 - [ ] **ENSM-03**: System applies Tim Davies jazz articulation defaults: unmarked quarter notes are short, unmarked eighth notes are long, swing assumed unless marked "Straight 8s," staccato+accent not paired (redundant)
 - [ ] **ENSM-04**: System generates chord symbols on rhythm section parts (guitar, piano, bass) with changes placed above the staff
-- [ ] **ENSM-05**: Section consistency rule: if all parts in a section have the same articulation, omit it (the default handles it) — only mark departures from the section's collective default
+- [ ] **ENSM-05**: Section consistency rule: if all parts in a section have the same articulation, omit it (the default handles it) -- only mark departures from the section's collective default
 
 ### Evaluation
 
@@ -72,7 +72,7 @@ Deferred to after open-source corpus proves the concept.
 
 ### Corpus Expansion
 
-- **CORP-05**: Sam's 350 original arrangements ingested via Audiveris OMR (PDF → MusicXML → LilyPond) with manual quality verification on 10% sample
+- **CORP-05**: Sam's 350 original arrangements ingested via Audiveris OMR (PDF to MusicXML to LilyPond) with manual quality verification on 10% sample
 - **CORP-06**: YouTube recordings paired with Sam's scores to create (LilyPond source, MIDI tokens, structured text description) triples for big band RAG corpus
 
 ## v2 Requirements
@@ -82,7 +82,7 @@ Deferred to future release.
 ### Fine-Tuning
 
 - **TUNE-01**: Fine-tune Qwen3-4B (or equivalent small model) on curated LilyPond corpus using LoRA, targeting >95% compilation success rate
-- **TUNE-02**: Use v1 error telemetry to prioritize fine-tuning examples — oversample patterns the general model gets wrong most often
+- **TUNE-02**: Use v1 error telemetry to prioritize fine-tuning examples -- oversample patterns the general model gets wrong most often
 - **TUNE-03**: Explore RLCF (reinforcement learning from compiler feedback) using LilyPond compilation success/failure as reward signal
 
 ### Additional Ensemble Presets
@@ -96,7 +96,7 @@ Deferred to future release.
 ### Advanced Features
 
 - **ADVN-01**: MusicXML export generated from internal representation (not converted from LilyPond) for reliable import into Dorico/Sibelius/MuseScore
-- **ADVN-02**: Arrangement completion — fill in missing voices when MIDI has incomplete voicings
+- **ADVN-02**: Arrangement completion -- fill in missing voices when MIDI has incomplete voicings
 
 ## Out of Scope
 
@@ -104,60 +104,60 @@ Deferred to future release.
 |---------|--------|
 | Interactive notation editor | Multi-year project (MuseScore = 15+ years). Engrave is a pipeline, not an editor. Users edit in MuseScore/Dorico/Frescobaldi. |
 | Real-time playback / audio engine | Enormous distraction. Export MIDI, play back in DAW or MuseScore. |
-| AI composition / arrangement completion | Crosses from engraving into composition — different product, different trust requirements. v1 takes arrangement as given. |
+| AI composition / arrangement completion | Crosses from engraving into composition -- different product, different trust requirements. v1 takes arrangement as given. |
 | Mobile app | Inherently desktop workflow (upload files, write descriptions, review PDFs). |
 | Real-time collaboration | Single-user workflow matches Sam's actual process. |
-| Over-notation (marking every articulation) | Tim Davies "default" principle — over-notation creates clutter, slows sight-reading, insults the player. Only mark departures from default. |
+| Over-notation (marking every articulation) | Tim Davies "default" principle -- over-notation creates clutter, slows sight-reading, insults the player. Only mark departures from default. |
 | All ensemble types at launch | Each requires dedicated convention research. Start with big band. |
 
 ## Traceability
 
 | Requirement | Phase | Status |
 |-------------|-------|--------|
-| FNDN-01 | Phase 1 | Pending |
-| FNDN-02 | Phase 2 | Pending |
-| FNDN-03 | Phase 2 | Pending |
+| FNDN-01 | Phase 3 | Pending |
+| FNDN-02 | Phase 5 | Pending |
+| FNDN-03 | Phase 5 | Pending |
 | FNDN-04 | Phase 1 | Pending |
 | FNDN-05 | Phase 1 | Pending |
-| FNDN-06 | Phase 1 | Pending |
-| FNDN-07 | Phase 5 | Pending |
-| AUDP-01 | Phase 2 | Pending |
-| AUDP-02 | Phase 2 | Pending |
-| AUDP-03 | Phase 3 | Pending |
-| AUDP-04 | Phase 3 | Pending |
-| CORP-01 | Phase 1 | Pending |
-| CORP-02 | Phase 1 | Pending |
-| CORP-03 | Phase 1 | Pending |
-| CORP-04 | Phase 1 | Pending |
-| LILY-01 | Phase 1 | Pending |
-| LILY-02 | Phase 1 | Pending |
-| LILY-03 | Phase 1 | Pending |
-| LILY-04 | Phase 1 | Pending |
-| ENGR-01 | Phase 1 | Pending |
-| ENGR-02 | Phase 1 | Pending |
-| ENGR-03 | Phase 1 | Pending |
-| ENGR-04 | Phase 1 | Pending |
-| ENGR-05 | Phase 1 | Pending |
-| ENGR-06 | Phase 5 | Pending |
-| ENGR-07 | Phase 5 | Pending |
-| ENGR-08 | Phase 5 | Pending |
-| ENGR-09 | Phase 1 | Pending |
-| ENGR-10 | Phase 1 | Pending |
-| ENSM-01 | Phase 1 | Pending |
-| ENSM-02 | Phase 4 | Pending |
-| ENSM-03 | Phase 4 | Pending |
-| ENSM-04 | Phase 1 | Pending |
-| ENSM-05 | Phase 4 | Pending |
-| EVAL-01 | Phase 6 | Pending |
-| EVAL-02 | Phase 6 | Pending |
-| EVAL-03 | Phase 6 | Pending |
-| EVAL-04 | Phase 6 | Pending |
+| FNDN-06 | Phase 4 | Pending |
+| FNDN-07 | Phase 8 | Pending |
+| AUDP-01 | Phase 5 | Pending |
+| AUDP-02 | Phase 5 | Pending |
+| AUDP-03 | Phase 6 | Pending |
+| AUDP-04 | Phase 6 | Pending |
+| CORP-01 | Phase 2 | Pending |
+| CORP-02 | Phase 2 | Pending |
+| CORP-03 | Phase 2 | Pending |
+| CORP-04 | Phase 2 | Pending |
+| LILY-01 | Phase 3 | Pending |
+| LILY-02 | Phase 3 | Pending |
+| LILY-03 | Phase 3 | Pending |
+| LILY-04 | Phase 3 | Pending |
+| ENGR-01 | Phase 4 | Pending |
+| ENGR-02 | Phase 4 | Pending |
+| ENGR-03 | Phase 4 | Pending |
+| ENGR-04 | Phase 4 | Pending |
+| ENGR-05 | Phase 7 | Pending |
+| ENGR-06 | Phase 8 | Pending |
+| ENGR-07 | Phase 8 | Pending |
+| ENGR-08 | Phase 8 | Pending |
+| ENGR-09 | Phase 4 | Pending |
+| ENGR-10 | Phase 8 | Pending |
+| ENSM-01 | Phase 4 | Pending |
+| ENSM-02 | Phase 7 | Pending |
+| ENSM-03 | Phase 7 | Pending |
+| ENSM-04 | Phase 4 | Pending |
+| ENSM-05 | Phase 7 | Pending |
+| EVAL-01 | Phase 9 | Pending |
+| EVAL-02 | Phase 9 | Pending |
+| EVAL-03 | Phase 9 | Pending |
+| EVAL-04 | Phase 9 | Pending |
 
 **Coverage:**
 - v1 requirements: 37 total
 - Mapped to phases: 37
-- Unmapped: 0 ✓
+- Unmapped: 0
 
 ---
 *Requirements defined: 2026-02-24*
-*Last updated: 2026-02-24 after initial definition*
+*Last updated: 2026-02-24 after roadmap creation*
