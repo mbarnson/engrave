@@ -1,0 +1,32 @@
+# Engrave runtime configuration
+# API keys go in .env (gitignored), not here.
+
+[providers.lm_studio]
+api_base = "http://localhost:1234/v1"
+
+[providers.runpod]
+# api_base = "https://api.runpod.ai/v2/YOUR-ENDPOINT-ID/openai/v1"
+
+[roles.compile_fixer]
+model = "lm_studio/qwen3-coder-next"
+max_tokens = 4096
+min_context_window = 32000
+tags = ["code"]
+
+[roles.generator]
+model = "lm_studio/qwen3-coder-next"
+max_tokens = 8192
+min_context_window = 65000
+tags = ["code", "lilypond"]
+
+[roles.describer]
+model = "anthropic/claude-sonnet-4-20250514"
+max_tokens = 2048
+min_context_window = 16000
+tags = ["audio", "description"]
+
+[lilypond]
+min_version = "2.24"
+compile_timeout = 60
+max_fix_attempts = 5
+context_lines = 20

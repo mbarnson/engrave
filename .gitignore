@@ -1,0 +1,40 @@
+# Environment and secrets
+.env
+
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.egg-info/
+*.egg
+dist/
+build/
+*.whl
+
+# Virtual environments
+.venv/
+venv/
+
+# Ruff
+.ruff_cache/
+
+# pytest
+.pytest_cache/
+.coverage
+htmlcov/
+
+# LilyPond output
+*.pdf
+*.midi
+*.mid
+
+# IDE
+.idea/
+.vscode/
+*.swp
+*.swo
+*~
+
+# OS
+.DS_Store
+Thumbs.db
