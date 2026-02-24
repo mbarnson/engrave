@@ -50,11 +50,13 @@ Plans:
   3. A retrieval query for "big band trumpet section, swing style" returns relevant LilyPond phrase examples ranked by similarity
   4. Corpus is chunked at phrase level (4-8 bars), expanding 2K+ source scores into 10K+ retrievable examples
   5. Retrieval filters by structured metadata (instrument family, ensemble type, style, musical context)
-**Plans**: TBD
+**Plans:** 4 plans
 
 Plans:
-- [ ] 02-01: TBD
-- [ ] 02-02: TBD
+- [ ] 02-01-PLAN.md -- Corpus foundation: data models, ChromaDB store, configurable embeddings, config extension
+- [ ] 02-02-PLAN.md -- Parsing and chunking: boundary detection, music-aware chunker, metadata extraction, description templating
+- [ ] 02-03-PLAN.md -- Ingestion pipeline: shared pipeline, Mutopia adapter, PDMX adapter, MIDI injection
+- [ ] 02-04-PLAN.md -- Retrieval interface: hybrid scoring, public API, CLI corpus command
 
 ### Phase 3: MIDI-to-LilyPond Generation
 **Goal**: User can provide a MIDI file and receive LilyPond source code that compiles successfully, with music stored in concert pitch and generated section-by-section
@@ -186,7 +188,7 @@ Phases execute in numeric order: 1 -> 2 -> 3 -> 4 -> 5 -> 6 -> 7 -> 8 -> 9 -> 10
 | Phase | Plans Complete | Status | Completed |
 |-------|----------------|--------|-----------|
 | 1. Project Scaffolding & Inference Router | 0/2 | Complete    | 2026-02-24 |
-| 2. RAG Corpus & Retrieval | 0/TBD | Not started | - |
+| 2. RAG Corpus & Retrieval | 0/4 | Planned | - |
 | 3. MIDI-to-LilyPond Generation | 0/TBD | Not started | - |
 | 4. Rendering & Output Packaging | 0/TBD | Not started | - |
 | 5. Audio Input Pipeline | 0/TBD | Not started | - |
