@@ -35,7 +35,7 @@ When Sam uploads a rough demo recording and types "Big band, 4 trumpets, 4 bones
 
 ### Out of Scope
 
-- Fine-tuning models — v1 is RAG-first, fine-tuning deferred to v2
+- Fine-tuning models — v1 is RAG-first; v2 fine-tuning target is Qwen3-4B (not 30B) — narrow task favors specialized small model, local inference advantage, LilyPond compiler feedback as free reward signal (RLCF). v1 error telemetry feeds fine-tuning corpus prioritization.
 - Arrangement completion — Engrave v1 takes the arrangement as given, does not fill in incomplete voicings
 - Mobile app — web-first
 - Real-time collaboration — single-user workflow
@@ -47,9 +47,9 @@ When Sam uploads a rough demo recording and types "Big band, 4 trumpets, 4 bones
 - **Primary user:** Sam Graber, prolific composer writing for rock trio and full big band
 - **Hardware:** Matt's M4 Max, 128GB RAM — local inference preferred, cloud OK when needed
 - **Inference strategy:** Multi-provider — Anthropic API, OpenAI API, LMStudio local endpoints. Pipeline may use different models at different stages. LMStudio is cheapest for prototyping, using `lms` CLI to swap models.
-- **Model candidates for Stage 4 (code gen):** Qwen3-30B-a3B, Qwen3-Coder-Next (80B-A3B), gpt-oss-120b, Claude, GPT-4 — to be benchmarked
+- **Model candidates for Stage 4 (code gen):** Qwen3.5-Medium (30B-A3B), Qwen3-Coder-Next (80B-A3B), gpt-oss-120b, Claude, GPT-4 — to be benchmarked. ML landscape moves fast — new models drop constantly (Qwen3.5-Medium released Feb 2026). LMStudio + `lms` CLI enables rapid model swapping.
 - **Audio LM candidates (Stage 3):** Qwen2-Audio (local on Apple Silicon), LFM2.5-Audio (Matt has experience), Gemini 2.0 Flash (best for long-form audio, closed API)
-- **Corpus:** 350 Sam Graber original arrangements as PDF scores + recordings (YouTube). PDFs need OMR (Audiveris) to extract MusicXML. Supplemented by open-source freely-licensed material from IMSLP, Mutopia Project, and similar sources — any ensemble type.
+- **Corpus strategy:** v1 uses open-source freely-licensed material — Mutopia Project (2,124 LilyPond scores + MIDI), PDMX (222K MusicXML), OpenScore, KernScores, MAESTRO, ASAP, MusicNet, Slakh2100. v1.1 adds Sam's 350 original arrangements via OMR (Audiveris PDF → MusicXML). No freely-licensed big band corpus exists — Sam's charts fill that gap.
 - **Training triple format:** (LilyPond source, MIDI tokens, structured text description)
 - **LilyPond:** Not yet installed — needs setup as project dependency
 - **Key insight:** Once audio becomes MIDI and MIDI becomes structured text, the text-to-LilyPond transformation is a code generation problem. LLMs are already excellent at code generation.
