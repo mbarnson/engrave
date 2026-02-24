@@ -33,9 +33,9 @@ Python project structure with CLI entry point, multi-provider LLM routing via Li
 - TOML config: `pyproject.toml` for project metadata, `engrave.toml` for runtime config (providers, models, endpoints)
 - Testing: pytest with fixtures for mocking LLM responses and LilyPond compilation. Tests run without API keys or LilyPond installed
 - Gherkin integration tests: pytest-bdd with `.feature` files for any scenario expressible as given/when/then. Integration tests, not unit tests
-- Code coverage: 80% minimum enforced in pre-commit hook, excluding entrypoints
+- Code coverage: 80% minimum enforced via `make test --cov-fail-under=80`, not pre-commit (too slow for commit hook)
 - Linting: Ruff for both formatting and linting (replaces black + flake8)
-- Pre-commit hook: runs ruff check --fix, ruff format, pytest on changed files, coverage check
+- Pre-commit hook: runs ruff check --fix, ruff format (no pytest — coverage enforced in make test)
 - Setup: `make setup` installs deps, sets up pre-commit hooks, verifies LilyPond. Single command onboarding for developers and agents
 
 ### LilyPond Setup

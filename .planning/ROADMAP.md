@@ -138,13 +138,12 @@ Plans:
 ### Phase 8: Engraving Polish
 **Goal**: Parts contain all the professional engraving details that enable a real rehearsal: cues, navigation marks, page turns at rests, and chord chart output
 **Depends on**: Phase 7
-**Requirements**: ENGR-06, ENGR-07, ENGR-08, ENGR-10, FNDN-07
+**Requirements**: ENGR-06, ENGR-07, ENGR-08, ENGR-10
 **Success Criteria** (what must be TRUE):
   1. Parts include cue notes from an audible instrument after 8+ bars of rest, transposed to the player's reading key
   2. Parts include repeat signs, first/second endings, D.S. al Coda, and other navigation marks as inferred from structural analysis or user hints
   3. Page turns in parts are placed at rests, never mid-phrase
   4. System generates chord chart / lead sheet output with Nashville number system or chord symbol notation, optional melody line, and lyric underlay if text is provided
-  5. Web UI provides a single-page interface (FastAPI + HTML/JS) with drag-and-drop file upload, text description field, output format checkboxes, and "Engrave" button
 **Plans**: TBD
 
 Plans:
@@ -166,10 +165,22 @@ Plans:
 - [ ] 09-01: TBD
 - [ ] 09-02: TBD
 
+### Phase 10: Web UI
+**Goal**: Users interact with the engrave pipeline through a browser-based interface with drag-and-drop upload and output configuration
+**Depends on**: Phase 4
+**Requirements**: FNDN-07
+**Success Criteria** (what must be TRUE):
+  1. Web UI provides a single-page interface (FastAPI + HTML/JS) with drag-and-drop file upload, text description field, output format checkboxes, and "Engrave" button
+**Plans**: TBD
+
+Plans:
+- [ ] 10-01: TBD
+- [ ] 10-02: TBD
+
 ## Progress
 
 **Execution Order:**
-Phases execute in numeric order: 1 -> 2 -> 3 -> 4 -> 5 -> 6 -> 7 -> 8 -> 9
+Phases execute in numeric order: 1 -> 2 -> 3 -> 4 -> 5 -> 6 -> 7 -> 8 -> 9 -> 10
 (Phase 5 and Phase 9 can execute in parallel with other phases -- see dependency graph)
 
 | Phase | Plans Complete | Status | Completed |
@@ -183,3 +194,4 @@ Phases execute in numeric order: 1 -> 2 -> 3 -> 4 -> 5 -> 6 -> 7 -> 8 -> 9
 | 7. Convergent Sight-Reading & Ensemble Intelligence | 0/TBD | Not started | - |
 | 8. Engraving Polish | 0/TBD | Not started | - |
 | 9. Evaluation Pipeline | 0/TBD | Not started | - |
+| 10. Web UI | 0/TBD | Not started | - |

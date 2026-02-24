@@ -20,7 +20,7 @@ min_context_window = 65000
 tags = ["code", "lilypond"]
 
 [roles.describer]
-model = "anthropic/claude-sonnet-4-20250514"
+model = "anthropic/claude-opus-4-6"
 max_tokens = 2048
 min_context_window = 16000
 tags = ["audio", "description"]

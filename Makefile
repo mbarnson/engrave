@@ -26,7 +26,7 @@ setup:
 	@echo "=== Setup Complete ==="
 
 test:
-	$(UV) run pytest tests/ -v --cov=engrave --cov-report=term-missing
+	$(UV) run pytest tests/ -v --cov=engrave --cov-report=term-missing --cov-fail-under=80
 
 lint:
 	$(UV) run ruff check src/ tests/

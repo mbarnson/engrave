@@ -56,7 +56,7 @@ None yet.
 
 ### Blockers/Concerns
 
-- basic-pitch Python 3.12 compatibility is uncertain (official support 3.8-3.11 only) -- test early in Phase 5
+- basic-pitch HARD CONSTRAINT: requires Python 3.10 isolated venv on Apple Silicon (official support 3.8-3.11 only, frozen since Aug 2024). Phase 5 must implement subprocess invocation or venv isolation to run basic-pitch alongside the Python 3.12 project.
 - LilyPond LLM generation quality ceiling unknown -- benchmark models early in Phase 3
 - RAG corpus is mostly classical (Mutopia); big band jazz coverage is sparse until Sam's charts are added (v1.1)
 
