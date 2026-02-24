@@ -10,28 +10,28 @@ See: .planning/PROJECT.md (updated 2026-02-24)
 ## Current Position
 
 Phase: 1 of 9 (Project Scaffolding & Inference Router)
-Plan: 0 of TBD in current phase
-Status: Ready to plan
-Last activity: 2026-02-24 -- Roadmap created (9 phases, 37 requirements mapped)
+Plan: 1 of 2 in current phase
+Status: Executing
+Last activity: 2026-02-24 -- Completed 01-01-PLAN.md (scaffolding, config, router, CLI)
 
-Progress: [..........] 0%
+Progress: [#.........] 5%
 
 ## Performance Metrics
 
 **Velocity:**
-- Total plans completed: 0
-- Average duration: -
-- Total execution time: 0 hours
+- Total plans completed: 1
+- Average duration: 6 min
+- Total execution time: 0.1 hours
 
 **By Phase:**
 
 | Phase | Plans | Total | Avg/Plan |
 |-------|-------|-------|----------|
-| - | - | - | - |
+| 1 | 1 | 6 min | 6 min |
 
 **Recent Trend:**
-- Last 5 plans: -
-- Trend: -
+- Last 5 plans: 01-01 (6 min)
+- Trend: First plan
 
 *Updated after each plan completion*
 
@@ -45,6 +45,10 @@ Recent decisions affecting current work:
 - Roadmap: MIDI-first strategy -- prove code generation with clean MIDI input before adding audio complexity
 - Roadmap: 9 phases derived from natural pipeline component boundaries at comprehensive depth
 - Roadmap: Convergent sight-reading (Phase 7) deferred until rendering and audio understanding are stable
+- 01-01: hatchling build backend for src layout support with uv
+- 01-01: pydantic-settings v2 requires settings_customise_sources for TOML (not just model_config)
+- 01-01: TestSettings subclass pattern for TOML path isolation in tests
+- 01-01: typer (not typer[all]) -- the [all] extra removed in v0.24.x
 
 ### Pending Todos
 
@@ -59,5 +63,5 @@ None yet.
 ## Session Continuity
 
 Last session: 2026-02-24
-Stopped at: Phase 1 context gathered
-Resume file: .planning/phases/01-project-scaffolding-inference-router/01-CONTEXT.md
+Stopped at: Completed 01-01-PLAN.md
+Resume file: .planning/phases/01-project-scaffolding-inference-router/01-01-SUMMARY.md
