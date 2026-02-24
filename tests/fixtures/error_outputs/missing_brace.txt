@@ -1,0 +1,3 @@
+/tmp/test_input.ly:3:1: error: unmatched '{'
+{
+ c4 d e f

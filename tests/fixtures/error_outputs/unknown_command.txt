@@ -1,0 +1,2 @@
+/tmp/test_input.ly:2:1: error: unknown escaped string: '\relativee'
+\relativee c' { c4 d e f | g2 g | }
