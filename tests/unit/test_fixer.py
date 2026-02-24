@@ -175,8 +175,13 @@ class TestErrorContextExtracted:
         call_args = mock_router.complete.call_args
         messages = call_args.kwargs.get("messages") or call_args[1].get("messages")
         prompt_text = messages[0]["content"]
-        # Context should be much shorter than the full 100-line source
-        assert len(prompt_text.splitlines()) < 80
+        # The CONTEXT AROUND ERROR section should contain ~20 lines, not all 100
+        # Extract just the context section from the prompt
+        context_start = prompt_text.index("CONTEXT AROUND ERROR:")
+        context_end = prompt_text.index("FULL SOURCE:")
+        context_section = prompt_text[context_start:context_end]
+        context_lines_found = [line for line in context_section.splitlines() if "|" in line]
+        assert len(context_lines_found) <= 21  # ~20 lines centered on error
 
 
 class TestFixPromptIncludesErrorMessage:

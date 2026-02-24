@@ -4,7 +4,7 @@ from __future__ import annotations
 
 from pathlib import Path
 from typing import TYPE_CHECKING, Any
-from unittest.mock import AsyncMock, patch
+from unittest.mock import AsyncMock, MagicMock, patch
 
 import pytest
 from pydantic_settings import (
@@ -95,3 +95,35 @@ def mock_acompletion():
     mock.return_value.choices = [AsyncMock(message=AsyncMock(content="Test response"))]
     with patch("litellm.acompletion", mock):
         yield mock
+
+
+@pytest.fixture
+def mock_compiler():
+    """Mock LilyPondCompiler with configurable compile() responses.
+
+    Default: returns a successful compilation result.
+    Override compile.return_value or compile.side_effect in tests.
+    """
+    from engrave.lilypond.compiler import RawCompileResult
+
+    compiler = MagicMock()
+    compiler.compile.return_value = RawCompileResult(
+        success=True,
+        returncode=0,
+        stdout="",
+        stderr="",
+        output_path=Path("/tmp/out.pdf"),
+    )
+    return compiler
+
+
+@pytest.fixture
+def mock_router():
+    """Mock InferenceRouter with configurable complete() responses.
+
+    Default: returns a simple fixed LilyPond source.
+    Override complete.return_value or complete.side_effect in tests.
+    """
+    router = AsyncMock()
+    router.complete.return_value = '\\version "2.24.4"\n\\relative c\' { c4 d e f | g2 g | }\n'
+    return router
