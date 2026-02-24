@@ -13,7 +13,7 @@ Requirements for initial release. Each maps to roadmap phases.
 - [ ] **FNDN-02**: System accepts audio files (MP3, WAV, AIFF, FLAC) as input and routes them through the full audio processing pipeline
 - [ ] **FNDN-03**: System accepts YouTube URLs as input via yt-dlp, extracts audio, and routes through audio processing pipeline
 - [x] **FNDN-04**: System supports multiple LLM providers (Anthropic API, OpenAI API, LMStudio local) via LiteLLM, configurable per pipeline stage
-- [ ] **FNDN-05**: System provides a compile-check-fix retry loop that detects LilyPond compilation errors, feeds them back to the LLM, and retries up to 5 times
+- [x] **FNDN-05**: System provides a compile-check-fix retry loop that detects LilyPond compilation errors, feeds them back to the LLM, and retries up to 5 times
 - [ ] **FNDN-06**: System packages output as a ZIP containing selected PDFs, LilyPond source files, and MusicXML export
 - [ ] **FNDN-07**: Web UI provides a single-page interface (FastAPI + HTML/JS) with drag-and-drop file upload, text description field, output format checkboxes, and "Engrave" button
 
@@ -118,7 +118,7 @@ Deferred to future release.
 | FNDN-02 | Phase 5 | Pending |
 | FNDN-03 | Phase 5 | Pending |
 | FNDN-04 | Phase 1 | Complete |
-| FNDN-05 | Phase 1 | Pending |
+| FNDN-05 | Phase 1 | Complete |
 | FNDN-06 | Phase 4 | Pending |
 | FNDN-07 | Phase 10 | Pending |
 | AUDP-01 | Phase 5 | Pending |

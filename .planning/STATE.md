@@ -9,29 +9,29 @@ See: .planning/PROJECT.md (updated 2026-02-24)
 
 ## Current Position
 
-Phase: 1 of 9 (Project Scaffolding & Inference Router)
-Plan: 1 of 2 in current phase
-Status: Executing
-Last activity: 2026-02-24 -- Completed 01-01-PLAN.md (scaffolding, config, router, CLI)
+Phase: 1 of 9 (Project Scaffolding & Inference Router) -- COMPLETE
+Plan: 2 of 2 in current phase (all plans complete)
+Status: Phase Complete
+Last activity: 2026-02-24 -- Completed 01-02-PLAN.md (LilyPond compiler, parser, compile-fix loop, CLI)
 
-Progress: [#.........] 5%
+Progress: [##........] 11%
 
 ## Performance Metrics
 
 **Velocity:**
-- Total plans completed: 1
+- Total plans completed: 2
 - Average duration: 6 min
-- Total execution time: 0.1 hours
+- Total execution time: 0.2 hours
 
 **By Phase:**
 
 | Phase | Plans | Total | Avg/Plan |
 |-------|-------|-------|----------|
-| 1 | 1 | 6 min | 6 min |
+| 1 | 2 | 12 min | 6 min |
 
 **Recent Trend:**
-- Last 5 plans: 01-01 (6 min)
-- Trend: First plan
+- Last 5 plans: 01-01 (6 min), 01-02 (6 min)
+- Trend: Consistent
 
 *Updated after each plan completion*
 
@@ -49,6 +49,9 @@ Recent decisions affecting current work:
 - 01-01: pydantic-settings v2 requires settings_customise_sources for TOML (not just model_config)
 - 01-01: TestSettings subclass pattern for TOML path isolation in tests
 - 01-01: typer (not typer[all]) -- the [all] extra removed in v0.24.x
+- 01-02: Error context window: ~20 lines centered on error, full source also in prompt for complete return
+- 01-02: extract_lilypond_from_response handles markdown code blocks, generic code blocks, and plain text
+- 01-02: Repeated error hash detection after first occurrence triggers early loop exit
 
 ### Pending Todos
 
@@ -63,5 +66,5 @@ None yet.
 ## Session Continuity
 
 Last session: 2026-02-24
-Stopped at: Phase 2 context gathered
-Resume file: .planning/phases/02-rag-corpus-retrieval/02-CONTEXT.md
+Stopped at: Completed 01-02-PLAN.md -- Phase 1 complete
+Resume file: .planning/phases/01-project-scaffolding-inference-router/01-02-SUMMARY.md
