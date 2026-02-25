@@ -99,7 +99,8 @@ class TestConductorScore:
 
     def test_conductor_score_uses_tabloid_landscape(self) -> None:
         output = _generate_score()
-        assert 'set-paper-size "tabloid" \'landscape' in output
+        assert "paper-width = 431.8\\mm" in output
+        assert "paper-height = 279.4\\mm" in output
 
     def test_conductor_score_has_all_instruments(self) -> None:
         output = _generate_score()

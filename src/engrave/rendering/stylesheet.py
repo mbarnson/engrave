@@ -22,7 +22,8 @@ VERSION_HEADER: str = '\\version "2.24.4"\n'
 
 CONDUCTOR_SCORE_PAPER: str = """\
 \\paper {
-  #(set-paper-size "tabloid" 'landscape)
+  paper-width = 431.8\\mm
+  paper-height = 279.4\\mm
   top-margin = 12\\mm
   bottom-margin = 12\\mm
   left-margin = 15\\mm
@@ -31,7 +32,11 @@ CONDUCTOR_SCORE_PAPER: str = """\
   score-system-spacing.basic-distance = #16
 }
 """
-"""Tabloid landscape paper block for the conductor score."""
+"""Tabloid landscape paper block for the conductor score.
+
+Uses explicit dimensions (17in x 11in) instead of ``'landscape`` flag
+to avoid PDF viewer rotation issues.
+"""
 
 CONDUCTOR_SCORE_LAYOUT: str = """\
 \\layout {
