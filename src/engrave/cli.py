@@ -623,6 +623,54 @@ def process_audio(
 
 
 # ---------------------------------------------------------------------------
+# Smoke test command
+# ---------------------------------------------------------------------------
+
+
+@app.command("smoke-test")
+def smoke_test(
+    test_dir: str = typer.Argument(..., help="Directory containing test input files"),
+    output_json: str | None = typer.Option(None, "--json", "-j", help="Write JSON results to file"),
+) -> None:
+    """Run smoke tests on all audio/MIDI files in a directory.
+
+    Discovers inputs by extension (.wav, .mp3, .flac, .aiff for audio;
+    .mid for MIDI). Runs each through the appropriate pipeline path
+    and performs 9 structural checks on the output.
+    """
+    import asyncio
+    from pathlib import Path
+
+    from rich.console import Console
+
+    console = Console()
+    dir_path = Path(test_dir)
+
+    if not dir_path.is_dir():
+        console.print(f"[red]Error:[/red] Not a directory: {test_dir}")
+        raise typer.Exit(code=1)
+
+    from engrave.smoke.reporter import format_json, format_terminal
+    from engrave.smoke.runner import run_smoke_test
+
+    result = asyncio.run(run_smoke_test(dir_path))
+
+    # Human-readable terminal output
+    format_terminal(result, console)
+
+    # JSON output (optional)
+    if output_json:
+        json_str = format_json(result, test_dir=test_dir)
+        json_path = Path(output_json)
+        json_path.write_text(json_str)
+        console.print(f"\n[dim]JSON results written to {json_path}[/dim]")
+
+    # Exit code: 0 if all passed, 1 if any failures or errors
+    if result.total_failed > 0 or result.total_errors > 0:
+        raise typer.Exit(code=1)
+
+
+# ---------------------------------------------------------------------------
 # Benchmark command group
 # ---------------------------------------------------------------------------
 
