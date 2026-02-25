@@ -201,3 +201,258 @@ def sample_mutopia_score() -> str:
     """Load the mutopia_bach.ly fixture file as a string."""
     fixture_path = Path(__file__).parent / "fixtures" / "corpus" / "mutopia_bach.ly"
     return fixture_path.read_text(encoding="utf-8")
+
+
+# ---------------------------------------------------------------------------
+# Populated corpus fixture (for retrieval integration tests)
+# ---------------------------------------------------------------------------
+
+
+@pytest.fixture
+def populated_corpus_store(request, tmp_path: Path):
+    """In-memory ChromaDB store pre-populated with ~10 diverse test chunks.
+
+    Covers different instrument families (brass, keyboard, strings, woodwind),
+    ensemble types (solo, big_band, chamber), and styles (Jazz, Baroque,
+    Classical, Romantic).
+    """
+    import chromadb
+
+    from engrave.config.settings import CorpusConfig
+    from engrave.corpus.models import Chunk, ScoreMetadata
+    from engrave.corpus.store import CorpusStore
+
+    config = CorpusConfig(
+        embedding_model="all-MiniLM-L6-v2",
+        db_path=str(tmp_path / "test_retrieval_db"),
+        collection_name=f"test_retrieval_{request.node.name}",
+    )
+    client = chromadb.Client()
+    store = CorpusStore(config=config, client=client)
+
+    chunks = [
+        Chunk(
+            id="brass-jazz-trumpet-1",
+            source="\\relative c'' { c4\\f d8 e f4 g | a4. b8 c4 r | }",
+            description="Bright brass trumpet line in big band jazz swing style with forte dynamics and syncopated eighth notes",
+            metadata=ScoreMetadata(
+                source_collection="mutopia",
+                source_path="test/trumpet_swing.ly",
+                chunk_index=0,
+                bar_start=1,
+                bar_end=2,
+                chunk_type="single_instrument",
+                key_signature="C major",
+                time_signature="4/4",
+                tempo="Allegro",
+                instrument="Trumpet",
+                instrument_family="brass",
+                clef="treble",
+                ensemble_type="big_band",
+                style="Jazz",
+                composer="Anonymous",
+            ),
+        ),
+        Chunk(
+            id="brass-jazz-trombone-1",
+            source="\\relative c { c2 e4 g | bes4. a8 g4 f | }",
+            description="Trombone bass line in big band jazz style with walking bass motion and flat seventh",
+            metadata=ScoreMetadata(
+                source_collection="mutopia",
+                source_path="test/trombone_swing.ly",
+                chunk_index=0,
+                bar_start=1,
+                bar_end=2,
+                chunk_type="single_instrument",
+                key_signature="C major",
+                time_signature="4/4",
+                tempo="Moderato",
+                instrument="Trombone",
+                instrument_family="brass",
+                clef="bass",
+                ensemble_type="big_band",
+                style="Jazz",
+                composer="Anonymous",
+            ),
+        ),
+        Chunk(
+            id="brass-classical-horn-1",
+            source="\\relative c' { c4( d e f) | g2.\\p r4 | }",
+            description="French horn melodic phrase in classical style with legato slur and piano dynamics",
+            metadata=ScoreMetadata(
+                source_collection="mutopia",
+                source_path="test/horn_classical.ly",
+                chunk_index=0,
+                bar_start=1,
+                bar_end=2,
+                chunk_type="single_instrument",
+                key_signature="C major",
+                time_signature="4/4",
+                tempo="Andante",
+                instrument="French Horn",
+                instrument_family="brass",
+                clef="treble",
+                ensemble_type="chamber",
+                style="Classical",
+                composer="Mozart",
+            ),
+        ),
+        Chunk(
+            id="keyboard-baroque-piano-1",
+            source="\\relative c' { c16 d e f g a b c | d c b a g f e d | }",
+            description="Keyboard running passage in baroque style with rapid sixteenth note scales ascending and descending",
+            metadata=ScoreMetadata(
+                source_collection="mutopia",
+                source_path="test/bach_invention.ly",
+                chunk_index=0,
+                bar_start=1,
+                bar_end=2,
+                chunk_type="single_instrument",
+                key_signature="C major",
+                time_signature="4/4",
+                tempo="Allegro",
+                instrument="Piano",
+                instrument_family="keyboard",
+                clef="treble",
+                ensemble_type="solo",
+                style="Baroque",
+                composer="J.S. Bach",
+            ),
+        ),
+        Chunk(
+            id="keyboard-jazz-piano-1",
+            source="\\relative c' { <c e g bes>4 <f a c e>4 <bes d f a>2 | }",
+            description="Jazz piano chord voicings with dominant seventh and extended chords in comping style",
+            metadata=ScoreMetadata(
+                source_collection="mutopia",
+                source_path="test/jazz_piano.ly",
+                chunk_index=0,
+                bar_start=1,
+                bar_end=1,
+                chunk_type="single_instrument",
+                key_signature="C major",
+                time_signature="4/4",
+                tempo="Medium Swing",
+                instrument="Piano",
+                instrument_family="keyboard",
+                clef="treble",
+                ensemble_type="big_band",
+                style="Jazz",
+                composer="Anonymous",
+                has_chord_symbols=True,
+            ),
+        ),
+        Chunk(
+            id="strings-baroque-violin-1",
+            source="\\relative c'' { g8 a b c d4 b | c8 b a g fis4 d | }",
+            description="Baroque violin passage with sequential eighth note motion and ornamental turns",
+            metadata=ScoreMetadata(
+                source_collection="mutopia",
+                source_path="test/bach_violin.ly",
+                chunk_index=0,
+                bar_start=1,
+                bar_end=2,
+                chunk_type="single_instrument",
+                key_signature="G major",
+                time_signature="4/4",
+                tempo="Vivace",
+                instrument="Violin",
+                instrument_family="strings",
+                clef="treble",
+                ensemble_type="solo",
+                style="Baroque",
+                composer="J.S. Bach",
+            ),
+        ),
+        Chunk(
+            id="strings-romantic-cello-1",
+            source="\\relative c { c4(\\pp d e f) | g2(\\< a) | bes1\\ff | }",
+            description="Romantic cello melody with wide dynamic range from pianissimo to fortissimo with crescendo hairpin",
+            metadata=ScoreMetadata(
+                source_collection="mutopia",
+                source_path="test/romantic_cello.ly",
+                chunk_index=0,
+                bar_start=1,
+                bar_end=3,
+                chunk_type="single_instrument",
+                key_signature="C minor",
+                time_signature="4/4",
+                tempo="Adagio",
+                instrument="Cello",
+                instrument_family="strings",
+                clef="bass",
+                ensemble_type="chamber",
+                style="Romantic",
+                composer="Dvorak",
+            ),
+        ),
+        Chunk(
+            id="woodwind-classical-flute-1",
+            source="\\relative c'' { c4 d8 e f4 g | a8 g f e d4 c | }",
+            description="Classical flute melody with stepwise motion and gentle ornamental grace notes",
+            metadata=ScoreMetadata(
+                source_collection="mutopia",
+                source_path="test/classical_flute.ly",
+                chunk_index=0,
+                bar_start=1,
+                bar_end=2,
+                chunk_type="single_instrument",
+                key_signature="C major",
+                time_signature="4/4",
+                tempo="Allegretto",
+                instrument="Flute",
+                instrument_family="woodwind",
+                clef="treble",
+                ensemble_type="chamber",
+                style="Classical",
+                composer="Mozart",
+            ),
+        ),
+        Chunk(
+            id="woodwind-jazz-sax-1",
+            source="\\relative c' { c8 d e g a4 c | bes8 a g f e4 d | }",
+            description="Alto saxophone jazz improvisation line with bebop-style chromatic approach tones and swing phrasing",
+            metadata=ScoreMetadata(
+                source_collection="mutopia",
+                source_path="test/jazz_sax.ly",
+                chunk_index=0,
+                bar_start=1,
+                bar_end=2,
+                chunk_type="single_instrument",
+                key_signature="C major",
+                time_signature="4/4",
+                tempo="Up Tempo",
+                instrument="Alto Saxophone",
+                instrument_family="woodwind",
+                clef="treble",
+                ensemble_type="big_band",
+                style="Jazz",
+                composer="Anonymous",
+            ),
+        ),
+        Chunk(
+            id="brass-jazz-trumpet-2",
+            source="\\relative c'' { r4 d8\\f e f g a4 | bes2 r2 | }",
+            description="Trumpet lead line in swing big band arrangement with pickup notes and forte attack",
+            metadata=ScoreMetadata(
+                source_collection="pdmx",
+                source_path="test/trumpet_lead.ly",
+                chunk_index=1,
+                bar_start=5,
+                bar_end=6,
+                chunk_type="single_instrument",
+                key_signature="Bb major",
+                time_signature="4/4",
+                tempo="Bright Swing",
+                instrument="Trumpet",
+                instrument_family="brass",
+                clef="treble",
+                ensemble_type="big_band",
+                style="Jazz",
+                composer="Anonymous",
+            ),
+        ),
+    ]
+
+    store.add_chunks(chunks)
+    return store
