@@ -136,6 +136,7 @@ def generate_conductor_score(
     title: str = "",
     composer: str = "",
     arranger: str = "",
+    beam_style: str = "swing",
 ) -> str:
     """Produce the ``score.ly`` content for a conductor score.
 
@@ -149,6 +150,8 @@ def generate_conductor_score(
         Whether to include a ``ChordNames`` context above the top staff.
     title, composer, arranger:
         Metadata for the header block.
+    beam_style:
+        Beaming style: ``"swing"`` or ``"straight"``.  Defaults to swing.
 
     Returns
     -------
@@ -180,6 +183,12 @@ def generate_conductor_score(
     # Score block
     lines.append("\\score {")
     lines.append("  <<")
+
+    # Beaming commands at score level (lazy import to avoid circular dependency)
+    from engrave.generation.section_groups import beaming_commands as _beaming_commands
+
+    beam_cmds = _beaming_commands(beam_style)
+    lines.append(beam_cmds.rstrip())
 
     # Chord names above top staff
     if has_chords:
@@ -232,6 +241,7 @@ def generate_part(
     chord_var: str = "chordSymbols",
     studio_mode: bool = False,
     title: str = "",
+    beam_style: str = "swing",
 ) -> str:
     """Produce a ``part-{slug}.ly`` file for one instrument.
 
@@ -249,6 +259,8 @@ def generate_part(
         If ``True``, use studio layout (bar numbers on every bar).
     title:
         Song title for the header.
+    beam_style:
+        Beaming style: ``"swing"`` or ``"straight"``.  Defaults to swing.
 
     Returns
     -------
@@ -288,6 +300,12 @@ def generate_part(
 
     # Score block
     lines.append("\\score {")
+
+    # Beaming commands (lazy import to avoid circular dependency)
+    from engrave.generation.section_groups import beaming_commands as _beaming_commands
+
+    beam_cmds = _beaming_commands(beam_style)
+    lines.append(beam_cmds.rstrip())
 
     if instrument.clef == "percussion":
         # Drums: DrumStaff

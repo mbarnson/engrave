@@ -194,3 +194,39 @@ class TestPartStudioMode:
     def test_normal_mode_no_all_bar_numbers(self) -> None:
         output = _generate_part_for("Trumpet 1", studio_mode=False)
         assert "all-bar-numbers-visible" not in output
+
+
+# ---------------------------------------------------------------------------
+# Beaming tests
+# ---------------------------------------------------------------------------
+
+
+class TestPartBeaming:
+    """Tests for beaming command injection in parts."""
+
+    def test_default_beam_style_includes_swing_beaming(self) -> None:
+        output = _generate_part_for("Trumpet 1")
+        assert "beamExceptions" in output
+        assert "baseMoment" in output
+        assert "beatStructure" in output
+
+    def test_explicit_swing_includes_swing_beaming(self) -> None:
+        output = _generate_part_for("Trumpet 1", beam_style="swing")
+        assert "\\set Timing.beamExceptions" in output
+
+    def test_explicit_straight_includes_unset_commands(self) -> None:
+        output = _generate_part_for("Trumpet 1", beam_style="straight")
+        assert "\\unset Timing.beamExceptions" in output
+        assert "\\unset Timing.baseMoment" in output
+        assert "\\unset Timing.beatStructure" in output
+
+    def test_straight_does_not_include_set_timing(self) -> None:
+        output = _generate_part_for("Trumpet 1", beam_style="straight")
+        assert "\\set Timing" not in output
+
+    def test_beaming_appears_in_score_block(self) -> None:
+        output = _generate_part_for("Alto Sax 1")
+        # Beaming should appear after \score { and before the staff
+        score_idx = output.index("\\score")
+        beam_idx = output.index("beamExceptions")
+        assert beam_idx > score_idx

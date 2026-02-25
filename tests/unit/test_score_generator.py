@@ -143,3 +143,56 @@ class TestConductorScore:
     def test_conductor_score_drums_staff(self) -> None:
         output = _generate_score()
         assert "DrumStaff" in output
+
+
+# ---------------------------------------------------------------------------
+# Conductor score beaming tests
+# ---------------------------------------------------------------------------
+
+
+class TestConductorScoreBeaming:
+    """Tests for beaming command injection in conductor scores."""
+
+    def test_default_beam_style_includes_swing_beaming(self) -> None:
+        output = _generate_score()
+        assert "beamExceptions" in output
+        assert "baseMoment" in output
+        assert "beatStructure" in output
+
+    def test_explicit_swing_includes_swing_beaming(self) -> None:
+        from engrave.rendering.generator import generate_conductor_score
+
+        output = generate_conductor_score(
+            preset=BIG_BAND,
+            music_var_names=_var_names(),
+            beam_style="swing",
+        )
+        assert "\\set Timing.beamExceptions" in output
+
+    def test_explicit_straight_includes_unset_commands(self) -> None:
+        from engrave.rendering.generator import generate_conductor_score
+
+        output = generate_conductor_score(
+            preset=BIG_BAND,
+            music_var_names=_var_names(),
+            beam_style="straight",
+        )
+        assert "\\unset Timing.beamExceptions" in output
+        assert "\\unset Timing.baseMoment" in output
+        assert "\\unset Timing.beatStructure" in output
+
+    def test_straight_does_not_include_set_timing(self) -> None:
+        from engrave.rendering.generator import generate_conductor_score
+
+        output = generate_conductor_score(
+            preset=BIG_BAND,
+            music_var_names=_var_names(),
+            beam_style="straight",
+        )
+        assert "\\set Timing" not in output
+
+    def test_beaming_appears_in_score_block(self) -> None:
+        output = _generate_score()
+        score_idx = output.index("\\score")
+        beam_idx = output.index("beamExceptions")
+        assert beam_idx > score_idx
