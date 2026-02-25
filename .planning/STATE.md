@@ -10,28 +10,28 @@ See: .planning/PROJECT.md (updated 2026-02-24)
 ## Current Position
 
 Phase: 2 of 9 (RAG Corpus & Retrieval)
-Plan: 3 of 4 in current phase
+Plan: 4 of 4 in current phase
 Status: Executing
-Last activity: 2026-02-25 - Completed quick task 1: Update planning docs to replace demucs with audio-separator/RoFormer SOTA stem-splitting models
+Last activity: 2026-02-25 -- Completed 02-03-PLAN.md (ingestion pipeline: Mutopia + PDMX adapters)
 
-Progress: [##........] 22%
+Progress: [###.......] 28%
 
 ## Performance Metrics
 
 **Velocity:**
-- Total plans completed: 4
+- Total plans completed: 5
 - Average duration: 6.8 min
-- Total execution time: 0.5 hours
+- Total execution time: 0.6 hours
 
 **By Phase:**
 
 | Phase | Plans | Total | Avg/Plan |
 |-------|-------|-------|----------|
 | 1 | 2 | 12 min | 6 min |
-| 2 | 2 | 16 min | 8 min |
+| 2 | 3 | 23 min | 8 min |
 
 **Recent Trend:**
-- Last 5 plans: 01-01 (6 min), 01-02 (6 min), 02-02 (7 min), 02-01 (9 min)
+- Last 5 plans: 01-01 (6 min), 01-02 (6 min), 02-02 (7 min), 02-01 (9 min), 02-03 (7 min)
 - Trend: Consistent
 
 *Updated after each plan completion*
@@ -61,6 +61,11 @@ Recent decisions affecting current work:
 - 02-01: ChromaDB Rust bindings reject None metadata values -- filter before add()
 - 02-01: chromadb.Client() is process-wide singleton -- unique collection names per test
 - 02-01: nomic-embed-text as default embedding model (configurable via engrave.toml)
+- 02-03: MIDI compiled from our own LilyPond source (not pre-existing archive MIDI) via ensure_midi_block injection
+- 02-03: Degenerate case filtering: <10 chars or <2 notes skipped before compilation
+- 02-03: PDMX originals stored alongside converted LilyPond for provenance
+- 02-03: Instrument family classification via case-insensitive lookup table (70+ instruments)
+- 02-03: Era inference from Mutopia style field or date-based ranges
 - [Phase quick]: audio-separator replaces demucs-infer as primary source separation package; per-stem model routing strategy documented
 - [Phase quick]: SDR benchmarks measure remix fidelity, NOT transcription accuracy — wrong metric for Engrave. Post-Phase 5 spike: run separation→transcription→MIDI comparison against ground truth charts to find best separator *for engraving*. Needs Sam's tracks (not yet available). No mandatory human review gates before Phase 7 demo.
 
@@ -83,5 +88,5 @@ None yet.
 ## Session Continuity
 
 Last session: 2026-02-25
-Stopped at: Completed 02-01-PLAN.md -- corpus storage foundation
-Resume file: .planning/phases/02-rag-corpus-retrieval/02-01-SUMMARY.md
+Stopped at: Completed 02-03-PLAN.md -- ingestion pipeline
+Resume file: .planning/phases/02-rag-corpus-retrieval/02-03-SUMMARY.md
