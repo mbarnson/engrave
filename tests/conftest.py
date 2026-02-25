@@ -655,3 +655,107 @@ def mock_compiler_success():
         output_path=Path("/tmp/out.pdf"),
     )
     return compiler
+
+
+# ---------------------------------------------------------------------------
+# Audio pipeline mock fixtures
+# ---------------------------------------------------------------------------
+
+
+@pytest.fixture
+def mock_normalizer():
+    """Patch normalize_audio to copy input to output (no pydub dependency).
+
+    The mock copies the source file content to the output path so downstream
+    stages see a real file on disk.
+    """
+    import shutil
+
+    def _fake_normalize(
+        input_path: Path,
+        output_path: Path,
+        target_sr: int = 44100,
+        channels: int = 1,
+        max_duration_seconds: int = 900,
+    ) -> Path:
+        output_path.parent.mkdir(parents=True, exist_ok=True)
+        shutil.copy2(str(input_path), str(output_path))
+        return output_path
+
+    with patch("engrave.audio.pipeline.normalize_audio", side_effect=_fake_normalize) as m:
+        yield m
+
+
+@pytest.fixture
+def mock_separator(tmp_path: Path):
+    """Patch run_separation to return fake StemOutput objects with WAV files.
+
+    Creates minimal WAV files in the job's separation directory so
+    downstream transcription can reference real paths.
+    """
+    from engrave.audio.separator import StemOutput
+
+    def _fake_separation(
+        audio_path: Path,
+        steps: list,
+        output_dir: Path,
+    ) -> list[StemOutput]:
+        output_dir.mkdir(parents=True, exist_ok=True)
+        step_dir = output_dir / "step-00_mock"
+        step_dir.mkdir(parents=True, exist_ok=True)
+
+        stems = []
+        for stem_name in ("drums", "bass", "vocals", "other"):
+            wav_path = step_dir / f"{stem_name}.wav"
+            # Write a minimal valid WAV (44 bytes header, no audio data)
+            _write_minimal_wav(wav_path)
+            stems.append(
+                StemOutput(
+                    stem_name=stem_name,
+                    path=wav_path,
+                    model_used="mock_model",
+                    step_index=0,
+                )
+            )
+        return stems
+
+    with patch("engrave.audio.pipeline.run_separation", side_effect=_fake_separation) as m:
+        yield m
+
+
+@pytest.fixture
+def mock_transcriber(tmp_path: Path):
+    """Return a MagicMock satisfying the Transcriber protocol.
+
+    transcribe() writes a minimal valid MIDI file (via pretty_midi) to the
+    output directory and returns the path.
+    """
+    import pretty_midi
+
+    transcriber = MagicMock()
+
+    def _fake_transcribe(wav_path: Path, output_dir: Path) -> Path:
+        output_dir.mkdir(parents=True, exist_ok=True)
+        midi_path = output_dir / f"{wav_path.stem}.mid"
+        # Create a minimal MIDI with one note
+        pm = pretty_midi.PrettyMIDI()
+        instrument = pretty_midi.Instrument(program=0)
+        note = pretty_midi.Note(velocity=80, pitch=60, start=0.0, end=1.0)
+        instrument.notes.append(note)
+        pm.instruments.append(instrument)
+        pm.write(str(midi_path))
+        return midi_path
+
+    transcriber.transcribe = MagicMock(side_effect=_fake_transcribe)
+    return transcriber
+
+
+def _write_minimal_wav(path: Path) -> None:
+    """Write a minimal valid WAV file (1-second, 44.1kHz, mono, silence)."""
+    sample_rate = 44100
+    n_frames = sample_rate  # 1 second
+    with wave.open(str(path), "wb") as wf:
+        wf.setnchannels(1)
+        wf.setsampwidth(2)
+        wf.setframerate(sample_rate)
+        wf.writeframes(b"\x00\x00" * n_frames)
