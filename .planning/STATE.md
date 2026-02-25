@@ -5,23 +5,23 @@
 See: .planning/PROJECT.md (updated 2026-02-24)
 
 **Core value:** When Sam uploads a recording and describes his ensemble, his players can sight-read the extracted parts at rehearsal and the brass section sounds like a section.
-**Current focus:** Phase 05.1 COMPLETE -- MusicXML/Dorico export pipeline with 706 passing tests
+**Current focus:** Phase 06 IN PROGRESS -- Audio understanding & hints (audio LM integration + prompt restructuring)
 
 ## Current Position
 
-Phase: 06 of 9 (next phase after 05.1 completed)
-Plan: 0 of 0 in current phase (phase 05.1 complete, awaiting phase 06 planning)
-Status: Phase 05.1 complete. All 4 plans executed and verified.
-Last activity: 2026-02-25 -- Completed 05.1-04-PLAN.md (MusicXML integration tests)
+Phase: 06 of 9
+Plan: 1 of 2 in current phase
+Status: Phase 06 Plan 01 complete. AudioDescription schema, GeminiDescriber, NL templates, DescriberConfig delivered.
+Last activity: 2026-02-25 -- Completed 06-01-PLAN.md (audio description foundation)
 
-Progress: [########..] 75%
+Progress: [########..] 80%
 
 ## Performance Metrics
 
 **Velocity:**
-- Total plans completed: 18
-- Average duration: 5.5 min
-- Total execution time: 1.8 hours
+- Total plans completed: 19
+- Average duration: 5.4 min
+- Total execution time: 1.9 hours
 
 **By Phase:**
 
@@ -48,6 +48,7 @@ Progress: [########..] 75%
 | Phase 05.1 P02 | 4 min | 2 tasks | 4 files |
 | Phase 05.1 P03 | 5 min | 2 tasks | 11 files |
 | Phase 05.1 P04 | 6 min | 2 tasks | 4 files |
+| Phase 06 P01 | 4 min | 2 tasks | 8 files |
 
 ## Accumulated Context
 
@@ -145,6 +146,10 @@ Recent decisions affecting current work:
 - 05.1-04: Dynamics verified via raw XML content (builder attaches to note.expressions, doesn't roundtrip through music21 re-parse)
 - 05.1-04: Mock router differentiates LilyPond vs JSON requests by detecting JSON suffix markers in prompt text
 - 05.1-04: RenderPipeline degradation tests verify ZIP packaging without MusicXML when JSON unavailable
+- 06-01: Describer protocol is async (unlike sync Transcriber) -- audio LM calls are I/O-bound
+- 06-01: GeminiDescriber retries once on validation failure with simplified prompt, then returns minimal defaults
+- 06-01: Audio downsampled to 16kHz via pydub when exceeding max_file_size_mb threshold
+- 06-01: NL templates produce compact prose for CONTEXTUAL prompt block -- no raw JSON in generation prompt
 
 ### Roadmap Evolution
 
@@ -169,5 +174,5 @@ Recent decisions affecting current work:
 ## Session Continuity
 
 Last session: 2026-02-25
-Stopped at: Completed 05.1-04-PLAN.md (MusicXML integration tests -- Phase 05.1 complete)
-Resume file: Phase 06 planning needed
+Stopped at: Completed 06-01-PLAN.md (audio description foundation)
+Resume file: 06-02-PLAN.md
