@@ -10,8 +10,8 @@ Requirements for initial release. Each maps to roadmap phases.
 ### Foundation
 
 - [x] **FNDN-01**: System accepts MIDI type 0 and type 1 files as input and routes them directly to the notation stage (bypassing audio processing)
-- [ ] **FNDN-02**: System accepts audio files (MP3, WAV, AIFF, FLAC) as input and routes them through the full audio processing pipeline
-- [ ] **FNDN-03**: System accepts YouTube URLs as input via yt-dlp, extracts audio, and routes through audio processing pipeline
+- [x] **FNDN-02**: System accepts audio files (MP3, WAV, AIFF, FLAC) as input and routes them through the full audio processing pipeline
+- [x] **FNDN-03**: System accepts YouTube URLs as input via yt-dlp, extracts audio, and routes through audio processing pipeline
 - [x] **FNDN-04**: System supports multiple LLM providers (Anthropic API, OpenAI API, LMStudio local) via LiteLLM, configurable per pipeline stage
 - [x] **FNDN-05**: System provides a compile-check-fix retry loop that detects LilyPond compilation errors, feeds them back to the LLM, and retries up to 5 times
 - [x] **FNDN-06**: System packages output as a ZIP containing selected PDFs, LilyPond source files, and MusicXML export
@@ -115,8 +115,8 @@ Deferred to future release.
 | Requirement | Phase | Status |
 |-------------|-------|--------|
 | FNDN-01 | Phase 3 | Complete |
-| FNDN-02 | Phase 5 | Pending |
-| FNDN-03 | Phase 5 | Pending |
+| FNDN-02 | Phase 5 | Complete |
+| FNDN-03 | Phase 5 | Complete |
 | FNDN-04 | Phase 1 | Complete |
 | FNDN-05 | Phase 1 | Complete |
 | FNDN-06 | Phase 4 | Complete |

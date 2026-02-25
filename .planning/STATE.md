@@ -5,23 +5,23 @@
 See: .planning/PROJECT.md (updated 2026-02-24)
 
 **Core value:** When Sam uploads a recording and describes his ensemble, his players can sight-read the extracted parts at rehearsal and the brass section sounds like a section.
-**Current focus:** Phase 4 complete -- Phase 5 next
+**Current focus:** Phase 5 in progress -- Audio Input Pipeline
 
 ## Current Position
 
-Phase: 5 of 9 (Audio Understanding)
-Plan: 1 of ? in current phase
-Status: Phase 4 complete, ready for Phase 5
-Last activity: 2026-02-25 -- Completed 04-03-PLAN.md (Render pipeline & ZIP packaging)
+Phase: 5 of 9 (Audio Input Pipeline)
+Plan: 3 of 6 in current phase
+Status: Plans 05-01 and 05-02 complete, continuing Phase 5
+Last activity: 2026-02-25 -- Completed 05-02-PLAN.md (YouTube audio extraction)
 
 Progress: [######....] 60%
 
 ## Performance Metrics
 
 **Velocity:**
-- Total plans completed: 12
-- Average duration: 6.0 min
-- Total execution time: 1.3 hours
+- Total plans completed: 14
+- Average duration: 5.7 min
+- Total execution time: 1.4 hours
 
 **By Phase:**
 
@@ -31,15 +31,15 @@ Progress: [######....] 60%
 | 2 | 4 | 27 min | 7 min |
 | 3 | 3 | 22 min | 7 min |
 | 4 | 3 | 13 min | 4 min |
+| 5 | 2 | 8 min | 4 min |
 
 **Recent Trend:**
-- Last 5 plans: 03-02 (5 min), 03-03 (9 min), 04-01 (3 min), 04-02 (5 min), 04-03 (5 min)
+- Last 5 plans: 03-03 (9 min), 04-01 (3 min), 04-02 (5 min), 04-03 (5 min), 05-02 (4 min)
 - Trend: Consistent
 
 *Updated after each plan completion*
-| Phase 04 P01 | 3 min | 2 tasks | 4 files |
-| Phase 04 P02 | 5 min | 2 tasks | 6 files |
-| Phase 04 P03 | 5 min | 2 tasks | 7 files |
+| Phase 05 P01 | 4 min | 1 task | 4 files |
+| Phase 05 P02 | 4 min | 1 task | 4 files |
 
 ## Accumulated Context
 
@@ -104,6 +104,12 @@ Recent decisions affecting current work:
 - 04-03: RenderPipeline sets compiler.timeout before score (300s) vs part (60s) compilation
 - 04-03: Partial compilation: .ly source files always included in ZIP even for failed parts
 - 04-03: CLI render command uses regex variable extraction from music-definitions.ly as placeholder
+- 05-01: pydub for format detection/conversion via AudioSegment.from_file() -- lightweight wrapper around ffmpeg
+- 05-01: stdlib wave module for test fixture creation -- no pydub dependency in test setup
+- 05-01: SeparationConfig.default_steps() class method returns big band cascade (htdemucs_ft + bs_roformer)
+- 05-02: yt-dlp Python API with context manager (not subprocess CLI) for YouTube extraction
+- 05-02: Video ID-based output filenames (not title) for deterministic pipeline runs
+- 05-02: FFmpegExtractAudio postprocessor with preferredcodec=wav
 
 ### Pending Todos
 
@@ -124,5 +130,5 @@ None yet.
 ## Session Continuity
 
 Last session: 2026-02-25
-Stopped at: Completed 04-03-PLAN.md -- Render pipeline & ZIP packaging (Phase 4 complete)
-Resume file: .planning/phases/04-rendering-output-packaging/04-03-SUMMARY.md
+Stopped at: Completed 05-02-PLAN.md -- YouTube audio extraction
+Resume file: .planning/phases/05-audio-input-pipeline/05-02-SUMMARY.md
