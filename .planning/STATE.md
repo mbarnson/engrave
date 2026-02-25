@@ -10,11 +10,11 @@ See: .planning/PROJECT.md (updated 2026-02-24)
 ## Current Position
 
 Phase: 07 of 10
-Plan: 2 of 3 in current phase
-Status: Plan 07-02 complete. Section groups with resolve_section_groups() and swing/straight beaming command injection.
-Last activity: 2026-02-25 -- Completed 07-02-PLAN.md (section groups + beaming)
+Plan: 3 of 3 in current phase
+Status: Phase 07 COMPLETE. Per-section-group pipeline dispatch with ENSM-03/05 post-processing and beaming injection.
+Last activity: 2026-02-25 -- Completed 07-03-PLAN.md (pipeline restructuring)
 
-Progress: [#########.] 92%
+Progress: [##########] 95%
 
 ## Performance Metrics
 
@@ -54,6 +54,7 @@ Progress: [#########.] 92%
 | Phase 07.1 P02 | 5 min | 2 tasks | 7 files |
 | Phase 07 P01 | 4 min | 1 task | 3 files |
 | Phase 07 P02 | 5 min | 2 tasks | 8 files |
+| Phase 07 P03 | 6min | 2 tasks | 3 files |
 
 ## Accumulated Context
 
@@ -179,6 +180,9 @@ Recent decisions affecting current work:
 - 07-02: Lazy import of beaming_commands in generator.py to break circular dependency (rendering.__init__ -> generator -> section_groups -> ensemble)
 - 07-02: Beaming style defaults to swing for big band if unspecified
 - 07-02: resolve_beam_style uses keyword matching against frozensets for style classification
+- [Phase 07]: 07-03: Backward compatible preset parameter -- preset=None falls back to per-instrument generation, no breaking changes
+- [Phase 07]: 07-03: Lazy post-processing import in pipeline to avoid circular dependency (same pattern as 07-02)
+- [Phase 07]: 07-03: Group identifier uses first instrument's sanitized variable_name for coherence dict keying
 
 ### Roadmap Evolution
 
@@ -204,5 +208,5 @@ Recent decisions affecting current work:
 ## Session Continuity
 
 Last session: 2026-02-25
-Stopped at: Completed 07-02-PLAN.md
-Resume file: .planning/phases/07-convergent-sight-reading-ensemble-intelligence/07-02-SUMMARY.md
+Stopped at: Completed 07-03-PLAN.md (Phase 07 COMPLETE)
+Resume file: .planning/phases/07-convergent-sight-reading-ensemble-intelligence/07-03-SUMMARY.md
