@@ -5,23 +5,23 @@
 See: .planning/PROJECT.md (updated 2026-02-24)
 
 **Core value:** When Sam uploads a recording and describes his ensemble, his players can sight-read the extracted parts at rehearsal and the brass section sounds like a section.
-**Current focus:** Phase 3: LilyPond Code Generation
+**Current focus:** Phase 3 Complete -- Phase 4: LilyPond Rendering
 
 ## Current Position
 
-Phase: 3 of 9 (LilyPond Code Generation)
-Plan: 3 of 3 in current phase
-Status: In Progress
-Last activity: 2026-02-25 -- Completed 03-01-PLAN.md (MIDI subsystem: loader, analyzer, tokenizer, sections)
+Phase: 4 of 9 (LilyPond Rendering)
+Plan: 1 of ? in current phase
+Status: Phase 3 Complete
+Last activity: 2026-02-25 -- Completed 03-03-PLAN.md (Generation pipeline, CLI, integration tests)
 
-Progress: [####......] 40%
+Progress: [####......] 44%
 
 ## Performance Metrics
 
 **Velocity:**
-- Total plans completed: 8
-- Average duration: 6.4 min
-- Total execution time: 0.9 hours
+- Total plans completed: 9
+- Average duration: 6.7 min
+- Total execution time: 1.0 hours
 
 **By Phase:**
 
@@ -29,14 +29,14 @@ Progress: [####......] 40%
 |-------|-------|-------|----------|
 | 1 | 2 | 12 min | 6 min |
 | 2 | 4 | 27 min | 7 min |
-| 3 | 2 | 13 min | 7 min |
+| 3 | 3 | 22 min | 7 min |
 
 **Recent Trend:**
-- Last 5 plans: 02-01 (9 min), 02-03 (7 min), 02-04 (4 min), 03-02 (5 min), 03-01 (8 min)
+- Last 5 plans: 02-03 (7 min), 02-04 (4 min), 03-01 (8 min), 03-02 (5 min), 03-03 (9 min)
 - Trend: Consistent
 
 *Updated after each plan completion*
-| Phase 03 P01 | 8 | 2 tasks | 15 files |
+| Phase 03 P03 | 9 | 3 tasks | 9 files |
 
 ## Accumulated Context
 
@@ -82,6 +82,12 @@ Recent decisions affecting current work:
 - 03-02: Prompt budget 32K total with RAG-first truncation priority (RAG > coherence > MIDI)
 - 03-02: Variable-per-instrument LilyPond templates: LLM fills music content, never generates score structure
 - 03-02: Failure records stored as individual JSON files with timestamp-based filenames for TUNE-02
+- 03-03: Pipeline uses async throughout; section failure halts entire generation (no partial output)
+- 03-03: Assembler concatenates per-instrument music across sections into continuous variables
+- 03-03: RAG retriever optional callable (query, limit) -> list[str]; graceful fallback to empty
+- 03-03: Analysis proxy bridges MidiAnalysis (lists) to CoherenceState (scalar fields)
+- 03-03: Mock generator router dynamically parses template variables from prompt for realistic test responses
+- 03-03: CLI engrave generate with --output, --labels, --no-rag, --role options
 - [Phase quick]: SDR benchmarks measure remix fidelity, NOT transcription accuracy — wrong metric for Engrave. Post-Phase 5 spike: run separation→transcription→MIDI comparison against ground truth charts to find best separator *for engraving*. Needs Sam's tracks (not yet available). No mandatory human review gates before Phase 7 demo.
 
 ### Pending Todos
@@ -103,5 +109,5 @@ None yet.
 ## Session Continuity
 
 Last session: 2026-02-25
-Stopped at: Completed 03-01-PLAN.md -- MIDI subsystem (loader, analyzer, tokenizer, sections)
-Resume file: .planning/phases/03-midi-to-lilypond-generation/03-01-SUMMARY.md
+Stopped at: Completed 03-03-PLAN.md -- Generation pipeline, CLI, integration tests (Phase 3 done)
+Resume file: .planning/phases/03-midi-to-lilypond-generation/03-03-SUMMARY.md
