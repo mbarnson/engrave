@@ -130,11 +130,11 @@ Plans:
   2. User can type natural language hints (e.g., "Soli at bar 17, brass shout chorus bar 33, swing feel") and the system encodes them as structural metadata for the generation stage
   3. When user hints conflict with audio inference, user hints are treated as authoritative
   4. Generated LilyPond output reflects audio understanding (tempo markings, style indications, dynamic contours) that were absent from raw MIDI transcription alone
-**Plans**: TBD
+**Plans:** 2 plans
 
 Plans:
-- [ ] 06-01: TBD
-- [ ] 06-02: TBD
+- [ ] 06-01-PLAN.md -- AudioDescription schema, Describer protocol (Gemini 3 Flash), NL templates, DescriberConfig
+- [ ] 06-02-PLAN.md -- Hint loader, three-tier prompt restructuring, audit log, pipeline integration, CLI --hints flag
 
 ### Phase 7: Convergent Sight-Reading & Ensemble Intelligence
 **Goal**: Section parts are generated jointly so musicians within a section independently arrive at the same musical interpretation on first read
