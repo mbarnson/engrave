@@ -10,11 +10,11 @@ See: .planning/PROJECT.md (updated 2026-02-24)
 ## Current Position
 
 Phase: 05.1 of 9 (Promote ADVN-01 into v1 scope for Dorico)
-Plan: 2 of 4 in current phase
-Status: Plan 02 complete. Continuing with Plan 03.
-Last activity: 2026-02-25 -- Completed 05.1-02-PLAN.md (Parallel LilyPond + JSON fan-out)
+Plan: 3 of 4 in current phase
+Status: Plan 03 complete. Continuing with Plan 04.
+Last activity: 2026-02-25 -- Completed 05.1-03-PLAN.md (MusicXML assembly pipeline)
 
-Progress: [######....] 60%
+Progress: [#######...] 70%
 
 ## Performance Metrics
 
@@ -46,6 +46,7 @@ Progress: [######....] 60%
 | Phase 05 P06 | 8 min | 2 tasks | 10 files |
 | Phase 05.1 P01 | 6 min | 3 tasks | 9 files |
 | Phase 05.1 P02 | 4 min | 2 tasks | 4 files |
+| Phase 05.1 P03 | 5 min | 2 tasks | 11 files |
 
 ## Accumulated Context
 
@@ -136,6 +137,10 @@ Recent decisions affecting current work:
 - 05.1-02: _request_json_notation isolated coroutine so JSON failure cannot affect LilyPond generation
 - 05.1-02: asyncio.gather with NotImplementedError fallback to sequential for non-async routers
 - 05.1-02: Training pairs saved as section_{N}.json with ly_source and json_notation fields
+- 05.1-03: xmlschema vendored XSD files in src/engrave/musicxml/schema/ for offline MusicXML 4.0 validation
+- 05.1-03: MusicXML validation failure still returns file (potentially usable by Dorico); warning logged
+- 05.1-03: Lazy import of json_assembler in packager.py to avoid heavy music21 import at construction time
+- 05.1-03: json_assembler registers instrument identifiers from both explicit list and section data for LLM naming variation
 
 ### Roadmap Evolution
 
@@ -160,5 +165,5 @@ Recent decisions affecting current work:
 ## Session Continuity
 
 Last session: 2026-02-25
-Stopped at: Completed 05.1-01-PLAN.md (MusicXML core data layer) and 05.1-02-PLAN.md (Parallel fan-out)
-Resume file: .planning/phases/05.1-promote-advn-01-into-v1-scope-for-dorico/05.1-03-PLAN.md
+Stopped at: Completed 05.1-03-PLAN.md (MusicXML assembly pipeline)
+Resume file: .planning/phases/05.1-promote-advn-01-into-v1-scope-for-dorico/05.1-04-PLAN.md

@@ -124,7 +124,7 @@ Plans:
   4. Output ZIP includes a single .musicxml file at top level alongside existing PDFs, .ly, and MIDI files
   5. Invalid JSON does not halt LilyPond generation -- MusicXML is skipped gracefully
   6. Aligned (LilyPond, JSON) pairs are saved as training data for future fine-tuning
-**Plans:** 2/4 plans executed
+**Plans:** 3/4 plans executed
 
 Plans:
 - [ ] 05.1-01-PLAN.md -- MusicXML core: pitch map, Pydantic models, JSON-to-music21 builder (TDD)
