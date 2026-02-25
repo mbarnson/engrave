@@ -5,32 +5,33 @@
 See: .planning/PROJECT.md (updated 2026-02-24)
 
 **Core value:** When Sam uploads a recording and describes his ensemble, his players can sight-read the extracted parts at rehearsal and the brass section sounds like a section.
-**Current focus:** Phase 1: Project Scaffolding & Inference Router
+**Current focus:** Phase 2: RAG Corpus & Retrieval
 
 ## Current Position
 
-Phase: 1 of 9 (Project Scaffolding & Inference Router) -- COMPLETE
-Plan: 2 of 2 in current phase (all plans complete)
-Status: Phase Complete
-Last activity: 2026-02-24 -- Completed 01-02-PLAN.md (LilyPond compiler, parser, compile-fix loop, CLI)
+Phase: 2 of 9 (RAG Corpus & Retrieval)
+Plan: 2 of 4 in current phase
+Status: Executing
+Last activity: 2026-02-24 -- Completed 02-02-PLAN.md (chunking, metadata extraction, description templating)
 
-Progress: [##........] 11%
+Progress: [##........] 16%
 
 ## Performance Metrics
 
 **Velocity:**
-- Total plans completed: 2
-- Average duration: 6 min
-- Total execution time: 0.2 hours
+- Total plans completed: 3
+- Average duration: 6.3 min
+- Total execution time: 0.3 hours
 
 **By Phase:**
 
 | Phase | Plans | Total | Avg/Plan |
 |-------|-------|-------|----------|
 | 1 | 2 | 12 min | 6 min |
+| 2 | 1 | 7 min | 7 min |
 
 **Recent Trend:**
-- Last 5 plans: 01-01 (6 min), 01-02 (6 min)
+- Last 5 plans: 01-01 (6 min), 01-02 (6 min), 02-02 (7 min)
 - Trend: Consistent
 
 *Updated after each plan completion*
@@ -52,6 +53,11 @@ Recent decisions affecting current work:
 - 01-02: Error context window: ~20 lines centered on error, full source also in prompt for complete return
 - 01-02: extract_lilypond_from_response handles markdown code blocks, generic code blocks, and plain text
 - 01-02: Repeated error hash detection after first occurrence triggers early loop exit
+- 02-02: 1-bar overlap between adjacent chunks for pickup/cadential continuity
+- 02-02: Repeats expanded (unrolled) before chunking -- linear chunks match performer reading order
+- 02-02: 8-bar fallback chunking when no structural boundaries detected
+- 02-02: Deterministic regex metadata extraction -- no LLM involvement per user decision
+- 02-02: python-ly 0.9.9 works on Python 3.13 despite PyPI listing 3.8-3.11
 
 ### Pending Todos
 
@@ -66,5 +72,5 @@ None yet.
 ## Session Continuity
 
 Last session: 2026-02-24
-Stopped at: Completed 01-02-PLAN.md -- Phase 1 complete
-Resume file: .planning/phases/01-project-scaffolding-inference-router/01-02-SUMMARY.md
+Stopped at: Completed 02-02-PLAN.md -- chunking, metadata, description modules
+Resume file: .planning/phases/02-rag-corpus-retrieval/02-02-SUMMARY.md
