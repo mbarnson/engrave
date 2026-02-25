@@ -10,6 +10,7 @@ from engrave.generation.templates import (
     extract_variable_names,
     parse_instrument_blocks,
     sanitize_var_name,
+    strip_variable_wrapper,
 )
 
 
@@ -69,6 +70,7 @@ class TestSanitizeVarName:
             ("Piano", "piano"),
             ("Electric Bass", "electricBass"),
             ("Drum Set", "drumSet"),
+            ("Drums", "drumsPart"),
         ],
     )
     def test_sanitize_var_name(self, input_name, expected):
@@ -116,3 +118,36 @@ class TestParseInstrumentBlocks:
 
         with pytest.raises(ValueError):
             parse_instrument_blocks("some random text without markers")
+
+    def test_parse_instrument_blocks_handles_var_eq_brace_format(self):
+        """LLM returns varName = { ... } instead of % varName markers."""
+        llm_response = "trumpets = {\n  r4 a'8\\ff ais'16 b'8\n}\n"
+        blocks = parse_instrument_blocks(llm_response)
+        assert "trumpets" in blocks
+        assert "r4 a'8" in blocks["trumpets"]
+
+
+class TestStripVariableWrapper:
+    """Test stripping redundant varName = { } wrappers from LLM content."""
+
+    def test_strips_wrapper(self):
+        content = "trumpets = {\n  r4 a'8\\ff ais'16 b'8\n}"
+        result = strip_variable_wrapper("trumpets", content)
+        assert result == "r4 a'8\\ff ais'16 b'8"
+
+    def test_strips_comment_and_wrapper(self):
+        content = "% varName: trumpets\n\ntrumpets = {\n  r4 a'8\n}"
+        result = strip_variable_wrapper("trumpets", content)
+        assert result == "r4 a'8"
+
+    def test_preserves_clean_content(self):
+        content = "r4 a'8\\ff ais'16 b'8"
+        result = strip_variable_wrapper("trumpets", content)
+        assert result == content
+
+    def test_no_double_wrap_after_build(self):
+        """Prove the full pipeline path doesn't double-wrap."""
+        llm_content = "trumpets = {\n  \\time 4/4\n  r4 a'8\n}"
+        stripped = strip_variable_wrapper("trumpets", llm_content)
+        built = build_instrument_variable("trumpets", stripped)
+        assert built.count("trumpets = {") == 1

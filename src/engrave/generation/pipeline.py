@@ -45,6 +45,7 @@ from engrave.generation.templates import (
     build_score_template,
     parse_instrument_blocks,
     sanitize_var_name,
+    strip_variable_wrapper,
 )
 from engrave.lilypond.fixer import compile_with_fix_loop, extract_lilypond_from_response
 from engrave.midi.analyzer import MidiAnalysis, analyze_midi
@@ -286,6 +287,7 @@ async def generate_section(
     for name in instrument_names:
         var_name = sanitize_var_name(name)
         content = blocks.get(var_name, "R1")  # Rest if LLM didn't provide
+        content = strip_variable_wrapper(var_name, content)
         var_declarations.append(build_instrument_variable(var_name, content))
 
     # Build section source from template with filled variables

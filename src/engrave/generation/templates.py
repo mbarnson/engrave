@@ -24,6 +24,30 @@ _NUMBER_WORDS = {
     "9": "Nine",
 }
 
+# LilyPond built-in commands that clash with variable names when prefixed with \
+_LILYPOND_RESERVED = frozenset(
+    {
+        "drums",
+        "chords",
+        "lyrics",
+        "figures",
+        "new",
+        "score",
+        "layout",
+        "midi",
+        "header",
+        "paper",
+        "book",
+        "context",
+        "voice",
+        "staff",
+        "tempo",
+        "time",
+        "key",
+        "clef",
+    }
+)
+
 
 def sanitize_var_name(instrument_name: str) -> str:
     """Convert instrument name to valid LilyPond variable name (camelCase).
@@ -57,7 +81,13 @@ def sanitize_var_name(instrument_name: str) -> str:
     for w in words[1:]:
         parts.append(w[0].upper() + w[1:] if len(w) > 1 else w.upper())
 
-    return "".join(parts)
+    name = "".join(parts)
+
+    # Avoid LilyPond built-in commands (e.g. \drums, \chords, \lyrics)
+    if name in _LILYPOND_RESERVED:
+        name = name + "Part"
+
+    return name
 
 
 def build_score_template(
@@ -160,6 +190,43 @@ def extract_variable_names(template: str) -> list[str]:
     return pattern.findall(template)
 
 
+def strip_variable_wrapper(var_name: str, content: str) -> str:
+    """Strip a redundant ``varName = { ... }`` wrapper from LLM-generated content.
+
+    LLMs often echo back the template wrapper even though the pipeline adds its
+    own via :func:`build_instrument_variable`.  This function detects and removes
+    the outer wrapper so the content can be re-wrapped cleanly.
+
+    Also strips leading ``% varName: ...`` comment lines that some LLMs emit.
+
+    Args:
+        var_name: The expected variable name (e.g. "trumpets").
+        content: Raw content string that may contain a wrapper.
+
+    Returns:
+        Inner music content with wrapper removed, or original content if no
+        wrapper detected.
+    """
+    # Strip leading comment lines like "% varName: trumpets" or "% varName"
+    cleaned = re.sub(
+        r"^%\s*varName[:\s].*\n*",
+        "",
+        content,
+        flags=re.MULTILINE,
+    ).strip()
+
+    # Strip outer varName = { ... } wrapper
+    wrapper_pattern = re.compile(
+        rf"^\s*{re.escape(var_name)}\s*=\s*\{{(.*)\}}\s*$",
+        re.DOTALL,
+    )
+    match = wrapper_pattern.match(cleaned)
+    if match:
+        return match.group(1).strip()
+
+    return cleaned
+
+
 def parse_instrument_blocks(llm_response: str) -> dict[str, str]:
     """Parse labeled instrument blocks from LLM output.
 
@@ -171,6 +238,7 @@ def parse_instrument_blocks(llm_response: str) -> dict[str, str]:
         % anotherVar
         ...music content...
 
+    Also handles ``varName = { ... }`` blocks as a fallback.
     Blocks are separated by blank lines or the next ``% varName`` marker.
 
     Args:
@@ -190,11 +258,23 @@ def parse_instrument_blocks(llm_response: str) -> dict[str, str]:
     matches = block_pattern.findall(llm_response)
 
     if not matches:
+        # Fallback: try varName = { ... } blocks
+        var_block_pattern = re.compile(
+            r"^([a-zA-Z]\w*)\s*=\s*\{(.*?)\n\}",
+            re.MULTILINE | re.DOTALL,
+        )
+        var_matches = var_block_pattern.findall(llm_response)
+        if var_matches:
+            result: dict[str, str] = {}
+            for var_name, content in var_matches:
+                result[var_name] = content.strip()
+            return result
+
         raise ValueError(
             "No instrument blocks found in LLM response. Expected format: '% varName\\n...music...'"
         )
 
-    result: dict[str, str] = {}
+    result = {}
     for var_name, content in matches:
         result[var_name] = content.strip()
 
