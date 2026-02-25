@@ -166,8 +166,8 @@ Plans:
 
 ### Phase 07.1: Minimal UI for UAT needs (INSERTED)
 
-**Goal:** [Urgent work - to be planned]
-**Depends on:** Phase 7
+**Goal:** Automated smoke test harness, minimal web UI, and pre-validated UAT test plan so the full pipeline can be exercised end-to-end before handing to Sam for musical quality judgment
+**Depends on:** Phase 6
 **Plans:** 0 plans
 
 Plans:
