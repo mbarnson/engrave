@@ -292,3 +292,110 @@ class TestRenderPipeline:
         # We verify the pipeline at least called compile the expected number of times.
         # Score + 17 parts = 18 compile calls
         assert len(calls) == 18
+
+
+# ---------------------------------------------------------------------------
+# MusicXML integration tests
+# ---------------------------------------------------------------------------
+
+
+class TestMusicXmlInZip:
+    """Tests for MusicXML inclusion in ZIP output."""
+
+    def test_musicxml_in_zip(self, tmp_path: Path) -> None:
+        """A .musicxml file in work_dir is included in the ZIP."""
+        mock_compiler = _make_mock_compiler()
+        pipeline = RenderPipeline(preset=BIG_BAND, compiler=mock_compiler)
+        music_vars = _minimal_music_vars()
+
+        # Run the pipeline normally (no json_sections -- MusicXML step skipped)
+        result = pipeline.render(
+            music_vars=music_vars,
+            global_music="\\time 4/4",
+            chord_symbols=None,
+            song_title="MxmlTest",
+            output_dir=tmp_path,
+        )
+
+        # Manually place a .musicxml file in _work (simulating generation)
+        work_dir = tmp_path / "_work"
+        mxml_file = work_dir / "score.musicxml"
+        mxml_file.write_text('<?xml version="1.0"?><score-partwise/>')
+
+        # Re-package the ZIP to pick up the new file
+        pipeline._package_zip(work_dir, result.zip_path)
+
+        with zipfile.ZipFile(result.zip_path) as zf:
+            names = zf.namelist()
+        assert "score.musicxml" in names
+
+    def test_no_musicxml_flag(self, tmp_path: Path) -> None:
+        """RenderPipeline with include_musicxml=False skips MusicXML generation."""
+        mock_compiler = _make_mock_compiler()
+        pipeline = RenderPipeline(
+            preset=BIG_BAND,
+            compiler=mock_compiler,
+            include_musicxml=False,
+        )
+        music_vars = _minimal_music_vars()
+
+        # Provide json_sections -- but generation should be skipped
+        json_sections: list[list[dict] | None] = [
+            [
+                {
+                    "instrument": "trumpet_1",
+                    "measures": [
+                        {
+                            "number": 1,
+                            "notes": [{"pitch": "c4", "beat": 1.0, "duration": 4.0}],
+                        }
+                    ],
+                }
+            ]
+        ]
+
+        result = pipeline.render(
+            music_vars=music_vars,
+            global_music="\\time 4/4",
+            chord_symbols=None,
+            song_title="NoMxml",
+            output_dir=tmp_path,
+            json_sections=json_sections,
+            instrument_names=["Trumpet 1"],
+        )
+
+        # No .musicxml should be in the ZIP
+        with zipfile.ZipFile(result.zip_path) as zf:
+            names = zf.namelist()
+        mxml_files = [n for n in names if n.endswith(".musicxml")]
+        assert len(mxml_files) == 0
+
+    def test_musicxml_failure_graceful(self, tmp_path: Path) -> None:
+        """Invalid JSON sections don't crash the render pipeline."""
+        mock_compiler = _make_mock_compiler()
+        pipeline = RenderPipeline(preset=BIG_BAND, compiler=mock_compiler)
+        music_vars = _minimal_music_vars()
+
+        # Provide deliberately invalid json_sections
+        json_sections: list[list[dict] | None] = [
+            [{"invalid": "data", "no_instrument": True}],
+            None,
+        ]
+
+        result = pipeline.render(
+            music_vars=music_vars,
+            global_music="\\time 4/4",
+            chord_symbols=None,
+            song_title="BadJson",
+            output_dir=tmp_path,
+            json_sections=json_sections,
+            instrument_names=["Trumpet 1"],
+        )
+
+        # Pipeline should still complete (LilyPond output unaffected)
+        assert result.zip_path.exists()
+        # .ly files should be in the ZIP regardless
+        with zipfile.ZipFile(result.zip_path) as zf:
+            names = zf.namelist()
+        ly_files = [n for n in names if n.endswith(".ly")]
+        assert len(ly_files) > 0

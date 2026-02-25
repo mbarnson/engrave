@@ -2,7 +2,7 @@
 
 Connects the generators (04-02) to the compiler (Phase 1) and produces
 the deliverable ZIP archive containing score PDF, 17 part PDFs, all .ly
-source files, and MIDI output.
+source files, MIDI output, and optionally a MusicXML file for Dorico import.
 
 Public API
 ----------
@@ -103,11 +103,13 @@ class RenderPipeline:
         compiler: LilyPondCompiler | None = None,
         score_timeout: int = 300,
         part_timeout: int = 60,
+        include_musicxml: bool = True,
     ) -> None:
         self.preset = preset
         self.compiler = compiler or LilyPondCompiler()
         self.score_timeout = score_timeout
         self.part_timeout = part_timeout
+        self.include_musicxml = include_musicxml
 
     def render(
         self,
@@ -116,6 +118,11 @@ class RenderPipeline:
         chord_symbols: str | None,
         song_title: str | None,
         output_dir: Path,
+        json_sections: list[list[dict] | None] | None = None,
+        instrument_names: list[str] | None = None,
+        key_sig: str = "c \\major",
+        time_sig: str = "4/4",
+        tempo_bpm: int = 120,
     ) -> RenderResult:
         """Run the full render pipeline.
 
@@ -131,6 +138,17 @@ class RenderPipeline:
             Song title for the ZIP filename. Falls back to "untitled".
         output_dir:
             Directory where the work files and ZIP are created.
+        json_sections:
+            Optional per-section JSON notation data for MusicXML generation.
+            Each entry is a list of dicts (one per instrument) or None.
+        instrument_names:
+            Optional list of instrument display names for MusicXML assembly.
+        key_sig:
+            Key signature for MusicXML (LilyPond-style, e.g. ``"c \\major"``).
+        time_sig:
+            Time signature for MusicXML (e.g. ``"4/4"``).
+        tempo_bpm:
+            Tempo in BPM for MusicXML (default 120).
 
         Returns
         -------
@@ -205,6 +223,30 @@ class RenderPipeline:
                 errors[part_ly_name] = part_result.stderr
                 logger.error("Failed to compile %s: %s", part_ly_name, part_result.stderr)
 
+        # 6.5. Generate MusicXML (optional)
+        if self.include_musicxml and json_sections is not None:
+            has_data = any(s is not None for s in json_sections)
+            if has_data:
+                try:
+                    from engrave.generation.json_assembler import assemble_musicxml
+
+                    musicxml_path = work_dir / "score.musicxml"
+                    names = instrument_names or list(music_vars.keys())
+                    success_mxml, _mxml_path = assemble_musicxml(
+                        json_sections=json_sections,
+                        instrument_names=names,
+                        key_sig=key_sig,
+                        time_sig=time_sig,
+                        tempo_bpm=tempo_bpm,
+                        output_path=musicxml_path,
+                    )
+                    if success_mxml:
+                        logger.info("MusicXML generated: %s", musicxml_path)
+                    else:
+                        logger.warning("MusicXML generation failed; continuing without")
+                except Exception as exc:
+                    logger.warning("MusicXML generation error: %s", str(exc)[:200])
+
         # 7. Package ZIP
         title_slug = _slugify_title(song_title) if song_title else "untitled"
         zip_name = f"{title_slug}-{date.today().isoformat()}.zip"
@@ -238,7 +280,7 @@ class RenderPipeline:
             The output ZIP path.
         """
         with zipfile.ZipFile(output_path, "w", zipfile.ZIP_DEFLATED) as zf:
-            for ext in ("*.pdf", "*.ly", "*.mid"):
+            for ext in ("*.pdf", "*.ly", "*.mid", "*.musicxml"):
                 for file_path in sorted(work_dir.glob(ext)):
                     zf.write(file_path, file_path.name)
         return output_path

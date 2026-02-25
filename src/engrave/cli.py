@@ -394,6 +394,9 @@ def render(
         help="Output ZIP path (default: auto-generated in current directory)",
     ),
     title: str | None = typer.Option(None, "--title", "-t", help="Song title for ZIP filename"),
+    no_musicxml: bool = typer.Option(
+        False, "--no-musicxml", help="Exclude MusicXML from output ZIP"
+    ),
 ) -> None:
     """Render LilyPond sources to PDFs and package into a ZIP archive.
 
@@ -437,6 +440,7 @@ def render(
         pipeline = RenderPipeline(
             preset=BIG_BAND,
             compiler=compiler,
+            include_musicxml=not no_musicxml,
         )
 
         # Read music variables from input directory
