@@ -44,7 +44,7 @@ Requirements for initial release. Each maps to roadmap phases.
 - [x] **ENGR-02**: System renders one extracted part PDF per instrument, correctly transposed to the instrument's reading key with proper clef and key signature
 - [x] **ENGR-03**: Parts include rehearsal marks (every 8-16 bars and at structural landmarks), measure numbers at the start of each line, and multi-bar rests (consolidated)
 - [x] **ENGR-04**: Parts include dynamic markings with restatement after multi-bar rests
-- [ ] **ENGR-05**: Parts include correct rhythmic notation and beaming per style conventions (jazz beaming for swing, straight beaming for Latin/rock)
+- [x] **ENGR-05**: Parts include correct rhythmic notation and beaming per style conventions (jazz beaming for swing, straight beaming for Latin/rock)
 - [ ] **ENGR-06**: Parts include cue notes from an audible instrument after 8+ bars of rest, transposed to the player's reading key
 - [ ] **ENGR-07**: Parts include repeat signs, first/second endings, D.S. al Coda, and other navigation marks as inferred from structural analysis or user hints
 - [ ] **ENGR-08**: System generates chord chart / lead sheet output with Nashville number system or chord symbol notation, optional melody line, and lyric underlay if text is provided
@@ -54,7 +54,7 @@ Requirements for initial release. Each maps to roadmap phases.
 ### Ensemble & Articulation
 
 - [x] **ENSM-01**: System includes a big band ensemble preset encoding: 5 saxes (AATBT), 4 Bb trumpets, 4 trombones (3 tenor + 1 bass), piano, guitar, bass, drums -- with correct transpositions, clefs, score order, and staff sizes
-- [ ] **ENSM-02**: System generates section parts jointly (e.g., all 4 trumpets in one LLM call) so articulations, dynamics, and beam groupings co-vary -- enabling convergent sight-reading
+- [x] **ENSM-02**: System generates section parts jointly (e.g., all 4 trumpets in one LLM call) so articulations, dynamics, and beam groupings co-vary -- enabling convergent sight-reading
 - [x] **ENSM-03**: System applies Tim Davies jazz articulation defaults: unmarked quarter notes are short, unmarked eighth notes are long, swing assumed unless marked "Straight 8s," staccato+accent not paired (redundant)
 - [x] **ENSM-04**: System generates chord symbols on rhythm section parts (guitar, piano, bass) with changes placed above the staff
 - [x] **ENSM-05**: Section consistency rule: if all parts in a section have the same articulation, omit it (the default handles it) -- only mark departures from the section's collective default
@@ -145,14 +145,14 @@ Deferred to future release.
 | ENGR-02 | Phase 4 | Complete |
 | ENGR-03 | Phase 4 | Complete |
 | ENGR-04 | Phase 4 | Complete |
-| ENGR-05 | Phase 7 | Pending |
+| ENGR-05 | Phase 7 | Complete |
 | ENGR-06 | Phase 8 | Pending |
 | ENGR-07 | Phase 8 | Pending |
 | ENGR-08 | Phase 8 | Pending |
 | ENGR-09 | Phase 4 | Complete |
 | ENGR-10 | Phase 8 | Pending |
 | ENSM-01 | Phase 4 | Complete |
-| ENSM-02 | Phase 7 | Pending |
+| ENSM-02 | Phase 7 | Complete |
 | ENSM-03 | Phase 7 | Complete |
 | ENSM-04 | Phase 4 | Complete |
 | ENSM-05 | Phase 7 | Complete |
