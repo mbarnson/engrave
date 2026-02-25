@@ -19,9 +19,9 @@ Progress: [######....] 60%
 ## Performance Metrics
 
 **Velocity:**
-- Total plans completed: 17
+- Total plans completed: 18
 - Average duration: 5.5 min
-- Total execution time: 1.7 hours
+- Total execution time: 1.8 hours
 
 **By Phase:**
 
@@ -44,6 +44,7 @@ Progress: [######....] 60%
 | Phase 05 P04 | 6 min | 2 tasks | 4 files |
 | Phase 05 P05 | 5 min | 2 tasks | 7 files |
 | Phase 05 P06 | 8 min | 2 tasks | 10 files |
+| Phase 05.1 P01 | 6 min | 3 tasks | 9 files |
 | Phase 05.1 P02 | 4 min | 2 tasks | 4 files |
 
 ## Accumulated Context
@@ -127,6 +128,10 @@ Recent decisions affecting current work:
 - 05-06: mir_eval used directly in evaluator tests (pure Python, safe for unit tests)
 - 05-06: Per-stem comparison against full reference MIDI -- precision meaningful, recall expected low per-stem
 - 05-06: BenchmarkConfig as local dataclass separate from settings.py pydantic model
+- 05.1-01: LilyPond 'es' treated as E-flat (not E-sharp), 'as' as A-flat -- matching standard LilyPond behavior
+- 05.1-01: Regex accidental patterns ordered longest-first to prevent partial matches (ees before es)
+- 05.1-01: Dynamic attached to note.expressions list as music21.dynamics.Dynamic object
+- 05.1-01: music21 9.9.1 added as project dependency
 - 05.1-02: JSON extraction three-stage fallback: json.loads array, json.loads object wrapped, regex individual objects -- never raises
 - 05.1-02: _request_json_notation isolated coroutine so JSON failure cannot affect LilyPond generation
 - 05.1-02: asyncio.gather with NotImplementedError fallback to sequential for non-async routers
@@ -155,5 +160,5 @@ Recent decisions affecting current work:
 ## Session Continuity
 
 Last session: 2026-02-25
-Stopped at: Completed 05.1-02-PLAN.md (Parallel LilyPond + JSON fan-out)
+Stopped at: Completed 05.1-01-PLAN.md (MusicXML core data layer) and 05.1-02-PLAN.md (Parallel fan-out)
 Resume file: .planning/phases/05.1-promote-advn-01-into-v1-scope-for-dorico/05.1-03-PLAN.md
