@@ -160,3 +160,44 @@ def corpus_store(corpus_config):
 
     client = chromadb.Client()
     return CorpusStore(config=corpus_config, client=client)
+
+
+# ---------------------------------------------------------------------------
+# Ingestion pipeline fixtures
+# ---------------------------------------------------------------------------
+
+
+@pytest.fixture
+def mock_lilypond_compiler(tmp_path: Path):
+    """Mock LilyPondCompiler that produces a fake .midi file on success.
+
+    Returns a successful RawCompileResult and writes a zero-byte .midi file
+    to simulate LilyPond producing MIDI output.
+    """
+    from engrave.lilypond.compiler import RawCompileResult
+
+    pdf_path = tmp_path / "out.pdf"
+    midi_path = tmp_path / "out.midi"
+
+    def fake_compile(source: str, output_dir: Path | None = None):
+        # Write fake outputs
+        pdf_path.write_text("fake pdf")
+        midi_path.write_bytes(b"")
+        return RawCompileResult(
+            success=True,
+            returncode=0,
+            stdout="",
+            stderr="",
+            output_path=pdf_path,
+        )
+
+    compiler = MagicMock()
+    compiler.compile.side_effect = fake_compile
+    return compiler
+
+
+@pytest.fixture
+def sample_mutopia_score() -> str:
+    """Load the mutopia_bach.ly fixture file as a string."""
+    fixture_path = Path(__file__).parent / "fixtures" / "corpus" / "mutopia_bach.ly"
+    return fixture_path.read_text(encoding="utf-8")
