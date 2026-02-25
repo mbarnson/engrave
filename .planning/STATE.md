@@ -150,5 +150,5 @@ None yet.
 ## Session Continuity
 
 Last session: 2026-02-25
-Stopped at: Completed 05-06-PLAN.md -- Benchmark harness (Phase 5 complete)
-Resume file: .planning/phases/05-audio-input-pipeline/05-06-SUMMARY.md
+Stopped at: Phase 05.1 context revised -- parallel generation via prefix caching
+Resume file: .planning/phases/05.1-promote-advn-01-into-v1-scope-for-dorico/05.1-CONTEXT.md
