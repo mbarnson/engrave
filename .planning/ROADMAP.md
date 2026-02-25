@@ -157,11 +157,21 @@ Plans:
   3. Section consistency rule enforced: if all parts share the same articulation, it is omitted (default handles it) -- only departures from the section collective default are marked
   4. Beaming follows style conventions: jazz beaming for swing, straight beaming for Latin/rock sections
   5. A blind comparison test shows that jointly-generated section parts have measurably more consistent articulations and dynamics than independently-generated parts
-**Plans**: TBD
+**Plans:** 3 plans
 
 Plans:
-- [ ] 07-01: TBD
-- [ ] 07-02: TBD
+- [ ] 07-01-PLAN.md -- Articulation post-processor: ENSM-03 token scanner (jazz defaults) + ENSM-05 rhythmic aligner (section consistency) (TDD)
+- [ ] 07-02-PLAN.md -- Section-group data model (InstrumentSpec.section_group, resolve_section_groups) + style-aware beaming commands
+- [ ] 07-03-PLAN.md -- Pipeline restructuring (per-section-group dispatch, scoped prompts, post-processing chain) + integration tests
+
+### Phase 07.1: Minimal UI for UAT needs (INSERTED)
+
+**Goal:** [Urgent work - to be planned]
+**Depends on:** Phase 7
+**Plans:** 0 plans
+
+Plans:
+- [ ] TBD (run /gsd:plan-phase 07.1 to break down)
 
 ### Phase 8: Engraving Polish
 **Goal**: Parts contain all the professional engraving details that enable a real rehearsal: cues, navigation marks, page turns at rests, and chord chart output
@@ -219,7 +229,7 @@ Phases execute in numeric order: 1 -> 2 -> 3 -> 4 -> 5 -> 6 -> 7 -> 8 -> 9 -> 10
 | 4. Rendering & Output Packaging | 1/3 | Complete    | 2026-02-25 |
 | 5. Audio Input Pipeline | 0/6 | Complete    | 2026-02-25 |
 | 6. Audio Understanding & Hints | 0/TBD | Not started | - |
-| 7. Convergent Sight-Reading & Ensemble Intelligence | 0/TBD | Not started | - |
+| 7. Convergent Sight-Reading & Ensemble Intelligence | 0/3 | Not started | - |
 | 8. Engraving Polish | 0/TBD | Not started | - |
 | 9. Evaluation Pipeline | 0/TBD | Not started | - |
 | 10. Web UI | 0/TBD | Not started | - |
