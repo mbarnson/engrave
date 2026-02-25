@@ -17,7 +17,7 @@ Decimal phases appear between their surrounding integers in numeric order.
 - [x] **Phase 3: MIDI-to-LilyPond Generation** - Core code generation from MIDI input via RAG-augmented LLM, section-by-section with coherence state, concert-pitch storage (completed 2026-02-25)
 - [x] **Phase 4: Rendering & Output Packaging** - LilyPond-to-PDF rendering, conductor score, extracted transposed parts, ZIP packaging with LilyPond source (completed 2026-02-25)
 - [x] **Phase 5: Audio Input Pipeline** - Audio file ingestion, YouTube URL extraction, Demucs source separation, Basic Pitch MIDI transcription (completed 2026-02-25)
-- [ ] **Phase 6: Audio Understanding & Hints** - Audio LM structured descriptions, natural language hint processing, user intent as authoritative override
+- [x] **Phase 6: Audio Understanding & Hints** - Audio LM structured descriptions, natural language hint processing, user intent as authoritative override (completed 2026-02-25)
 - [ ] **Phase 7: Convergent Sight-Reading & Ensemble Intelligence** - Joint section-part generation, Tim Davies articulation defaults, section consistency rules, big band preset
 - [ ] **Phase 8: Engraving Polish** - Cue notes, page turns at rests, chord charts/lead sheets, repeat/coda navigation, style-aware beaming
 - [ ] **Phase 9: Evaluation Pipeline** - Automated structural diff, audio envelope comparison, visual PDF comparison, end-to-end quality reports
@@ -141,7 +141,7 @@ Plans:
   2. User can type natural language hints (e.g., "Soli at bar 17, brass shout chorus bar 33, swing feel") and the system encodes them as structural metadata for the generation stage
   3. When user hints conflict with audio inference, user hints are treated as authoritative
   4. Generated LilyPond output reflects audio understanding (tempo markings, style indications, dynamic contours) that were absent from raw MIDI transcription alone
-**Plans:** 2 plans
+**Plans:** 2/2 plans complete
 
 Plans:
 - [ ] 06-01-PLAN.md -- AudioDescription schema, Describer protocol (Gemini 3 Flash), NL templates, DescriberConfig
@@ -228,7 +228,7 @@ Phases execute in numeric order: 1 -> 2 -> 3 -> 4 -> 5 -> 6 -> 7 -> 8 -> 9 -> 10
 | 3. MIDI-to-LilyPond Generation | 0/3 | Complete    | 2026-02-25 |
 | 4. Rendering & Output Packaging | 1/3 | Complete    | 2026-02-25 |
 | 5. Audio Input Pipeline | 0/6 | Complete    | 2026-02-25 |
-| 6. Audio Understanding & Hints | 0/TBD | Not started | - |
+| 6. Audio Understanding & Hints | 0/TBD | Complete    | 2026-02-25 |
 | 7. Convergent Sight-Reading & Ensemble Intelligence | 0/3 | Not started | - |
 | 8. Engraving Polish | 0/TBD | Not started | - |
 | 9. Evaluation Pipeline | 0/TBD | Not started | - |
