@@ -43,7 +43,7 @@ Demucs was trained on pop/rock music datasets (MUSDB18) where the 4-stem separat
 
 **How to avoid:**
 1. Accept that Demucs is a preprocessing helper, not a solution. It usefully isolates drums, bass, and vocals. The "other" stem is a starting point, not an end product.
-2. For the horn section: rely primarily on MIDI transcription (via MT3 or Basic Pitch) applied to the "other" stem, combined with audio LM understanding (Qwen3-Omni-Captioner, Gemini 3 Flash) to identify instrument roles and voicings.
+2. For the horn section: rely primarily on MIDI transcription (via MT3 or Basic Pitch) applied to the "other" stem, combined with audio LM understanding (Qwen3-Omni-Instruct, Gemini 3 Flash) to identify instrument roles and voicings.
 3. Do NOT architect the pipeline assuming individual instrument stems will be available. Design from the start for "mixed horn section audio" as the input to the transcription stage.
 4. For Sam's recordings specifically: if the demo recordings are MIDI-originated (from a DAW), prefer the MIDI input path entirely and skip audio separation.
 5. Consider Bandit/Banquet research for future fine-grained separation, but do not depend on it for v1.
@@ -68,7 +68,7 @@ MT3 has no memory across segments. Each ~6-second window is transcribed in isola
 
 **How to avoid:**
 1. Use MT3/Basic Pitch primarily for pitch and rhythm extraction. Do NOT rely on MT3's instrument labels for part assignment.
-2. Use the audio LM (Qwen3-Omni-Captioner, Gemini 3 Flash) to identify which instruments are playing and their approximate roles (melody, harmony, bass line). This provides the "what instrument plays what" information that MT3 cannot reliably provide.
+2. Use the audio LM (Qwen3-Omni-Instruct, Gemini 3 Flash) to identify which instruments are playing and their approximate roles (melody, harmony, bass line). This provides the "what instrument plays what" information that MT3 cannot reliably provide.
 3. Consider MR-MT3 (Memory Retaining MT3) which addresses this with a memory retention mechanism, but note it is a research prototype, not production-ready.
 4. Design the pipeline with an explicit "instrument assignment" stage that is separate from "note transcription" -- don't conflate these two tasks.
 5. For the MIDI input path, instrument assignments come from MIDI channel/program data and this pitfall doesn't apply.
@@ -257,7 +257,7 @@ Phase 2 (Audio understanding pipeline). Must be addressed before full-chart proc
 | Demucs | Expecting individual instrument stems | Accept 4-stem output; design pipeline around "mixed section audio" |
 | MT3 / Basic Pitch | Trusting instrument labels in multi-instrument transcription | Use pitch/rhythm output only; assign instruments via audio LM or user hints |
 | Audiveris OMR | Running batch OMR and trusting output | Sample-check 10% of output, budget for manual correction time |
-| Qwen3-Omni-Captioner | Passing full-length audio and expecting coherent analysis | Segment audio first; process sections individually with structural context. Validate max clip length on M4 Max |
+| Qwen3-Omni-Instruct | Passing full-length audio and expecting coherent analysis | Segment audio first; process sections individually with structural context. Validate max clip length on M4 Max |
 | YouTube download (yt-dlp) | Assuming consistent audio quality from YouTube | YouTube audio is lossy (AAC/Opus ~128-256kbps); quality varies wildly. Prefer original recordings when available |
 | LilyPond MusicXML export | Expecting roundtrip LilyPond -> MusicXML -> LilyPond | LilyPond has NO native MusicXML export. Use Frescobaldi experimental export or generate MusicXML independently from internal representation |
 | LMStudio local inference | Assuming local model quality matches cloud APIs | Local models (Qwen3-30B) are significantly less capable than Claude/GPT-4 for code generation. Use local for prototyping cost savings; benchmark against cloud before committing |

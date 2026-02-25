@@ -51,7 +51,7 @@
 
 | ID | Description | Research Support |
 |----|-------------|-----------------|
-| AUDP-03 | System produces structured musical descriptions from audio via audio LM (Qwen3-Omni-30B-A3B-Captioner for local inference, Gemini 3 Flash for cloud/long-form), capturing key, tempo, style, dynamics, articulation intent, and structural form | Describer protocol pattern (mirrors Transcriber), Pydantic AudioDescription schema, dual-path LLM integration via LiteLLM (Gemini) and mlx-vlm (local), natural language template rendering |
+| AUDP-03 | System produces structured musical descriptions from audio via audio LM (Qwen3-Omni-30B-A3B-Instruct for local inference, Gemini 3 Flash for cloud/long-form), capturing key, tempo, style, dynamics, articulation intent, and structural form | Describer protocol pattern (mirrors Transcriber), Pydantic AudioDescription schema, dual-path LLM integration via LiteLLM (Gemini) and mlx-vlm (local), natural language template rendering |
 | AUDP-04 | User can provide natural language hints describing ensemble composition, style, structural markers, and articulation intent -- hints are treated as authoritative when conflicting with audio inference | Three-tier prompt template with authority labels, CLI --hints flag with path/inline auto-detection, audit log with per-field override tracking, generation pipeline integration |
 </phase_requirements>
 
@@ -550,7 +550,7 @@ Generate the LilyPond music content for each instrument variable:"""
 
 | Old Approach | Current Approach | When Changed | Impact |
 |--------------|------------------|--------------|--------|
-| Qwen2-Audio-7B for audio understanding | Qwen3-Omni-30B-A3B-Captioner (MoE) | Sep 2025 | 4x parameter efficiency via MoE, SOTA on 32/36 audio benchmarks, designed for captioning |
+| Qwen2-Audio-7B for audio understanding | Qwen3-Omni-30B-A3B-Instruct (MoE) | Sep 2025 | 4x parameter efficiency via MoE, SOTA on 32/36 audio benchmarks, instruction-following for structured analysis |
 | Gemini 2.5 Flash for cloud audio | Gemini 3 Flash | Dec 2025 | 1M token context, native structured output with JSON Schema, improved audio understanding |
 | Manual JSON parsing of LLM output | Schema-enforced JSON (Gemini) + Pydantic validation (local) | 2025-2026 | Near-zero JSON format errors on Gemini path; robust fallback on local path |
 | Direct API calls per provider | LiteLLM unified interface | Already in use | Same abstraction handles both providers |
@@ -564,7 +564,7 @@ Generate the LilyPond music content for each instrument variable:"""
 
 1. **Qwen3-Omni via mlx-vlm: audio input support readiness**
    - What we know: mlx-vlm supports "omni models with audio and video support" and Qwen3-VL is supported. A GitHub issue (ml-explore/mlx-lm#497) shows text generation for Qwen3-Omni works, but full multimodal audio input is being actively added via mlx-vlm.
-   - What's unclear: Whether Qwen3-Omni-30B-A3B-Captioner specifically works with audio input via mlx-vlm's Python API as of February 2026. The model loads, but audio preprocessing may not be fully implemented.
+   - What's unclear: Whether Qwen3-Omni-30B-A3B-Instruct specifically works with audio input via mlx-vlm's Python API as of February 2026. The model loads, but audio preprocessing may not be fully implemented.
    - Recommendation: Build Gemini backend first. Add local backend when mlx-vlm audio support is confirmed. Make local backend import-guarded so it fails gracefully.
 
 2. **LiteLLM audio + structured output combination for Gemini**
@@ -639,7 +639,7 @@ Generate the LilyPond music content for each instrument variable:"""
 
 ### Secondary (MEDIUM confidence)
 - [Qwen3-Omni GitHub](https://github.com/QwenLM/Qwen3-Omni) -- model capabilities, usage patterns
-- [Qwen3-Omni-30B-A3B-Captioner HuggingFace](https://huggingface.co/Qwen/Qwen3-Omni-30B-A3B-Captioner) -- model card, captioning specialization
+- [Qwen3-Omni-30B-A3B-Instruct HuggingFace](https://huggingface.co/Qwen/Qwen3-Omni-30B-A3B-Instruct) -- model card, instruction-following multimodal
 - [mlx-vlm GitHub](https://github.com/Blaizzy/mlx-vlm) -- omni model support with audio, Python API
 - [mlx-lm#497 Qwen3-Omni support issue](https://github.com/ml-explore/mlx-lm/issues/497) -- status of audio input support
 - [LiteLLM Gemini 3 day-0 support](https://docs.litellm.ai/blog/gemini_3) -- Gemini 3 Flash integration

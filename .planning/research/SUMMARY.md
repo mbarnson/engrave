@@ -7,7 +7,7 @@
 
 ## Executive Summary
 
-Engrave is an AI-powered music engraving pipeline that transforms audio recordings or MIDI files into publication-quality, transposed sheet music parts. The system combines source separation (Demucs), MIDI transcription (Basic Pitch), audio understanding (Qwen3-Omni-Captioner), and RAG-augmented LLM code generation (Qwen3-Coder-Next/Claude) to produce LilyPond output. The primary use case is big band arrangements, where the key differentiator is "convergent sight-reading" -- generating section parts jointly so articulations, dynamics, and beam groupings co-vary, enabling musicians to sound like a unified section on first read.
+Engrave is an AI-powered music engraving pipeline that transforms audio recordings or MIDI files into publication-quality, transposed sheet music parts. The system combines source separation (Demucs), MIDI transcription (Basic Pitch), audio understanding (Qwen3-Omni-Instruct), and RAG-augmented LLM code generation (Qwen3-Coder-Next/Claude) to produce LilyPond output. The primary use case is big band arrangements, where the key differentiator is "convergent sight-reading" -- generating section parts jointly so articulations, dynamics, and beam groupings co-vary, enabling musicians to sound like a unified section on first read.
 
 The recommended approach is to build a stage-based pipeline (Ingest -> Separate -> Transcribe -> Describe -> Generate -> Render) with artifact passing through the filesystem. Start with MIDI input to validate the code generation pipeline before tackling the harder audio input path. Use LiteLLM for unified LLM provider routing, ChromaDB for RAG-based few-shot prompting, and section-by-section generation with coherence state passing to handle long scores. Store all music in concert pitch internally and apply transposition deterministically at render time.
 
@@ -73,7 +73,7 @@ The stack is PyTorch-centric with Python 3.12 as the runtime. FastAPI handles th
 
 ### Architecture Approach
 
-The architecture is a stage-based pipeline with artifact passing through the filesystem. Each stage is a pure function: `(job_context, stage_input_dir) -> stage_output_dir`. The orchestrator manages job directories and routes between stages. Stages: (0) Ingest (file/URL intake, normalization), (1) Source Separation (Demucs 4-stem), (2) MIDI Transcription (Basic Pitch per stem), (3) Audio Understanding (Qwen3-Omni-Captioner structured description), (4) LilyPond Generation (RAG-augmented LLM with section-by-section coherence state passing), (5) Rendering (LilyPond CLI to PDF + ZIP packaging).
+The architecture is a stage-based pipeline with artifact passing through the filesystem. Each stage is a pure function: `(job_context, stage_input_dir) -> stage_output_dir`. The orchestrator manages job directories and routes between stages. Stages: (0) Ingest (file/URL intake, normalization), (1) Source Separation (Demucs 4-stem), (2) MIDI Transcription (Basic Pitch per stem), (3) Audio Understanding (Qwen3-Omni-Instruct structured description), (4) LilyPond Generation (RAG-augmented LLM with section-by-section coherence state passing), (5) Rendering (LilyPond CLI to PDF + ZIP packaging).
 
 **Major components:**
 1. **Pipeline Orchestrator** -- Routes jobs through stages, manages state machine, handles MIDI-skip path, retries failures. In-process async pipeline with stage functions.
@@ -108,7 +108,7 @@ The architecture is a stage-based pipeline with artifact passing through the fil
 
 8. **Audiveris OMR quality too low for automated corpus building** -- OMR output has wrong durations, misread accidentals, missing ties/slurs, confused beams. Mitigation: do NOT use OMR as ground truth without human verification, prioritize MIDI/audio input paths, use OMR only for structural scaffolding (pitches/rhythms), manually annotate articulations/dynamics.
 
-9. **Audio LM clip limitations miss song-level structure** -- Local audio LMs may degrade on long audio, losing song-level structure (key changes, section relationships). Qwen3-Omni-Captioner may handle longer clips than its predecessor but needs validation. Mitigation: segment audio into structural sections first, process each section with context about its role, treat user hints as authoritative for structure, use Gemini 3 Flash for long-form analysis.
+9. **Audio LM clip limitations miss song-level structure** -- Local audio LMs may degrade on long audio, losing song-level structure (key changes, section relationships). Qwen3-Omni-Instruct may handle longer clips than its predecessor but needs validation. Mitigation: segment audio into structural sections first, process each section with context about its role, treat user hints as authoritative for structure, use Gemini 3 Flash for long-form analysis.
 
 ## Implications for Roadmap
 
@@ -182,7 +182,7 @@ Based on research, suggested phase structure:
 - LFM2.5-Audio-1.5B (lightweight local model for fast tasks, optional)
 
 **Implements architecture component:**
-- Stage 3: Audio Understanding (Qwen3-Omni-Captioner structured description)
+- Stage 3: Audio Understanding (Qwen3-Omni-Instruct structured description)
 - Natural language hint processing and encoding into Stage 4 prompts
 
 **Addresses features:**
@@ -194,7 +194,7 @@ Based on research, suggested phase structure:
 - Audio LM 30-second clip limitation (segment audio into structural sections first, process with context)
 - Song-level structure loss (supplement with user hints, use Gemini for long-form)
 
-**Research flag:** Needs deeper research into Qwen3-Omni-Captioner output format and audio segmentation approaches. Also research into NL-to-structural-metadata mapping. Validate MoE inference speed on M4 Max via vllm-mlx.
+**Research flag:** Needs deeper research into Qwen3-Omni-Instruct output format and audio segmentation approaches. Also research into NL-to-structural-metadata mapping. Validate MoE inference speed on M4 Max via vllm-mlx.
 
 ---
 
@@ -262,7 +262,7 @@ Based on research, suggested phase structure:
 
 - **MIDI-first approach:** Validates code generation without audio complexity. Audio adds transcription error that compounds with engraving error -- tackle sequentially, not simultaneously.
 - **Audio pipeline after MIDI:** Source separation and transcription are well-understood (Demucs, Basic Pitch) but audio quality issues are unpredictable. Prove end-to-end value with MIDI before investing in audio debugging.
-- **Audio understanding after transcription:** Qwen3-Omni-Captioner provides semantic layer but is not critical for basic MIDI-to-parts. Add once transcription works.
+- **Audio understanding after transcription:** Qwen3-Omni-Instruct provides semantic layer but is not critical for basic MIDI-to-parts. Add once transcription works.
 - **Convergent sight-reading last:** This is the novel, hard problem. Requires stable foundation (Phases 1-3) before experimentation. Dedicated phase with specific evaluation criteria.
 - **Corpus building deferred:** OMR is time-consuming and quality is poor without manual correction. Start with curated open-source corpus (Mutopia, PDMX), add Sam's charts later.
 
@@ -286,7 +286,7 @@ Foundation (Phase 1) -> Audio Pipeline (Phase 2) --+
 Phases likely needing deeper research during planning:
 
 - **Phase 1 (Foundation):** LilyPond engraving conventions (Tim Davies jazz defaults, big band score layout), RAG prompt engineering for code generation, compile-check-fix loop strategies
-- **Phase 3 (Audio Understanding):** Qwen3-Omni-Captioner output structuring, vllm-mlx inference validation on M4 Max, audio segmentation approaches, NL-to-structural-metadata mapping
+- **Phase 3 (Audio Understanding):** Qwen3-Omni-Instruct output structuring, vllm-mlx inference validation on M4 Max, audio segmentation approaches, NL-to-structural-metadata mapping
 - **Phase 4 (Convergent Sight-Reading):** Joint section-part generation prompting, section coherence validation, big band articulation conventions (Tim Davies, Evan Rogers, Gould)
 - **Phase 6 (Corpus Building):** Audiveris CLI automation, OMR quality assessment, MusicXML-to-LilyPond conversion
 
@@ -302,7 +302,7 @@ Phases with standard patterns (skip deep research):
 | Stack | HIGH | Core technologies (FastAPI, PyTorch, Demucs, Basic Pitch, LilyPond) are mature and well-documented. LLM landscape is fast-moving but LiteLLM provides abstraction. Qwen models are recent (2025-2026) but Hugging Face releases are stable. |
 | Features | MEDIUM-HIGH | Table stakes features are well-understood from established domain (music engraving conventions). Convergent sight-reading is novel -- no existing tool does this. RAG-augmented LilyPond generation is uncharted (combining existing techniques in new way). |
 | Architecture | MEDIUM | Stage-based pipeline pattern is standard. Section-by-section generation with coherence state is adapted from long-form LLM generation research (Hierarchical Expansion) but not proven for music notation. Joint section-part generation is novel hypothesis -- requires validation. |
-| Pitfalls | MEDIUM-HIGH | LilyPond compilation issues, Demucs limitations, MT3 instrument leakage, transposition errors are verified from multiple sources and practitioner reports. Convergent sight-reading failure mode is logical inference (not empirically tested in this domain). Audio LM limitations need revalidation with Qwen3-Omni-Captioner (successor to Qwen2-Audio). |
+| Pitfalls | MEDIUM-HIGH | LilyPond compilation issues, Demucs limitations, MT3 instrument leakage, transposition errors are verified from multiple sources and practitioner reports. Convergent sight-reading failure mode is logical inference (not empirically tested in this domain). Audio LM limitations need revalidation with Qwen3-Omni-Instruct (successor to Qwen2-Audio). |
 
 **Overall confidence:** MEDIUM-HIGH
 
@@ -320,7 +320,7 @@ The core pipeline (audio -> MIDI -> LilyPond -> PDF) is well-understood with est
 
 - **Demucs "other" stem quality for horn sections:** Demucs groups all brass/woodwinds/keys into "other" stem. Transcription quality from mixed horn section audio is unknown. Basic Pitch was designed for single-instrument audio -- performance on dense harmonic content is untested. May need MT3 fallback or manual MIDI input for complex horn voicings.
 
-- **Audio LM structured output reliability:** Qwen3-Omni-Captioner produces fine-grained audio captions with low hallucination, but structured JSON output (key, tempo, form, articulation notes) may require post-processing. The Captioner variant auto-parses without prompting — validate whether its output format is directly usable or needs reformatting. Gemini 3 Flash has better structured output but is cloud-only. Local model may need format validation and correction loop similar to LilyPond compile-check-fix. On Apple Silicon, mlx_lm loads HuggingFace MoE models natively via MLX — no conversion needed.
+- **Audio LM structured output reliability:** Qwen3-Omni-Instruct produces fine-grained audio captions with low hallucination, but structured JSON output (key, tempo, form, articulation notes) may require post-processing. The Captioner variant auto-parses without prompting — validate whether its output format is directly usable or needs reformatting. Gemini 3 Flash has better structured output but is cloud-only. Local model may need format validation and correction loop similar to LilyPond compile-check-fix. On Apple Silicon, mlx_lm loads HuggingFace MoE models natively via MLX — no conversion needed.
 
 ## Sources
 

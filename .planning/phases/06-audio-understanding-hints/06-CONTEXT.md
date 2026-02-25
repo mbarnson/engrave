@@ -1,7 +1,8 @@
 # Phase 6: Audio Understanding & Hints - Context
 
 **Gathered:** 2026-02-24
-**Status:** Ready for planning
+**Revised:** 2026-02-24
+**Status:** Ready for planning (replanning needed -- 06-02 targets pre-5.1 pipeline)
 
 <domain>
 ## Phase Boundary
@@ -24,9 +25,11 @@ Requirements: AUDP-03 (structured audio descriptions), AUDP-04 (user hints with 
 - **Per-section `notes` field** is separate from `texture`. Texture describes musical texture ("walking bass under trumpet melody"). Notes is a catch-all for stray observations ("sounds like a Basie arrangement", "drummer on brushes"). Nullable -- usually empty
 
 ### Audio LM Output Mode
-- **Model-dependent dual path:** local Qwen3-Omni-Instruct produces JSON via structured prompting with Pydantic validation on output. Cloud Gemini 3 Flash uses schema-enforced JSON via `response_mime_type="application/json"` + `response_schema`
-- The `Describer` protocol abstracts the difference, same pattern as `Transcriber` in Phase 5
+- **Model-dependent dual path:** local Qwen3-Omni-30B-A3B-Instruct produces JSON via structured prompting with Pydantic validation on output. Cloud Gemini 3 Flash uses schema-enforced JSON via `response_mime_type="application/json"` + `response_schema`
+- **NOT Captioner.** The Captioner variant is closed-captioning only ("music plays", "soft music plays"). The correct local model is Qwen3-Omni-30B-A3B-Instruct -- instruction-following for structured analysis
+- The `Describer` protocol abstracts the difference, structurally similar to `Transcriber` in Phase 5 (Protocol + concrete implementations + factory). **Key difference: Describer is async** (`async def describe`) because audio LM calls are I/O-bound and benefit from concurrent section processing, while Transcriber is sync (`def transcribe`)
 - Audio LM's purpose: structure and context, NOT note accuracy. High-value outputs are things like "this is a 12-bar blues in Bb" or "saxophone takes melody while piano comps" -- constraints that help the generation LLM interpret noisy MIDI
+- **Describer bypasses InferenceRouter.** The router abstracts which text LLM handles which role. The audio describer is a multimodal model receiving WAV bytes -- different input modality, different API surface (base64 file content, schema-enforced JSON responses, file size thresholds triggering downsampling). `DescriberConfig` in settings.py carries the model name and timeout -- that's the only configuration surface needed. The `Describer` protocol is the abstraction layer; a router on top of a protocol is redundant indirection. If the router eventually grows multimodal support (e.g., for vision-based score comparison), the Describer can migrate to it then -- don't build ahead of the second use case
 
 ### Hint Language & Parsing
 - **Free text, no DSL.** Sam is a musician, not a programmer. The LLM is the parser -- no structured markers, no regex extraction for v1
@@ -46,6 +49,7 @@ Requirements: AUDP-03 (structured audio descriptions), AUDP-04 (user hints with 
 - **When MIDI and audio LM disagree (no user hint):** both go into the prompt with weighted framing. MIDI analysis is grounded in note data (Krumhansl-Kessler chroma correlation). Audio LM guessed from a spectrogram. The LLM is told which is more grounded. Most disagreements are enharmonic/modal ambiguities resolvable from musical context
 - **Self-contradictory hints pass through verbatim.** "Key of Bb" and "key of C" in the same block probably means different sections. The generation LLM has section context to interpret correctly. Don't throw away information with "last one wins"
 - **Audit log:** structured JSON, per-field override tracking only (not per-note). Fields: {field, midi_value, audio_value, hint_value, resolved_to, source}. Machine-readable, queryable via jq. Human-readable rendering is a future web UI concern, not a log format
+- **Audit log is skeletal in Phase 6.** hint_value is always None (hints are unstructured free text, not decomposable to per-field values). audio_value requires parsing a natural language string. In practice the Phase 6 audit log mostly records MIDI values with source="midi" and MIDI-vs-audio disagreements. The infrastructure is forward-looking -- it becomes meaningful with structured hint parsing or audio-to-field extraction (future). Build it now, it populates later
 - **Disagreement warnings:** when MIDI analysis and audio LM disagree, log it. Future web UI can surface "Audio says Bb, MIDI says B -- consider adding a key hint." This is a disagreement between two systems, not a threshold on one system's self-assessment
 
 ### Integration with Generation
@@ -53,6 +57,7 @@ Requirements: AUDP-03 (structured audio descriptions), AUDP-04 (user hints with 
 - **Prompt-only context.** Audio description is observed context (from input analysis). Coherence state tracks generated context (from LLM output). Don't mix them. Per-section audio labels are injected fresh; coherence state carries key/harmony/articulation consistency from generated output
 - **Same three-tier template always**, even for pure MIDI input (no audio). When no audio exists, the CONTEXTUAL section is empty/absent. Consistent prompt structure regardless of input type
 - **Prompt structure per section:** compact global header (tempo, key, style) + per-section block with audio description summary + user hints (full block) + current section MIDI data + coherence state summary from previous sections
+- **Post-Phase 5.1 pipeline awareness:** Phase 5.1 restructures `generate_section()` for parallel fan-out (two requests per section with prefix caching -- one for LilyPond, one for MusicXML JSON). Audio description and user hints must flow into BOTH fan-out requests, since both the LilyPond and JSON requests need the same musical context. The three-tier prompt template applies to both request types. Existing plans (06-02) were written against the pre-5.1 single-request function signature and need replanning to target the post-5.1 fan-out pipeline
 
 ### Claude's Discretion
 - Exact Pydantic model field types and validation rules for AudioDescription
