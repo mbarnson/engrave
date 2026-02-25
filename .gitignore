@@ -35,6 +35,9 @@ htmlcov/
 *.swo
 *~
 
+# Audio pipeline job artifacts (large WAV intermediates)
+jobs/
+
 # OS
 .DS_Store
 Thumbs.db

@@ -1,4 +1,4 @@
-"""Typer CLI entry point with check, corpus, and generate commands."""
+"""Typer CLI entry point with check, corpus, generate, and benchmark commands."""
 
 from __future__ import annotations
 
@@ -508,6 +508,101 @@ def render(
 
     except typer.Exit:
         raise
+    except Exception as e:
+        console.print(f"[red]Error:[/red] {e}")
+        raise typer.Exit(code=1) from e
+
+
+@app.command("process-audio")
+def process_audio(
+    input_source: str = typer.Argument(
+        ..., help="Path to audio file (MP3/WAV/AIFF/FLAC) or YouTube URL"
+    ),
+    output_dir: str | None = typer.Option(
+        None, "--output-dir", "-o", help="Custom job directory (default: auto-generated in jobs/)"
+    ),
+    no_separate: bool = typer.Option(
+        False, "--no-separate", help="Skip separation (transcribe raw audio directly)"
+    ),
+    steps: str | None = typer.Option(None, "--steps", help="JSON override for separation steps"),
+) -> None:
+    """Process audio through the full pipeline: normalize, separate, transcribe, annotate.
+
+    Accepts an audio file path or a YouTube URL. Creates a timestamped job
+    directory with all intermediate artifacts (normalized WAV, separated stems,
+    MIDI transcriptions, quality annotations).
+    """
+    import json as json_mod
+    from pathlib import Path
+
+    from rich.console import Console
+    from rich.table import Table
+
+    console = Console()
+
+    try:
+        from engrave.audio.pipeline import AudioPipeline
+        from engrave.audio.youtube import is_youtube_url
+        from engrave.config.settings import Settings
+
+        settings = Settings()
+
+        # Optionally override separation steps
+        if steps:
+            try:
+                steps_data = json_mod.loads(steps)
+                # Apply steps override to config
+                settings.audio.separation.steps = steps_data
+            except json_mod.JSONDecodeError as e:
+                console.print(f"[red]Error:[/red] Invalid --steps JSON: {e}")
+                raise typer.Exit(code=1) from e
+
+        if no_separate:
+            # Clear separation steps so pipeline gets empty list
+            settings.audio.separation.steps = []
+
+        pipeline = AudioPipeline(config=settings.audio)
+        job_dir_path = Path(output_dir) if output_dir else None
+
+        if is_youtube_url(input_source):
+            console.print(f"[bold]Downloading from YouTube:[/bold] {input_source}")
+            result = pipeline.process_youtube(input_source, job_dir_path)
+        else:
+            source_path = Path(input_source)
+            if not source_path.exists():
+                console.print(f"[red]Error:[/red] Audio file not found: {input_source}")
+                raise typer.Exit(code=1)
+            console.print(f"[bold]Processing audio:[/bold] {source_path}")
+            result = pipeline.process(source_path, job_dir_path)
+
+        # Display results
+        console.print("\n[green]Pipeline complete![/green]")
+        console.print(f"  Job directory: {result.job_dir}")
+        console.print(f"  Stems: {len(result.stem_results)}")
+
+        if result.stem_results:
+            table = Table(title="Stem Results")
+            table.add_column("Stem", style="cyan")
+            table.add_column("MIDI Path", style="green")
+            table.add_column("Notes", justify="right")
+            table.add_column("Quality Issues", justify="right")
+
+            for sr in result.stem_results:
+                issues = sr.quality.pitch_range_violations
+                table.add_row(
+                    sr.stem_name,
+                    str(sr.midi_path),
+                    str(sr.quality.note_count),
+                    str(issues),
+                )
+
+            console.print(table)
+
+    except typer.Exit:
+        raise
+    except FileNotFoundError as e:
+        console.print(f"[red]Error:[/red] {e}")
+        raise typer.Exit(code=1) from e
     except Exception as e:
         console.print(f"[red]Error:[/red] {e}")
         raise typer.Exit(code=1) from e
