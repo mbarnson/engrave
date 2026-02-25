@@ -2,6 +2,8 @@
 
 from __future__ import annotations
 
+from typing import Annotated
+
 import typer
 
 app = typer.Typer(
@@ -603,6 +605,137 @@ def process_audio(
     except FileNotFoundError as e:
         console.print(f"[red]Error:[/red] {e}")
         raise typer.Exit(code=1) from e
+    except Exception as e:
+        console.print(f"[red]Error:[/red] {e}")
+        raise typer.Exit(code=1) from e
+
+
+# ---------------------------------------------------------------------------
+# Benchmark command group
+# ---------------------------------------------------------------------------
+
+benchmark_app = typer.Typer(help="Benchmark and evaluate pipeline accuracy.")
+app.add_typer(benchmark_app, name="benchmark")
+
+
+@benchmark_app.command("run")
+def benchmark_run(
+    midi_path: str = typer.Argument(..., help="Path to reference MIDI file"),
+    results_dir: str | None = typer.Option(
+        None,
+        "--results-dir",
+        "-r",
+        help="Directory to save results (default: from config)",
+    ),
+    soundfont: str | None = typer.Option(
+        None, "--soundfont", "-s", help="Override SoundFont (.sf2) path"
+    ),
+) -> None:
+    """Run a benchmark evaluation on a reference MIDI file.
+
+    Renders the MIDI to audio via FluidSynth, processes through the
+    separation+transcription pipeline, and diffs against ground truth.
+    Results are saved as structured JSON.
+    """
+    from pathlib import Path
+
+    from rich.console import Console
+    from rich.table import Table
+
+    console = Console()
+    source = Path(midi_path)
+
+    if not source.exists():
+        console.print(f"[red]Error:[/red] MIDI file not found: {midi_path}")
+        raise typer.Exit(code=1)
+
+    try:
+        from engrave.audio.pipeline import AudioPipeline
+        from engrave.benchmark.harness import BenchmarkConfig, BenchmarkHarness
+        from engrave.config.settings import Settings
+
+        settings = Settings()
+        bench_cfg = settings.audio.benchmark
+
+        config = BenchmarkConfig(
+            soundfont_path=soundfont or bench_cfg.soundfont_path,
+            onset_tolerance=bench_cfg.onset_tolerance,
+            results_dir=results_dir or bench_cfg.results_dir,
+        )
+
+        pipeline = AudioPipeline(config=settings.audio)
+        harness = BenchmarkHarness(pipeline=pipeline, config=config)
+
+        console.print(f"[bold]Running benchmark:[/bold] {source}")
+        run = harness.run_single(source, results_dir=Path(config.results_dir))
+
+        # Display results
+        console.print(f"\n[green]Benchmark complete![/green]  Run ID: {run.run_id}")
+
+        table = Table(title="Per-Stem Metrics")
+        table.add_column("Stem", style="cyan")
+        table.add_column("F1", justify="right")
+        table.add_column("Precision", justify="right")
+        table.add_column("Recall", justify="right")
+        table.add_column("Overlap", justify="right")
+        table.add_column("Ref Notes", justify="right")
+        table.add_column("Est Notes", justify="right")
+
+        for sm in run.stem_metrics:
+            table.add_row(
+                sm.stem_name,
+                f"{sm.f1:.3f}",
+                f"{sm.precision:.3f}",
+                f"{sm.recall:.3f}",
+                f"{sm.avg_overlap:.3f}",
+                str(sm.note_count_ref),
+                str(sm.note_count_est),
+            )
+
+        console.print(table)
+
+        agg = run.aggregate
+        console.print(f"\n  Mean F1: {agg.mean_f1:.3f}")
+        console.print(f"  Mean Precision: {agg.mean_precision:.3f}")
+        console.print(f"  Mean Recall: {agg.mean_recall:.3f}")
+        console.print(f"  Worst Stem: {agg.worst_stem} (F1={agg.worst_f1:.3f})")
+
+    except typer.Exit:
+        raise
+    except Exception as e:
+        console.print(f"[red]Error:[/red] {e}")
+        raise typer.Exit(code=1) from e
+
+
+@benchmark_app.command("compare")
+def benchmark_compare(
+    result_files: Annotated[list[str], typer.Argument(help="Paths to benchmark result JSON files")],
+) -> None:
+    """Compare benchmark results from multiple runs.
+
+    Loads JSON result files and displays a formatted comparison table
+    with per-stem and aggregate metrics.
+    """
+    from pathlib import Path
+
+    from rich.console import Console
+
+    console = Console()
+
+    try:
+        from engrave.benchmark.harness import BenchmarkHarness
+
+        paths = [Path(f) for f in result_files]
+        for p in paths:
+            if not p.exists():
+                console.print(f"[red]Error:[/red] Result file not found: {p}")
+                raise typer.Exit(code=1)
+
+        output = BenchmarkHarness.compare_runs(paths)
+        console.print(output)
+
+    except typer.Exit:
+        raise
     except Exception as e:
         console.print(f"[red]Error:[/red] {e}")
         raise typer.Exit(code=1) from e
