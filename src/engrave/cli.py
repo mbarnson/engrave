@@ -292,6 +292,9 @@ def generate(
     no_rag: bool = typer.Option(
         False, "--no-rag", help="Disable RAG retrieval (proceed without few-shot examples)"
     ),
+    hints: str | None = typer.Option(
+        None, "--hints", help="Natural language hints (inline text or path to .hints file)"
+    ),
 ) -> None:
     """Generate LilyPond source from a MIDI file."""
     import asyncio
@@ -324,12 +327,16 @@ def generate(
     try:
         from engrave.config.settings import Settings
         from engrave.generation.pipeline import generate_from_midi
+        from engrave.hints import load_hints
         from engrave.lilypond.compiler import LilyPondCompiler
         from engrave.llm.router import InferenceRouter
 
         settings = Settings()
         router = InferenceRouter(settings)
         compiler = LilyPondCompiler(timeout=settings.lilypond.compile_timeout)
+
+        # Load user hints (inline text or file path, silent flow)
+        user_hints = load_hints(hints)
 
         # Set up RAG retriever (if available and not disabled)
         rag_retriever = None
@@ -357,6 +364,7 @@ def generate(
                 compiler=compiler,
                 rag_retriever=rag_retriever,
                 user_labels=user_labels,
+                user_hints=user_hints,
             )
         )
 

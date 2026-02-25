@@ -172,3 +172,84 @@ class TestBuildSectionPrompt:
         rules_idx = prompt.index("RULES")
         rules_section = prompt[rules_idx : rules_idx + 600]
         assert "\\score" in rules_section or "\\version" in rules_section
+
+
+class TestThreeTierPrompt:
+    """Tests for three-tier authority prompt structure."""
+
+    def test_three_tier_prompt_has_definitive_section(self):
+        """Prompt with user_hints contains DEFINITIVE section."""
+        prompt = build_section_prompt(
+            section_midi={"trumpet": "bar 1: c4(q)"},
+            coherence=CoherenceState(),
+            rag_examples=[],
+            template="trumpet = { }",
+            user_hints="swing feel",
+        )
+        assert "=== DEFINITIVE" in prompt
+        assert "swing feel" in prompt
+
+    def test_three_tier_prompt_has_contextual_section(self):
+        """Prompt with audio_description contains CONTEXTUAL section."""
+        prompt = build_section_prompt(
+            section_midi={"trumpet": "bar 1: c4(q)"},
+            coherence=CoherenceState(),
+            rag_examples=[],
+            template="trumpet = { }",
+            audio_description="Bb major, 142 BPM",
+        )
+        assert "=== CONTEXTUAL" in prompt
+        assert "Bb major, 142 BPM" in prompt
+
+    def test_three_tier_prompt_has_raw_input_section(self):
+        """Prompt contains RAW INPUT section for MIDI content."""
+        prompt = build_section_prompt(
+            section_midi={"trumpet": "bar 1: c4(q)"},
+            coherence=CoherenceState(),
+            rag_examples=[],
+            template="trumpet = { }",
+        )
+        assert "=== RAW INPUT" in prompt
+
+    def test_three_tier_prompt_empty_hints_placeholder(self):
+        """Prompt without user hints contains placeholder text."""
+        prompt = build_section_prompt(
+            section_midi={"trumpet": "bar 1: c4(q)"},
+            coherence=CoherenceState(),
+            rag_examples=[],
+            template="trumpet = { }",
+        )
+        assert "No user hints provided." in prompt
+
+    def test_three_tier_prompt_empty_audio_placeholder(self):
+        """Prompt without audio description contains placeholder text."""
+        prompt = build_section_prompt(
+            section_midi={"trumpet": "bar 1: c4(q)"},
+            coherence=CoherenceState(),
+            rag_examples=[],
+            template="trumpet = { }",
+        )
+        assert "No audio analysis available." in prompt
+
+    def test_three_tier_prompt_backward_compatible(self):
+        """Prompt with no new args still produces valid prompt with all required sections."""
+        prompt = build_section_prompt(
+            section_midi={"trumpet": "bar 1: c4(q)"},
+            coherence=CoherenceState(),
+            rag_examples=["example 1"],
+            template="trumpet = { }",
+        )
+        assert "RULES" in prompt
+        assert "TEMPLATE" in prompt or "LILYPOND TEMPLATE" in prompt
+        assert "EXAMPLES" in prompt or "SIMILAR EXAMPLES" in prompt
+        assert "=== DEFINITIVE" in prompt
+        assert "=== CONTEXTUAL" in prompt
+        assert "=== RAW INPUT" in prompt
+        assert "No user hints provided." in prompt
+        assert "No audio analysis available." in prompt
+
+    def test_prompt_budget_description_tokens_field(self):
+        """PromptBudget has description_tokens=800 and safety_margin=3200."""
+        budget = PromptBudget()
+        assert budget.description_tokens == 800
+        assert budget.safety_margin == 3200

@@ -21,6 +21,7 @@ from pathlib import Path
 from typing import TYPE_CHECKING
 
 from engrave.generation.assembler import assemble_sections
+from engrave.generation.audit import AuditLog, FieldResolution
 from engrave.generation.coherence import CoherenceState
 from engrave.generation.failure_log import FailureRecord, log_failure
 from engrave.generation.prompts import (
@@ -41,6 +42,7 @@ from engrave.midi.sections import detect_sections
 from engrave.midi.tokenizer import tokenize_section_for_prompt
 
 if TYPE_CHECKING:
+    from engrave.audio.description import AudioDescription
     from engrave.lilypond.compiler import LilyPondCompiler
     from engrave.llm.router import InferenceRouter
 
@@ -192,6 +194,8 @@ async def generate_section(
     instrument_names: list[str],
     router: InferenceRouter,
     compiler: LilyPondCompiler,
+    audio_description: str = "",
+    user_hints: str = "",
 ) -> tuple[str, list[dict] | None, CoherenceState]:
     """Generate LilyPond (and optionally JSON) for a single section.
 
@@ -209,6 +213,8 @@ async def generate_section(
         instrument_names: List of instrument names.
         router: LLM inference router.
         compiler: LilyPond compiler for fix loop.
+        audio_description: Rendered NL text for this section (CONTEXTUAL block).
+        user_hints: Raw user hint text (DEFINITIVE block).
 
     Returns:
         Tuple of (section_ly_source, json_notation_or_none, updated_coherence).
@@ -217,7 +223,14 @@ async def generate_section(
         GenerationHaltError: If compilation fails after all retries.
     """
     # Build shared prompt prefix (identical context for both requests)
-    prompt = build_section_prompt(section_midi, coherence, rag_examples, template)
+    prompt = build_section_prompt(
+        section_midi,
+        coherence,
+        rag_examples,
+        template,
+        audio_description=audio_description,
+        user_hints=user_hints,
+    )
 
     # Fan out LilyPond + JSON requests concurrently
     ly_coro = router.complete(
@@ -354,6 +367,15 @@ def _save_training_pair(
     logger.debug("Saved training pair: %s", pair_path)
 
 
+def _write_audit_log(audit_log: AuditLog, output_dir: str | None) -> None:
+    """Write audit log to the output directory if one is available."""
+    if output_dir is not None:
+        try:
+            audit_log.write(Path(output_dir))
+        except Exception:
+            logger.warning("Failed to write audit log")
+
+
 async def generate_from_midi(
     midi_path: str,
     router: InferenceRouter,
@@ -361,6 +383,8 @@ async def generate_from_midi(
     rag_retriever=None,
     user_labels: dict[int, str] | None = None,
     output_dir: str | None = None,
+    audio_description: AudioDescription | None = None,
+    user_hints: str = "",
 ) -> GenerationResult:
     """Orchestrate end-to-end MIDI-to-LilyPond generation.
 
@@ -369,6 +393,7 @@ async def generate_from_midi(
     3. Detect section boundaries
     4. For each section: tokenize, query RAG, build prompt, generate, compile
     5. Assemble all sections into complete .ly file
+    6. Write audit log
 
     Args:
         midi_path: Path to the input MIDI file.
@@ -379,6 +404,8 @@ async def generate_from_midi(
         output_dir: Optional job output directory.  When provided, aligned
             (LilyPond, JSON) training pairs are saved under
             ``output_dir/training_pairs/``.
+        audio_description: Optional AudioDescription from audio LM.
+        user_hints: Raw user hint text (full block goes to every section).
 
     Returns:
         GenerationResult with success status and output.
@@ -425,6 +452,9 @@ async def generate_from_midi(
     json_sections: list[list[dict] | None] = []
     ticks_per_beat = analysis.ticks_per_beat
 
+    # Prepare audit log
+    audit_log = AuditLog(job_id=output_dir or "")
+
     for sec_idx, boundary in enumerate(sections):
         start_bar = boundary.bar_number
         # End bar is either the next boundary's bar - 1, or total_bars
@@ -468,7 +498,51 @@ async def generate_from_midi(
         # c. Build template
         template = build_score_template(instrument_names, section_label, start_bar, end_bar)
 
-        # d. Generate section (LilyPond + JSON fan-out)
+        # d. Render audio description for this section (if available)
+        section_audio_text = ""
+        section_audio_data: dict[str, str | None] = {
+            "key": None,
+            "tempo": None,
+            "time_signature": None,
+        }
+        if audio_description is not None:
+            from engrave.audio.templates import render_section_description, render_track_summary
+
+            # Find matching section by bar range overlap
+            matched_section = None
+            for ad_section in audio_description.sections:
+                if ad_section.start_bar <= end_bar and ad_section.end_bar >= start_bar:
+                    matched_section = ad_section
+                    break
+
+            # Build NL text: track summary header + section description
+            parts: list[str] = []
+            if sec_idx == 0:
+                parts.append(render_track_summary(audio_description))
+            if matched_section is not None:
+                parts.append(render_section_description(matched_section))
+                section_audio_data["key"] = matched_section.key
+            section_audio_text = "\n".join(parts) if parts else ""
+
+            # Track-level audio data for audit
+            section_audio_data["tempo"] = str(audio_description.tempo_bpm)
+            section_audio_data["time_signature"] = audio_description.time_signature
+
+            # Log disagreements between MIDI and audio at WARNING level
+            if audio_description.key and audio_description.key != key_sig:
+                logger.warning(
+                    "MIDI/audio key disagreement: MIDI=%s, audio=%s",
+                    key_sig,
+                    audio_description.key,
+                )
+            if audio_description.tempo_bpm != tempo_bpm:
+                logger.warning(
+                    "MIDI/audio tempo disagreement: MIDI=%d, audio=%d",
+                    tempo_bpm,
+                    audio_description.tempo_bpm,
+                )
+
+        # e. Generate section (LilyPond + JSON fan-out)
         section_source, json_data, coherence = await generate_section(
             section_midi=section_midi,
             coherence=coherence,
@@ -477,9 +551,43 @@ async def generate_from_midi(
             instrument_names=instrument_names,
             router=router,
             compiler=compiler,
+            audio_description=section_audio_text,
+            user_hints=user_hints,
         )
 
-        # e. Check if compilation succeeded
+        # f. Build audit entry for this section
+        resolutions: list[FieldResolution] = []
+        for field_name in ("key", "tempo", "time_signature"):
+            midi_val = {
+                "key": key_sig,
+                "tempo": str(tempo_bpm),
+                "time_signature": time_sig_str,
+            }[field_name]
+            audio_val = section_audio_data.get(field_name)
+            # Resolve: audio if available, else midi
+            if audio_val is not None and audio_val:
+                resolved = audio_val
+                source = "audio"
+            else:
+                resolved = midi_val
+                source = "midi"
+            resolutions.append(
+                FieldResolution(
+                    field=field_name,
+                    midi_value=midi_val,
+                    audio_value=audio_val,
+                    hint_value=None,  # Phase 6: hints are unstructured text
+                    resolved_to=resolved,
+                    source=source,
+                )
+            )
+        audit_log.add_entry(
+            section_index=sec_idx,
+            section_label=section_label,
+            resolutions=resolutions,
+        )
+
+        # g. Check if compilation succeeded
         # We check by looking at whether coherence advanced (section_index incremented)
         if coherence.section_index <= sec_idx:
             # Compilation failed - build failure record
@@ -498,6 +606,9 @@ async def generate_from_midi(
             )
             log_failure(record)
 
+            # Write audit log even on failure
+            _write_audit_log(audit_log, output_dir)
+
             return GenerationResult(
                 success=False,
                 ly_source="",
@@ -511,14 +622,17 @@ async def generate_from_midi(
         section_sources.append(section_source)
         json_sections.append(json_data)
 
-        # f. Save training pair if output_dir is provided and JSON succeeded
+        # h. Save training pair if output_dir is provided and JSON succeeded
         if output_dir is not None and json_data is not None:
             try:
                 _save_training_pair(section_source, json_data, sec_idx, output_dir)
             except Exception:
                 logger.warning("Failed to save training pair for section %d", sec_idx)
 
-    # 8. Assemble all sections
+    # 8. Write audit log
+    _write_audit_log(audit_log, output_dir)
+
+    # 9. Assemble all sections
     if not section_sources:
         return GenerationResult(
             success=False,
