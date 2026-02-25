@@ -10,18 +10,18 @@ See: .planning/PROJECT.md (updated 2026-02-24)
 ## Current Position
 
 Phase: 5 of 9 (Audio Input Pipeline)
-Plan: 3 of 6 in current phase
-Status: Plans 05-01 and 05-02 complete, continuing Phase 5
-Last activity: 2026-02-25 -- Completed 05-02-PLAN.md (YouTube audio extraction)
+Plan: 5 of 6 in current phase
+Status: Plans 05-01 through 05-04 complete, continuing Phase 5
+Last activity: 2026-02-25 -- Completed 05-04-PLAN.md (Transcription engine & quality annotation)
 
 Progress: [######....] 60%
 
 ## Performance Metrics
 
 **Velocity:**
-- Total plans completed: 14
+- Total plans completed: 15
 - Average duration: 5.7 min
-- Total execution time: 1.4 hours
+- Total execution time: 1.5 hours
 
 **By Phase:**
 
@@ -31,15 +31,17 @@ Progress: [######....] 60%
 | 2 | 4 | 27 min | 7 min |
 | 3 | 3 | 22 min | 7 min |
 | 4 | 3 | 13 min | 4 min |
-| 5 | 2 | 8 min | 4 min |
+| 5 | 3 | 14 min | 5 min |
 
 **Recent Trend:**
-- Last 5 plans: 03-03 (9 min), 04-01 (3 min), 04-02 (5 min), 04-03 (5 min), 05-02 (4 min)
+- Last 5 plans: 04-01 (3 min), 04-02 (5 min), 04-03 (5 min), 05-02 (4 min), 05-04 (6 min)
 - Trend: Consistent
 
 *Updated after each plan completion*
 | Phase 05 P01 | 4 min | 1 task | 4 files |
 | Phase 05 P02 | 4 min | 1 task | 4 files |
+| Phase 05 P03 | 4 min | 1 task | 2 files |
+| Phase 05 P04 | 6 min | 2 tasks | 4 files |
 
 ## Accumulated Context
 
@@ -110,6 +112,10 @@ Recent decisions affecting current work:
 - 05-02: yt-dlp Python API with context manager (not subprocess CLI) for YouTube extraction
 - 05-02: Video ID-based output filenames (not title) for deterministic pipeline runs
 - 05-02: FFmpegExtractAudio postprocessor with preferredcodec=wav
+- 05-04: TranscriptionConfig dataclass local to transcriber.py (not yet in settings.py) -- integrate when audio pipeline config is complete
+- 05-04: Quality metrics are informational metadata for LLM, not binary pass/fail gates ("LLM IS the fallback")
+- 05-04: Onset cluster threshold 10ms matching neural transcription temporal resolution
+- 05-04: Drum tracks excluded from quality analysis (pitched content only)
 
 ### Pending Todos
 
@@ -130,5 +136,5 @@ None yet.
 ## Session Continuity
 
 Last session: 2026-02-25
-Stopped at: Completed 05-02-PLAN.md -- YouTube audio extraction
-Resume file: .planning/phases/05-audio-input-pipeline/05-02-SUMMARY.md
+Stopped at: Completed 05-04-PLAN.md -- Transcription engine & quality annotation
+Resume file: .planning/phases/05-audio-input-pipeline/05-04-SUMMARY.md
