@@ -8,12 +8,11 @@ Feature: MIDI to LilyPond generation
     And the output contains variables for each instrument
     And all pitches are in concert pitch
 
-  Scenario: Generation halts on unrecoverable compilation failure
+  Scenario: Generation degrades gracefully on compilation failure
     Given a type 1 MIDI file with piano track
     And the LilyPond compiler always fails
     When the user runs the generation pipeline
-    Then generation halts with a failure report
-    And a structured failure log file is created
+    Then generation succeeds with rest fallback
 
   Scenario: MIDI without instrument metadata generates generic parts
     Given a MIDI file with no instrument metadata

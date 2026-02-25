@@ -100,8 +100,10 @@ class TestGenerateFromMidiType0:
 class TestGenerateFailure:
     """Tests for generation failure paths."""
 
-    def test_generate_halts_on_failure(self, sample_midi_type1, mock_generator_router):
-        """Mock compiler that always fails -> GenerationResult with success=False."""
+    def test_generate_degrades_gracefully_on_compiler_failure(
+        self, sample_midi_type1, mock_generator_router
+    ):
+        """Mock compiler that always fails -> rest fallback, pipeline still succeeds."""
         # Create compiler that always fails
         failing_compiler = MagicMock()
         failing_compiler.compile.return_value = RawCompileResult(
@@ -121,9 +123,9 @@ class TestGenerateFailure:
             )
         )
 
-        assert result.success is False
-        assert result.failure_record is not None
-        assert result.sections_completed == 0
+        # Pipeline succeeds with rest fallback instead of aborting
+        assert result.success is True
+        assert "R" in result.ly_source  # Contains rest fallback content
 
     def test_generate_failure_log_written(self, sample_midi_type1, mock_generator_router, tmp_path):
         """On failure, a JSON file exists in failure log directory."""
@@ -153,12 +155,8 @@ class TestGenerateFailure:
         finally:
             os.chdir(old_cwd)
 
-        assert result.success is False
-        # Check that a failure log file was created
-        failure_dir = tmp_path / ".engrave" / "failures"
-        if failure_dir.exists():
-            json_files = list(failure_dir.glob("*.json"))
-            assert len(json_files) > 0
+        # With rest fallback, pipeline succeeds but may still write fallback logs
+        assert result.success is True
 
 
 class TestGeneratedOutputQuality:

@@ -508,11 +508,11 @@ class TestBeamingChangesPerSection:
         assert beaming_calls >= 2
 
 
-class TestSectionGroupFailureHaltsSection:
-    """Test 7: Section group generation failure halts the temporal section."""
+class TestSectionGroupFailureFallsBackToRests:
+    """Test 7: Section group generation failure degrades gracefully with rests."""
 
-    def test_section_group_failure_halts_section(self, tmp_path):
-        """Failure in trumpet group -> GenerationResult.success is False."""
+    def test_section_group_failure_uses_rest_fallback(self, tmp_path):
+        """Failure in trumpet group -> rest fallback, pipeline succeeds."""
         midi_path = _make_midi_file(
             tmp_path / "fail.mid",
             track_specs=[
@@ -540,10 +540,9 @@ class TestSectionGroupFailureHaltsSection:
             )
         )
 
-        assert result.success is False
-        assert result.sections_completed == 0
-        # Failure record should identify the failed group
-        assert result.failure_record is not None
+        # Pipeline succeeds with rest fallback
+        assert result.success is True
+        assert "R" in result.ly_source  # Contains rest fallback
 
 
 class TestPerGroupCoherenceIsolation:

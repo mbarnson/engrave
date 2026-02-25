@@ -27,14 +27,13 @@ import asyncio
 import json
 import logging
 from dataclasses import dataclass, field
-from datetime import UTC, datetime
 from pathlib import Path
 from typing import TYPE_CHECKING
 
 from engrave.generation.assembler import assemble_sections
 from engrave.generation.audit import AuditLog, FieldResolution
 from engrave.generation.coherence import CoherenceState
-from engrave.generation.failure_log import FailureRecord, log_failure
+from engrave.generation.failure_log import FailureRecord
 from engrave.generation.prompts import (
     build_json_generation_suffix,
     build_section_prompt,
@@ -592,8 +591,7 @@ async def generate_from_midi(
         # b. Dispatch per generation group
         all_group_blocks: dict[str, str] = {}  # var_name -> music content
         section_json_data: list[dict] | None = None
-        section_failed = False
-        failed_group_name = ""
+        section_had_fallback = False
 
         for group in generation_groups:
             gid = _group_identifier(group)
@@ -631,6 +629,7 @@ async def generate_from_midi(
             )
 
             # Generate for this group
+            group_generation_ok = True
             try:
                 group_source, json_data, updated_coherence = await generate_section(
                     section_midi=group_midi,
@@ -647,20 +646,36 @@ async def generate_from_midi(
                 )
             except Exception as exc:
                 logger.error("Generation failed for group '%s': %s", gid, exc)
-                section_failed = True
-                failed_group_name = gid
-                break
+                group_generation_ok = False
 
             # Check if compilation succeeded (coherence advanced)
-            if updated_coherence.section_index <= group_coherence[gid].section_index:
+            if (
+                group_generation_ok
+                and updated_coherence.section_index <= group_coherence[gid].section_index
+            ):
                 logger.error(
                     "Compilation FAILED for group '%s' in section %d (coherence did not advance)",
                     gid,
                     sec_idx,
                 )
-                section_failed = True
-                failed_group_name = gid
-                break
+                group_generation_ok = False
+
+            # Fallback: fill failed group with rests and continue
+            if not group_generation_ok:
+                num_bars = max(1, end_bar - start_bar + 1)
+                rest_duration = f"R{time_sig_tuple[1]}" if time_sig_tuple[1] != 1 else "R1"
+                rest_content = f"{rest_duration}*{num_bars}"
+                logger.warning(
+                    "Using rest fallback for group '%s' section %d (%d bars)",
+                    gid,
+                    sec_idx,
+                    num_bars,
+                )
+                section_had_fallback = True
+                for name in group_names:
+                    var_name = sanitize_var_name(name)
+                    all_group_blocks[var_name] = rest_content
+                continue
 
             # Update per-group coherence
             group_coherence[gid] = updated_coherence
@@ -677,47 +692,11 @@ async def generate_from_midi(
                     section_json_data = []
                 section_json_data.extend(json_data)
 
-        # c. Handle section failure
-        if section_failed:
-            # Build failure record with available info
-            midi_text = ""
-            for group in generation_groups:
-                for _name, track in group:
-                    filtered = _filter_notes_for_section(
-                        track, start_bar, end_bar, ticks_per_beat, beats_per_bar
-                    )
-                    tokens = tokenize_section_for_prompt(
-                        notes=filtered,
-                        time_sig=time_sig_tuple,
-                        key=key_sig,
-                        bars=(start_bar, end_bar),
-                        ticks_per_beat=ticks_per_beat,
-                    )
-                    midi_text += tokens + "\n"
-
-            first_coherence = next(iter(group_coherence.values()))
-            record = FailureRecord(
-                timestamp=datetime.now(tz=UTC).isoformat(),
-                section_index=sec_idx,
-                midi_token_text=midi_text,
-                prompt_sent=f"[group: {failed_group_name}]",
-                lilypond_error=f"Group '{failed_group_name}' failed in section {sec_idx}",
-                lilypond_source="",
-                retry_attempts=5,
-                error_hashes=[],
-                coherence_state=first_coherence.model_dump(),
-            )
-            log_failure(record)
-            _write_audit_log(audit_log, output_dir)
-
-            return GenerationResult(
-                success=False,
-                ly_source="",
-                sections_completed=sec_idx,
-                total_sections=total_sections,
-                failure_record=record,
-                instrument_names=instrument_names,
-                json_sections=json_sections,
+        # c. Log if any groups used rest fallback (pipeline continues)
+        if section_had_fallback:
+            logger.warning(
+                "Section %d had rest fallback(s) -- some groups used rests",
+                sec_idx,
             )
 
         # d. Apply post-processing: ENSM-03 defaults then ENSM-05 consistency

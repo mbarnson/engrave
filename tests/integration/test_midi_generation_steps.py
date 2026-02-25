@@ -26,9 +26,9 @@ def test_generate_lilypond_from_type1():
 
 @scenario(
     "features/midi_generation.feature",
-    "Generation halts on unrecoverable compilation failure",
+    "Generation degrades gracefully on compilation failure",
 )
-def test_generation_halts_on_failure():
+def test_generation_degrades_gracefully():
     pass
 
 
@@ -262,20 +262,10 @@ def check_concert_pitch(result):
     assert "\\relative" not in result.ly_source
 
 
-@then("generation halts with a failure report")
-def check_failure_report(result):
-    assert result.success is False
-    assert result.failure_record is not None
-
-
-@then("a structured failure log file is created")
-def check_failure_log(result, tmp_path):
-    # The failure log was created in the current working directory
-    # Since we can't easily control CWD in this step, just verify
-    # that the failure_record is populated
-    assert result.failure_record is not None
-    assert result.failure_record.section_index >= 0
-    assert result.failure_record.timestamp != ""
+@then("generation succeeds with rest fallback")
+def check_rest_fallback(result):
+    assert result.success is True
+    assert "R" in result.ly_source  # Contains rest fallback content
 
 
 @then("the output contains parts with generic names")
