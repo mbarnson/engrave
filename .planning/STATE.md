@@ -61,6 +61,7 @@ Recent decisions affecting current work:
 - 02-01: ChromaDB Rust bindings reject None metadata values -- filter before add()
 - 02-01: chromadb.Client() is process-wide singleton -- unique collection names per test
 - 02-01: nomic-embed-text as default embedding model (configurable via engrave.toml)
+- [Phase quick]: audio-separator replaces demucs-infer as primary source separation package; per-stem model routing strategy documented
 
 ### Pending Todos
 
