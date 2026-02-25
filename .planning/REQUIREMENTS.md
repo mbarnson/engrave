@@ -61,9 +61,9 @@ Requirements for initial release. Each maps to roadmap phases.
 
 ### UAT & Smoke Testing (Phase 07.1 -- Inserted)
 
-- [ ] **UAT-01**: Automated smoke test harness discovers test inputs by file extension (.wav/.mp3/.flac/.aiff for audio, .mid for MIDI) and runs them through the appropriate pipeline path (audio-in or MIDI-only)
-- [ ] **UAT-02**: Smoke harness performs 9 automated checks per input file: no exceptions, compilable LilyPond, valid PDFs, valid MusicXML (XSD 4.0 + music21 re-read), all parts present, correct transpositions, note count > 0 per non-drum part, PDF size > threshold, ZIP file count
-- [ ] **UAT-03**: Smoke harness outputs human-readable terminal report (Rich) plus structured JSON for coding agent consumption
+- [x] **UAT-01**: Automated smoke test harness discovers test inputs by file extension (.wav/.mp3/.flac/.aiff for audio, .mid for MIDI) and runs them through the appropriate pipeline path (audio-in or MIDI-only)
+- [x] **UAT-02**: Smoke harness performs 9 automated checks per input file: no exceptions, compilable LilyPond, valid PDFs, valid MusicXML (XSD 4.0 + music21 re-read), all parts present, correct transpositions, note count > 0 per non-drum part, PDF size > threshold, ZIP file count
+- [x] **UAT-03**: Smoke harness outputs human-readable terminal report (Rich) plus structured JSON for coding agent consumption
 - [ ] **UAT-04**: Minimal web UI (FastAPI) with file upload, hints textarea, Engrave button, polling status, and ZIP download -- enabling non-technical users to exercise the pipeline
 - [ ] **UAT-05**: UAT test plan (TESTPLAN.md) with pre-validated steps for Sam's musical quality judgment
 
@@ -156,9 +156,9 @@ Deferred to future release.
 | ENSM-03 | Phase 7 | Pending |
 | ENSM-04 | Phase 4 | Complete |
 | ENSM-05 | Phase 7 | Pending |
-| UAT-01 | Phase 07.1 | Pending |
-| UAT-02 | Phase 07.1 | Pending |
-| UAT-03 | Phase 07.1 | Pending |
+| UAT-01 | Phase 07.1 | Complete |
+| UAT-02 | Phase 07.1 | Complete |
+| UAT-03 | Phase 07.1 | Complete |
 | UAT-04 | Phase 07.1 | Pending |
 | UAT-05 | Phase 07.1 | Pending |
 | EVAL-01 | Phase 9 | Pending |

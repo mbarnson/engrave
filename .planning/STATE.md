@@ -5,23 +5,23 @@
 See: .planning/PROJECT.md (updated 2026-02-24)
 
 **Core value:** When Sam uploads a recording and describes his ensemble, his players can sight-read the extracted parts at rehearsal and the brass section sounds like a section.
-**Current focus:** Phase 06 COMPLETE -- Audio understanding & hints (audio LM integration + prompt restructuring)
+**Current focus:** Phase 07.1 IN PROGRESS -- Minimal UI for UAT needs (smoke test harness + web UI + test plan)
 
 ## Current Position
 
-Phase: 06 of 9
-Plan: 2 of 2 in current phase
-Status: Phase 06 complete. Three-tier prompt, hint loader, audit log, pipeline integration, CLI --hints delivered.
-Last activity: 2026-02-25 -- Completed 06-02-PLAN.md (pipeline integration)
+Phase: 07.1 of 10
+Plan: 1 of 3 in current phase
+Status: Plan 07.1-01 complete. Smoke test harness with 9 checks, reporter, CLI command delivered.
+Last activity: 2026-02-25 -- Completed 07.1-01-PLAN.md (smoke test harness)
 
-Progress: [########..] 85%
+Progress: [########..] 87%
 
 ## Performance Metrics
 
 **Velocity:**
-- Total plans completed: 20
+- Total plans completed: 21
 - Average duration: 5.4 min
-- Total execution time: 2.0 hours
+- Total execution time: 2.1 hours
 
 **By Phase:**
 
@@ -50,6 +50,7 @@ Progress: [########..] 85%
 | Phase 05.1 P04 | 6 min | 2 tasks | 4 files |
 | Phase 06 P01 | 4 min | 2 tasks | 8 files |
 | Phase 06 P02 | 6 min | 2 tasks | 11 files |
+| Phase 07.1 P01 | 5 min | 2 tasks | 7 files |
 
 ## Accumulated Context
 
@@ -156,6 +157,12 @@ Recent decisions affecting current work:
 - 06-02: Audit log skeletal in Phase 6 -- hint_value always None, infrastructure forward-looking
 - 06-02: MIDI/audio disagreements logged at WARNING level -- disagreement itself is the signal
 - 06-02: PromptBudget safety_margin reduced 4000->3200 to accommodate description_tokens=800
+- 07.1-01: Check functions return CheckResult dataclasses (not raise exceptions) for uniform pass/fail/skip reporting
+- 07.1-01: MusicXML absence returns SKIPPED (passed=True) not FAILED in smoke checks
+- 07.1-01: check_compilable_ly verifies PDF existence (not re-compilation) per anti-pattern guidance
+- 07.1-01: Transposition check reads XML <transpose> elements; reports "manual verification recommended" when absent
+- 07.1-01: LLM connectivity pre-flight check before running any inputs (per Pitfall 3)
+- 07.1-01: JSON output keyed by check name (dict) matching documented schema from RESEARCH.md
 
 ### Roadmap Evolution
 
@@ -180,6 +187,6 @@ Recent decisions affecting current work:
 
 ## Session Continuity
 
-Last session: 2026-02-24
-Stopped at: Phase 07.1 context gathered
-Resume file: .planning/phases/07.1-minimal-ui-for-uat-needs/07.1-CONTEXT.md
+Last session: 2026-02-25
+Stopped at: Completed 07.1-01-PLAN.md
+Resume file: .planning/phases/07.1-minimal-ui-for-uat-needs/07.1-01-SUMMARY.md
