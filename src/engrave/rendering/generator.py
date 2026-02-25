@@ -10,6 +10,7 @@ Public API
 
 from __future__ import annotations
 
+import re
 from itertools import groupby
 
 from engrave.rendering.ensemble import BigBandPreset, InstrumentSpec, StaffGroupType
@@ -349,12 +350,30 @@ def generate_part(
 
 
 # ---------------------------------------------------------------------------
-# restate_dynamics (placeholder -- implemented in Task 2)
+# restate_dynamics
 # ---------------------------------------------------------------------------
+
+# Dynamic marking pattern: matches \pp, \p, \mp, \mf, \f, \ff, \fff,
+# \fp, \sfz, \sf, \spp, \sff, etc.
+_DYNAMIC_RE = re.compile(r"\\(pp|p|mp|mf|fff|ff|f|fp|sfz|sf|spp|sff)\b")
+
+# Multi-measure rest pattern: R followed by duration and optional multiplier.
+# Matches R1*4, R1*2, R2.*3, R1, etc.
+_MULTI_REST_RE = re.compile(r"R\d+\.?\*?(\d+)?")
+
+# Note pattern: a note name possibly with octave marks and duration.
+# Used to identify the first note after a rest.
+_NOTE_RE = re.compile(r"[a-g][,']*[\d]*")
 
 
 def restate_dynamics(lilypond_source: str) -> str:
     """Insert dynamic restatement at entrances following 2+ bars of rest.
+
+    Operates on a single instrument's LilyPond music content (not a full
+    ``.ly`` file).  Walks through the source tracking the current dynamic
+    level and detecting multi-bar rests of 2+ bars.  When a note entrance
+    follows such a rest, the current dynamic is inserted if not already
+    present.
 
     Parameters
     ----------
@@ -366,5 +385,70 @@ def restate_dynamics(lilypond_source: str) -> str:
     str
         Modified LilyPond source with dynamics restated after multi-bar rests.
     """
-    # Full implementation in Task 2
-    return lilypond_source
+    if not lilypond_source:
+        return lilypond_source
+
+    # Check if there are any dynamics in the source at all
+    if not _DYNAMIC_RE.search(lilypond_source):
+        return lilypond_source
+
+    current_dynamic: str | None = None
+    need_restatement = False
+    result_parts: list[str] = []
+    pos = 0
+    source = lilypond_source
+
+    while pos < len(source):
+        # Try to match a dynamic marking at current position
+        dyn_match = _DYNAMIC_RE.match(source, pos)
+        if dyn_match:
+            current_dynamic = dyn_match.group(0)
+            # If we needed restatement, this dynamic satisfies it
+            # (the entrance already has a dynamic)
+            need_restatement = False
+            result_parts.append(dyn_match.group(0))
+            pos = dyn_match.end()
+            continue
+
+        # Try to match a multi-measure rest at current position
+        rest_match = _MULTI_REST_RE.match(source, pos)
+        if rest_match:
+            # Determine how many bars of rest
+            multiplier_str = rest_match.group(1)
+            rest_bars = int(multiplier_str) if multiplier_str is not None else 1
+
+            if rest_bars >= 2 and current_dynamic is not None:
+                need_restatement = True
+
+            result_parts.append(rest_match.group(0))
+            pos = rest_match.end()
+            continue
+
+        # Try to match a note at current position (for restatement insertion)
+        note_match = _NOTE_RE.match(source, pos)
+        if note_match:
+            if need_restatement and current_dynamic is not None:
+                # Check that the note is not already followed by a dynamic
+                after_note_pos = note_match.end()
+                after_dyn = _DYNAMIC_RE.match(source, after_note_pos)
+                if after_dyn:
+                    # Entrance already has a dynamic -- don't double it
+                    # Update current_dynamic to the one already present
+                    need_restatement = False
+                else:
+                    # Insert the restatement after the note token
+                    result_parts.append(note_match.group(0))
+                    result_parts.append(current_dynamic)
+                    need_restatement = False
+                    pos = note_match.end()
+                    continue
+
+            result_parts.append(note_match.group(0))
+            pos = note_match.end()
+            continue
+
+        # No pattern matched -- copy character as-is
+        result_parts.append(source[pos])
+        pos += 1
+
+    return "".join(result_parts)
