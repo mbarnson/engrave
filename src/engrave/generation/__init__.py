@@ -1,4 +1,4 @@
-"""LilyPond generation infrastructure: pipeline, coherence, templates, prompts, failure logging.
+"""LilyPond generation infrastructure: pipeline, coherence, templates, prompts, failure logging, audit.
 
 Public API::
 
@@ -10,9 +10,11 @@ Public API::
     from engrave.generation import build_section_prompt, PromptBudget
     from engrave.generation import build_json_generation_suffix, extract_json_from_response
     from engrave.generation import FailureRecord, log_failure, load_failure_log
+    from engrave.generation import AuditLog, AuditEntry, FieldResolution
 """
 
 from engrave.generation.assembler import assemble_sections
+from engrave.generation.audit import AuditEntry, AuditLog, FieldResolution
 from engrave.generation.coherence import CoherenceState
 from engrave.generation.failure_log import FailureRecord, load_failure_log, log_failure
 from engrave.generation.pipeline import (
@@ -33,8 +35,11 @@ from engrave.generation.templates import (
 )
 
 __all__ = [
+    "AuditEntry",
+    "AuditLog",
     "CoherenceState",
     "FailureRecord",
+    "FieldResolution",
     "GenerationHaltError",
     "GenerationResult",
     "PromptBudget",

@@ -41,7 +41,8 @@ class PromptBudget:
     rag_tokens: int = 3000
     midi_tokens: int = 4000
     output_reserve: int = 8000
-    safety_margin: int = 4000
+    safety_margin: int = 3200
+    description_tokens: int = 800
     total_limit: int = 32000
 
     @property
@@ -144,11 +145,19 @@ def build_section_prompt(
     rag_examples: list[str],
     template: str,
     budget: PromptBudget | None = None,
+    audio_description: str = "",
+    user_hints: str = "",
 ) -> str:
     """Assemble the complete prompt for section generation.
 
-    Applies budget fitting, then formats sections: RULES, CURRENT MUSICAL STATE,
-    LILYPOND TEMPLATE, SIMILAR EXAMPLES, MIDI CONTENT, and instruction.
+    Uses a three-tier authority format:
+    - **DEFINITIVE** (user hints): always authoritative
+    - **CONTEXTUAL** (audio analysis): structural observations
+    - **RAW INPUT** (MIDI): noisy suggestion
+
+    Audio description and user hints are NEVER truncated (they are small and
+    high-authority).  Only MIDI, RAG, and coherence participate in budget
+    fitting.
 
     Args:
         section_midi: Dict mapping track_name to tokenized MIDI text.
@@ -156,6 +165,8 @@ def build_section_prompt(
         rag_examples: Retrieved LilyPond examples from corpus.
         template: LilyPond structural template for this section.
         budget: Optional token budget. Defaults to standard budget.
+        audio_description: Rendered natural language audio description text.
+        user_hints: Raw user hint text (free text, LLM is the parser).
 
     Returns:
         Complete prompt string for LLM generation.
@@ -169,13 +180,17 @@ def build_section_prompt(
     )
     coherence_text = coherence.to_prompt_text()
 
-    # Apply budget fitting
+    # Apply budget fitting (audio_description and user_hints excluded -- never truncated)
     fitted_midi, fitted_rag, fitted_coherence = fit_within_budget(
         budget, midi_text, rag_examples, coherence_text
     )
 
     # Format RAG section
     rag_text = "\n\n---\n\n".join(fitted_rag) if fitted_rag else "No examples available."
+
+    # Three-tier authority content
+    definitive_content = user_hints if user_hints else "No user hints provided."
+    contextual_content = audio_description if audio_description else "No audio analysis available."
 
     return f"""Generate LilyPond music content for the following section.
 
@@ -187,7 +202,13 @@ RULES:
 5. Add appropriate articulations, dynamics, and expression marks based on the musical context.
 6. Output each instrument's music as a separate block labeled with the variable name (% varName).
 
-CURRENT MUSICAL STATE:
+=== DEFINITIVE (User Hints -- always authoritative) ===
+{definitive_content}
+
+=== CONTEXTUAL (Audio Analysis -- structural observations) ===
+{contextual_content}
+
+=== CURRENT MUSICAL STATE ===
 {fitted_coherence}
 
 LILYPOND TEMPLATE (fill in the instrument variables):
@@ -196,7 +217,7 @@ LILYPOND TEMPLATE (fill in the instrument variables):
 SIMILAR EXAMPLES FROM CORPUS:
 {rag_text}
 
-MIDI CONTENT FOR THIS SECTION:
+=== RAW INPUT (MIDI Transcription -- treat as noisy suggestion) ===
 {fitted_midi}
 
 Generate the LilyPond music content for each instrument variable:"""
