@@ -168,10 +168,17 @@ Plans:
 
 **Goal:** Automated smoke test harness, minimal web UI, and pre-validated UAT test plan so the full pipeline can be exercised end-to-end before handing to Sam for musical quality judgment
 **Depends on:** Phase 6
-**Plans:** 0 plans
+**Requirements:** UAT-01, UAT-02, UAT-03, UAT-04, UAT-05
+**Success Criteria** (what must be TRUE):
+  1. CLI `engrave smoke-test ./dir/` discovers audio and MIDI files and runs them through the full pipeline, performing 9 structural checks per input
+  2. Minimal web UI at http://127.0.0.1:8000 accepts file upload with hints, runs the pipeline, and provides ZIP download
+  3. TESTPLAN.md provides Sam with a structured checklist for evaluating musical quality
+**Plans:** 3 plans
 
 Plans:
-- [ ] TBD (run /gsd:plan-phase 07.1 to break down)
+- [ ] 07.1-01-PLAN.md -- Smoke test harness: runner, 9 checks, reporter, CLI command, unit tests
+- [ ] 07.1-02-PLAN.md -- Minimal web UI: FastAPI app, HTML template, CLI serve command, integration tests
+- [ ] 07.1-03-PLAN.md -- UAT test plan (TESTPLAN.md) with human review checkpoint
 
 ### Phase 8: Engraving Polish
 **Goal**: Parts contain all the professional engraving details that enable a real rehearsal: cues, navigation marks, page turns at rests, and chord chart output
