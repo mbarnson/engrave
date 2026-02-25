@@ -40,10 +40,10 @@ Requirements for initial release. Each maps to roadmap phases.
 
 ### Engraving Output
 
-- [ ] **ENGR-01**: System renders a full conductor score PDF with standard instrument ordering (woodwinds, brass, percussion, rhythm), system brackets and braces, landscape orientation for big band
-- [ ] **ENGR-02**: System renders one extracted part PDF per instrument, correctly transposed to the instrument's reading key with proper clef and key signature
-- [ ] **ENGR-03**: Parts include rehearsal marks (every 8-16 bars and at structural landmarks), measure numbers at the start of each line, and multi-bar rests (consolidated)
-- [ ] **ENGR-04**: Parts include dynamic markings with restatement after multi-bar rests
+- [x] **ENGR-01**: System renders a full conductor score PDF with standard instrument ordering (woodwinds, brass, percussion, rhythm), system brackets and braces, landscape orientation for big band
+- [x] **ENGR-02**: System renders one extracted part PDF per instrument, correctly transposed to the instrument's reading key with proper clef and key signature
+- [x] **ENGR-03**: Parts include rehearsal marks (every 8-16 bars and at structural landmarks), measure numbers at the start of each line, and multi-bar rests (consolidated)
+- [x] **ENGR-04**: Parts include dynamic markings with restatement after multi-bar rests
 - [ ] **ENGR-05**: Parts include correct rhythmic notation and beaming per style conventions (jazz beaming for swing, straight beaming for Latin/rock)
 - [ ] **ENGR-06**: Parts include cue notes from an audible instrument after 8+ bars of rest, transposed to the player's reading key
 - [ ] **ENGR-07**: Parts include repeat signs, first/second endings, D.S. al Coda, and other navigation marks as inferred from structural analysis or user hints
@@ -56,7 +56,7 @@ Requirements for initial release. Each maps to roadmap phases.
 - [x] **ENSM-01**: System includes a big band ensemble preset encoding: 5 saxes (AATBT), 4 Bb trumpets, 4 trombones (3 tenor + 1 bass), piano, guitar, bass, drums -- with correct transpositions, clefs, score order, and staff sizes
 - [ ] **ENSM-02**: System generates section parts jointly (e.g., all 4 trumpets in one LLM call) so articulations, dynamics, and beam groupings co-vary -- enabling convergent sight-reading
 - [ ] **ENSM-03**: System applies Tim Davies jazz articulation defaults: unmarked quarter notes are short, unmarked eighth notes are long, swing assumed unless marked "Straight 8s," staccato+accent not paired (redundant)
-- [ ] **ENSM-04**: System generates chord symbols on rhythm section parts (guitar, piano, bass) with changes placed above the staff
+- [x] **ENSM-04**: System generates chord symbols on rhythm section parts (guitar, piano, bass) with changes placed above the staff
 - [ ] **ENSM-05**: Section consistency rule: if all parts in a section have the same articulation, omit it (the default handles it) -- only mark departures from the section's collective default
 
 ### Evaluation
@@ -133,10 +133,10 @@ Deferred to future release.
 | LILY-02 | Phase 3 | Complete |
 | LILY-03 | Phase 3 | Complete |
 | LILY-04 | Phase 3 | Complete |
-| ENGR-01 | Phase 4 | Pending |
-| ENGR-02 | Phase 4 | Pending |
-| ENGR-03 | Phase 4 | Pending |
-| ENGR-04 | Phase 4 | Pending |
+| ENGR-01 | Phase 4 | Complete |
+| ENGR-02 | Phase 4 | Complete |
+| ENGR-03 | Phase 4 | Complete |
+| ENGR-04 | Phase 4 | Complete |
 | ENGR-05 | Phase 7 | Pending |
 | ENGR-06 | Phase 8 | Pending |
 | ENGR-07 | Phase 8 | Pending |
@@ -146,7 +146,7 @@ Deferred to future release.
 | ENSM-01 | Phase 4 | Complete |
 | ENSM-02 | Phase 7 | Pending |
 | ENSM-03 | Phase 7 | Pending |
-| ENSM-04 | Phase 4 | Pending |
+| ENSM-04 | Phase 4 | Complete |
 | ENSM-05 | Phase 7 | Pending |
 | EVAL-01 | Phase 9 | Pending |
 | EVAL-02 | Phase 9 | Pending |

@@ -5,23 +5,23 @@
 See: .planning/PROJECT.md (updated 2026-02-24)
 
 **Core value:** When Sam uploads a recording and describes his ensemble, his players can sight-read the extracted parts at rehearsal and the brass section sounds like a section.
-**Current focus:** Phase 4: LilyPond Rendering -- Plan 2 next
+**Current focus:** Phase 4: LilyPond Rendering -- Plan 3 next
 
 ## Current Position
 
 Phase: 4 of 9 (LilyPond Rendering)
-Plan: 2 of 3 in current phase
+Plan: 3 of 3 in current phase
 Status: Executing Phase 4
-Last activity: 2026-02-25 -- Completed 04-01-PLAN.md (Ensemble preset data model & stylesheet constants)
+Last activity: 2026-02-25 -- Completed 04-02-PLAN.md (Score & part generators with dynamic restatement)
 
-Progress: [#####.....] 50%
+Progress: [######....] 55%
 
 ## Performance Metrics
 
 **Velocity:**
-- Total plans completed: 10
-- Average duration: 6.3 min
-- Total execution time: 1.1 hours
+- Total plans completed: 11
+- Average duration: 6.1 min
+- Total execution time: 1.2 hours
 
 **By Phase:**
 
@@ -30,14 +30,15 @@ Progress: [#####.....] 50%
 | 1 | 2 | 12 min | 6 min |
 | 2 | 4 | 27 min | 7 min |
 | 3 | 3 | 22 min | 7 min |
-| 4 | 1 | 3 min | 3 min |
+| 4 | 2 | 8 min | 4 min |
 
 **Recent Trend:**
-- Last 5 plans: 02-04 (4 min), 03-01 (8 min), 03-02 (5 min), 03-03 (9 min), 04-01 (3 min)
+- Last 5 plans: 03-01 (8 min), 03-02 (5 min), 03-03 (9 min), 04-01 (3 min), 04-02 (5 min)
 - Trend: Consistent
 
 *Updated after each plan completion*
 | Phase 04 P01 | 3 min | 2 tasks | 4 files |
+| Phase 04 P02 | 5 min | 2 tasks | 6 files |
 
 ## Accumulated Context
 
@@ -94,6 +95,10 @@ Recent decisions affecting current work:
 - 04-01: Baritone sax transpose_to='a' (A below middle C), octave lower than alto's 'a''
 - 04-01: Staff size 14 for conductor score via layout-set-staff-size inside layout block
 - 04-01: Header constants use Python format strings ({title}, {composer}) not Jinja templates
+- 04-02: restate_dynamics uses token-walking regex (not full LilyPond parser) for dynamic/rest pattern recognition
+- 04-02: Piano PianoStaff splits into upper/lower staves with separate variable refs (piano, pianoLeft)
+- 04-02: Non-transposing instruments omit \transpose wrapper entirely (no no-op \transpose c' c')
+- 04-02: Conductor score concert pitch throughout with no \transpose commands
 
 ### Pending Todos
 
@@ -114,5 +119,5 @@ None yet.
 ## Session Continuity
 
 Last session: 2026-02-25
-Stopped at: Completed 04-01-PLAN.md -- Ensemble preset data model & LilyPond stylesheet constants
-Resume file: .planning/phases/04-rendering-output-packaging/04-01-SUMMARY.md
+Stopped at: Completed 04-02-PLAN.md -- Score & part generators with dynamic restatement
+Resume file: .planning/phases/04-rendering-output-packaging/04-02-SUMMARY.md
