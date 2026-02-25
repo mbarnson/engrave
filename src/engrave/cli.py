@@ -295,6 +295,9 @@ def generate(
     hints: str | None = typer.Option(
         None, "--hints", help="Natural language hints (inline text or path to .hints file)"
     ),
+    verbose: bool = typer.Option(
+        False, "--verbose", "-v", help="Enable debug logging for pipeline observability"
+    ),
 ) -> None:
     """Generate LilyPond source from a MIDI file."""
     import asyncio
@@ -305,6 +308,17 @@ def generate(
     from rich.console import Console
 
     console = Console()
+
+    if verbose:
+        logging.basicConfig(
+            level=logging.DEBUG,
+            format="%(asctime)s %(name)s %(levelname)s %(message)s",
+            datefmt="%H:%M:%S",
+        )
+        # Quiet down litellm's noise
+        logging.getLogger("LiteLLM").setLevel(logging.WARNING)
+        logging.getLogger("httpx").setLevel(logging.WARNING)
+        logging.getLogger("httpcore").setLevel(logging.WARNING)
     source_path = Path(midi_path)
 
     if not source_path.exists():

@@ -8,15 +8,15 @@ api_base = "http://localhost:1234/v1"
 # api_base = "https://api.runpod.ai/v2/YOUR-ENDPOINT-ID/openai/v1"
 
 [roles.compile_fixer]
-model = "lm_studio/qwen3-coder-next"
+model = "lm_studio/qwen/qwen3-coder-30b"
 max_tokens = 4096
 min_context_window = 32000
 tags = ["code"]
 
 [roles.generator]
-model = "lm_studio/qwen3-coder-next"
+model = "lm_studio/qwen/qwen3-coder-30b"
 max_tokens = 8192
-min_context_window = 65000
+min_context_window = 131072
 tags = ["code", "lilypond"]
 
 [roles.describer]

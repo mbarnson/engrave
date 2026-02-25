@@ -510,6 +510,15 @@ async def generate_from_midi(
     # 5. Detect sections
     sections = detect_sections(midi_path)
     total_sections = len(sections)
+    logger.info(
+        "Loaded %d tracks, %d sections, key=%s, tempo=%d, time=%s",
+        len(tracks),
+        total_sections,
+        key_sig,
+        tempo_bpm,
+        time_sig_str,
+    )
+    logger.info("Instruments: %s", instrument_names)
 
     # 6. Initialize per-group coherence state
     class _AnalysisProxy:
@@ -558,6 +567,7 @@ async def generate_from_midi(
             continue
 
         section_label = f"Section {sec_idx + 1}"
+        logger.info("=== %s (bars %d-%d) ===", section_label, start_bar, end_bar)
 
         # a. Resolve beam_style for this temporal section
         from engrave.generation.section_groups import beaming_commands, resolve_beam_style
@@ -586,6 +596,7 @@ async def generate_from_midi(
         for group in generation_groups:
             gid = _group_identifier(group)
             group_names = [name for name, _track in group]
+            logger.info("  Group '%s': %s", gid, group_names)
 
             # Filter and tokenize notes scoped to this group
             group_midi: dict[str, str] = {}
@@ -640,7 +651,11 @@ async def generate_from_midi(
 
             # Check if compilation succeeded (coherence advanced)
             if updated_coherence.section_index <= group_coherence[gid].section_index:
-                logger.error("Compilation failed for group '%s' in section %d", gid, sec_idx)
+                logger.error(
+                    "Compilation FAILED for group '%s' in section %d (coherence did not advance)",
+                    gid,
+                    sec_idx,
+                )
                 section_failed = True
                 failed_group_name = gid
                 break

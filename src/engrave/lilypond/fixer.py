@@ -3,11 +3,14 @@
 from __future__ import annotations
 
 import hashlib
+import logging
 import re
 from dataclasses import dataclass, field
 from typing import TYPE_CHECKING
 
 from engrave.lilypond.parser import LilyPondError, parse_lilypond_errors
+
+logger = logging.getLogger(__name__)
 
 if TYPE_CHECKING:
     from engrave.lilypond.compiler import LilyPondCompiler
@@ -198,9 +201,14 @@ async def compile_with_fix_loop(
         if result.stdout:
             combined_output = result.stdout + "\n" + result.stderr
         errors = parse_lilypond_errors(combined_output)
-
+        logger.info(
+            "  Fix loop attempt %d: %d errors. First: %s",
+            attempt_num + 1,
+            len(errors),
+            errors[0].message if errors else "(unparseable)",
+        )
         if not errors:
-            # Unparseable error -- cannot fix
+            logger.warning("  Unparseable compiler output:\n%s", combined_output[:500])
             break
 
         # Early exit on repeated error
