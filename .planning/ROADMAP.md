@@ -18,7 +18,7 @@ Decimal phases appear between their surrounding integers in numeric order.
 - [x] **Phase 4: Rendering & Output Packaging** - LilyPond-to-PDF rendering, conductor score, extracted transposed parts, ZIP packaging with LilyPond source (completed 2026-02-25)
 - [x] **Phase 5: Audio Input Pipeline** - Audio file ingestion, YouTube URL extraction, Demucs source separation, Basic Pitch MIDI transcription (completed 2026-02-25)
 - [x] **Phase 6: Audio Understanding & Hints** - Audio LM structured descriptions, natural language hint processing, user intent as authoritative override (completed 2026-02-25)
-- [ ] **Phase 7: Convergent Sight-Reading & Ensemble Intelligence** - Joint section-part generation, Tim Davies articulation defaults, section consistency rules, big band preset
+- [x] **Phase 7: Convergent Sight-Reading & Ensemble Intelligence** - Joint section-part generation, Tim Davies articulation defaults, section consistency rules, big band preset (completed 2026-02-25)
 - [ ] **Phase 8: Engraving Polish** - Cue notes, page turns at rests, chord charts/lead sheets, repeat/coda navigation, style-aware beaming
 - [ ] **Phase 9: Evaluation Pipeline** - Automated structural diff, audio envelope comparison, visual PDF comparison, end-to-end quality reports
 - [ ] **Phase 10: Web UI** - Single-page FastAPI + HTML/JS interface with drag-and-drop upload, output options, and Engrave button
@@ -157,7 +157,7 @@ Plans:
   3. Section consistency rule enforced: if all parts share the same articulation, it is omitted (default handles it) -- only departures from the section collective default are marked
   4. Beaming follows style conventions: jazz beaming for swing, straight beaming for Latin/rock sections
   5. A blind comparison test shows that jointly-generated section parts have measurably more consistent articulations and dynamics than independently-generated parts
-**Plans:** 3 plans
+**Plans:** 3/3 plans complete
 
 Plans:
 - [ ] 07-01-PLAN.md -- Articulation post-processor: ENSM-03 token scanner (jazz defaults) + ENSM-05 rhythmic aligner (section consistency) (TDD)
@@ -236,7 +236,7 @@ Phases execute in numeric order: 1 -> 2 -> 3 -> 4 -> 5 -> 6 -> 7 -> 8 -> 9 -> 10
 | 4. Rendering & Output Packaging | 1/3 | Complete    | 2026-02-25 |
 | 5. Audio Input Pipeline | 0/6 | Complete    | 2026-02-25 |
 | 6. Audio Understanding & Hints | 0/TBD | Complete    | 2026-02-25 |
-| 7. Convergent Sight-Reading & Ensemble Intelligence | 0/3 | Not started | - |
+| 7. Convergent Sight-Reading & Ensemble Intelligence | 0/3 | Complete    | 2026-02-25 |
 | 8. Engraving Polish | 0/TBD | Not started | - |
 | 9. Evaluation Pipeline | 0/TBD | Not started | - |
 | 10. Web UI | 0/TBD | Not started | - |
