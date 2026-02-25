@@ -12,6 +12,7 @@ from engrave.rendering.generator import (
     generate_part,
     restate_dynamics,
 )
+from engrave.rendering.packager import RenderPipeline, RenderResult
 from engrave.rendering.stylesheet import (
     CONDUCTOR_SCORE_HEADER,
     CONDUCTOR_SCORE_LAYOUT,
@@ -41,6 +42,8 @@ __all__ = [
     "VERSION_HEADER",
     "BigBandPreset",
     "InstrumentSpec",
+    "RenderPipeline",
+    "RenderResult",
     "StaffGroupType",
     "generate_conductor_score",
     "generate_music_definitions",

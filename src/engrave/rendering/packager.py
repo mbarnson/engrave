@@ -13,11 +13,12 @@ Public API
 from __future__ import annotations
 
 import logging
-import re
 import zipfile
 from dataclasses import dataclass, field
 from datetime import date
 from pathlib import Path
+
+from slugify import slugify
 
 from engrave.lilypond.compiler import LilyPondCompiler
 from engrave.rendering.ensemble import BigBandPreset
@@ -39,14 +40,10 @@ logger = logging.getLogger(__name__)
 def _slugify_title(title: str) -> str:
     """Slugify a song title for use in filenames.
 
-    Lowercase, replace spaces and special characters with hyphens,
-    strip leading/trailing hyphens, collapse consecutive hyphens.
+    Uses python-slugify for proper Unicode/diacritics handling.
+    Song titles may contain non-ASCII characters unlike instrument names.
     """
-    slug = title.lower()
-    slug = re.sub(r"[^a-z0-9]+", "-", slug)
-    slug = slug.strip("-")
-    slug = re.sub(r"-+", "-", slug)
-    return slug
+    return slugify(title)
 
 
 # ---------------------------------------------------------------------------

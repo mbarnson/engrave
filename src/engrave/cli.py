@@ -378,3 +378,136 @@ def generate(
         console.print(f"[red]Error:[/red] {e}")
         console.print("Install LilyPond with: brew install lilypond")
         raise typer.Exit(code=1) from e
+
+
+@app.command()
+def render(
+    input_dir: str = typer.Argument(
+        ..., help="Directory containing music-definitions.ly or pre-generated .ly content"
+    ),
+    output: str | None = typer.Option(
+        None,
+        "--output",
+        "-o",
+        help="Output ZIP path (default: auto-generated in current directory)",
+    ),
+    title: str | None = typer.Option(None, "--title", "-t", help="Song title for ZIP filename"),
+) -> None:
+    """Render LilyPond sources to PDFs and package into a ZIP archive.
+
+    Reads .ly files from INPUT_DIR, compiles them via LilyPond, and produces
+    a ZIP containing score.pdf, individual part PDFs, all .ly source files,
+    and MIDI output.
+
+    Exit codes: 0 = all compiled, 1 = score failed, 2 = some parts failed.
+    """
+    import re
+    from pathlib import Path
+
+    from rich.console import Console
+
+    console = Console()
+    source_dir = Path(input_dir)
+
+    if not source_dir.is_dir():
+        console.print(f"[red]Error:[/red] Not a directory: {input_dir}")
+        raise typer.Exit(code=1)
+
+    try:
+        from engrave.rendering.ensemble import BIG_BAND
+        from engrave.rendering.packager import RenderPipeline
+
+        # Determine output directory
+        output_path = Path(output).parent if output else Path.cwd()
+
+        output_path.mkdir(parents=True, exist_ok=True)
+
+        # Create pipeline with default compiler
+        try:
+            from engrave.lilypond.compiler import LilyPondCompiler
+
+            compiler = LilyPondCompiler()
+        except FileNotFoundError as e:
+            console.print(f"[red]Error:[/red] {e}")
+            console.print("Install LilyPond with: brew install lilypond")
+            raise typer.Exit(code=1) from e
+
+        pipeline = RenderPipeline(
+            preset=BIG_BAND,
+            compiler=compiler,
+        )
+
+        # Read music variables from input directory
+        # For now, read the music-definitions.ly file and extract variables
+        # This is a placeholder interface -- Phase 3's assembler will produce
+        # the dict[str, str] of music variables directly
+        defs_file = source_dir / "music-definitions.ly"
+        if not defs_file.exists():
+            console.print(f"[red]Error:[/red] music-definitions.ly not found in {input_dir}")
+            raise typer.Exit(code=1)
+
+        # Read the raw content and parse music variables
+        defs_content = defs_file.read_text()
+
+        # Extract globalMusic and instrument variables from definitions file
+        # Simple regex-based parsing of LilyPond variable definitions
+        music_vars: dict[str, str] = {}
+        global_music = ""
+        chord_symbols: str | None = None
+
+        # Match variable = { content } blocks
+        var_pattern = re.compile(
+            r"^(\w+)\s*=\s*\{(.*?)\}",
+            re.MULTILINE | re.DOTALL,
+        )
+        for match in var_pattern.finditer(defs_content):
+            var_name = match.group(1)
+            content = match.group(2).strip()
+            if var_name == "globalMusic":
+                global_music = content
+            elif var_name == "chordSymbols":
+                chord_symbols = content
+            else:
+                music_vars[var_name] = content
+
+        if not music_vars:
+            console.print("[red]Error:[/red] No music variables found in music-definitions.ly")
+            raise typer.Exit(code=1)
+
+        console.print(f"[bold]Rendering {len(music_vars)} instruments...[/bold]")
+
+        result = pipeline.render(
+            music_vars=music_vars,
+            global_music=global_music,
+            chord_symbols=chord_symbols,
+            song_title=title,
+            output_dir=output_path,
+        )
+
+        # Report results
+        if result.success:
+            console.print(f"[green]Success:[/green] {result.zip_path}")
+            console.print(f"  Compiled: {len(result.compiled)} files")
+        else:
+            # Check if score failed
+            score_failed = "score.ly" in result.failed
+            if score_failed:
+                console.print("[red]Score compilation failed[/red]")
+                if "score.ly" in result.errors:
+                    console.print(f"  Error: {result.errors['score.ly']}")
+                raise typer.Exit(code=1)
+
+            # Some parts failed
+            console.print(f"[yellow]Partial success:[/yellow] {result.zip_path}")
+            console.print(f"  Compiled: {len(result.compiled)} files")
+            console.print(f"  Failed:   {len(result.failed)} files")
+            for fname in result.failed:
+                err = result.errors.get(fname, "Unknown error")
+                console.print(f"    [red]FAIL[/red] {fname}: {err}")
+            raise typer.Exit(code=2)
+
+    except typer.Exit:
+        raise
+    except Exception as e:
+        console.print(f"[red]Error:[/red] {e}")
+        raise typer.Exit(code=1) from e
