@@ -53,7 +53,7 @@ Requirements for initial release. Each maps to roadmap phases.
 
 ### Ensemble & Articulation
 
-- [ ] **ENSM-01**: System includes a big band ensemble preset encoding: 5 saxes (AATBT), 4 Bb trumpets, 4 trombones (3 tenor + 1 bass), piano, guitar, bass, drums -- with correct transpositions, clefs, score order, and staff sizes
+- [x] **ENSM-01**: System includes a big band ensemble preset encoding: 5 saxes (AATBT), 4 Bb trumpets, 4 trombones (3 tenor + 1 bass), piano, guitar, bass, drums -- with correct transpositions, clefs, score order, and staff sizes
 - [ ] **ENSM-02**: System generates section parts jointly (e.g., all 4 trumpets in one LLM call) so articulations, dynamics, and beam groupings co-vary -- enabling convergent sight-reading
 - [ ] **ENSM-03**: System applies Tim Davies jazz articulation defaults: unmarked quarter notes are short, unmarked eighth notes are long, swing assumed unless marked "Straight 8s," staccato+accent not paired (redundant)
 - [ ] **ENSM-04**: System generates chord symbols on rhythm section parts (guitar, piano, bass) with changes placed above the staff
@@ -143,7 +143,7 @@ Deferred to future release.
 | ENGR-08 | Phase 8 | Pending |
 | ENGR-09 | Phase 4 | Pending |
 | ENGR-10 | Phase 8 | Pending |
-| ENSM-01 | Phase 4 | Pending |
+| ENSM-01 | Phase 4 | Complete |
 | ENSM-02 | Phase 7 | Pending |
 | ENSM-03 | Phase 7 | Pending |
 | ENSM-04 | Phase 4 | Pending |

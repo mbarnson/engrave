@@ -5,23 +5,23 @@
 See: .planning/PROJECT.md (updated 2026-02-24)
 
 **Core value:** When Sam uploads a recording and describes his ensemble, his players can sight-read the extracted parts at rehearsal and the brass section sounds like a section.
-**Current focus:** Phase 3 Complete -- Phase 4: LilyPond Rendering
+**Current focus:** Phase 4: LilyPond Rendering -- Plan 2 next
 
 ## Current Position
 
 Phase: 4 of 9 (LilyPond Rendering)
-Plan: 1 of ? in current phase
-Status: Phase 3 Complete
-Last activity: 2026-02-25 -- Completed 03-03-PLAN.md (Generation pipeline, CLI, integration tests)
+Plan: 2 of 3 in current phase
+Status: Executing Phase 4
+Last activity: 2026-02-25 -- Completed 04-01-PLAN.md (Ensemble preset data model & stylesheet constants)
 
-Progress: [####......] 44%
+Progress: [#####.....] 50%
 
 ## Performance Metrics
 
 **Velocity:**
-- Total plans completed: 9
-- Average duration: 6.7 min
-- Total execution time: 1.0 hours
+- Total plans completed: 10
+- Average duration: 6.3 min
+- Total execution time: 1.1 hours
 
 **By Phase:**
 
@@ -30,13 +30,14 @@ Progress: [####......] 44%
 | 1 | 2 | 12 min | 6 min |
 | 2 | 4 | 27 min | 7 min |
 | 3 | 3 | 22 min | 7 min |
+| 4 | 1 | 3 min | 3 min |
 
 **Recent Trend:**
-- Last 5 plans: 02-03 (7 min), 02-04 (4 min), 03-01 (8 min), 03-02 (5 min), 03-03 (9 min)
+- Last 5 plans: 02-04 (4 min), 03-01 (8 min), 03-02 (5 min), 03-03 (9 min), 04-01 (3 min)
 - Trend: Consistent
 
 *Updated after each plan completion*
-| Phase 03 P03 | 9 | 3 tasks | 9 files |
+| Phase 04 P01 | 3 min | 2 tasks | 4 files |
 
 ## Accumulated Context
 
@@ -89,6 +90,10 @@ Recent decisions affecting current work:
 - 03-03: Mock generator router dynamically parses template variables from prompt for realistic test responses
 - 03-03: CLI engrave generate with --output, --labels, --no-rag, --role options
 - [Phase quick]: SDR benchmarks measure remix fidelity, NOT transcription accuracy — wrong metric for Engrave. Post-Phase 5 spike: run separation→transcription→MIDI comparison against ground truth charts to find best separator *for engraving*. Needs Sam's tracks (not yet available). No mandatory human review gates before Phase 7 demo.
+- 04-01: Piano is a single InstrumentSpec with is_grand_staff=True; generator handles PianoStaff context
+- 04-01: Baritone sax transpose_to='a' (A below middle C), octave lower than alto's 'a''
+- 04-01: Staff size 14 for conductor score via layout-set-staff-size inside layout block
+- 04-01: Header constants use Python format strings ({title}, {composer}) not Jinja templates
 
 ### Pending Todos
 
@@ -109,5 +114,5 @@ None yet.
 ## Session Continuity
 
 Last session: 2026-02-25
-Stopped at: Completed 03-03-PLAN.md -- Generation pipeline, CLI, integration tests (Phase 3 done)
-Resume file: .planning/phases/03-midi-to-lilypond-generation/03-03-SUMMARY.md
+Stopped at: Completed 04-01-PLAN.md -- Ensemble preset data model & LilyPond stylesheet constants
+Resume file: .planning/phases/04-rendering-output-packaging/04-01-SUMMARY.md
