@@ -65,6 +65,7 @@ def build_score_template(
     section_label: str,
     start_bar: int,
     end_bar: int,
+    beaming: str = "",
 ) -> str:
     """Generate complete LilyPond score skeleton with variable placeholders.
 
@@ -75,12 +76,15 @@ def build_score_template(
     - \\score block with \\new Staff for each instrument
     - ABSOLUTE pitch mode (no \\relative anywhere)
     - Concert pitch (no \\transpose anywhere)
+    - Optional beaming commands injected at the start of the score block
 
     Args:
         instrument_names: List of instrument names (e.g., ["Trumpet", "Alto Sax"]).
         section_label: Section identifier (e.g., "A", "Verse").
         start_bar: First bar number in this section.
         end_bar: Last bar number in this section.
+        beaming: Optional LilyPond beaming commands to inject at the start
+            of the score block.  Empty string means no beaming override.
 
     Returns:
         Complete LilyPond source string with empty variable bodies to fill.
@@ -103,6 +107,11 @@ def build_score_template(
 
     staves_block = "\n".join(staff_lines)
 
+    # Build beaming block (injected after << in the score)
+    beaming_block = ""
+    if beaming:
+        beaming_block = f"{beaming}\n"
+
     template = (
         f'\\version "2.24.4"\n'
         f"\n"
@@ -113,6 +122,7 @@ def build_score_template(
         f"\n"
         f"\\score {{\n"
         f"  <<\n"
+        f"{beaming_block}"
         f"{staves_block}\n"
         f"  >>\n"
         f"  \\layout {{ }}\n"
