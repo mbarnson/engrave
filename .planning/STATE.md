@@ -10,9 +10,9 @@ See: .planning/PROJECT.md (updated 2026-02-24)
 ## Current Position
 
 Phase: 5 of 9 (Audio Input Pipeline)
-Plan: 6 of 6 in current phase
-Status: Plans 05-01 through 05-05 complete, continuing Phase 5
-Last activity: 2026-02-25 -- Completed 05-05-PLAN.md (Audio pipeline orchestration & CLI)
+Plan: 6 of 6 in current phase -- PHASE COMPLETE
+Status: All 6 plans complete. Phase 5 done.
+Last activity: 2026-02-25 -- Completed 05-06-PLAN.md (Benchmark harness)
 
 Progress: [######....] 60%
 
@@ -43,6 +43,7 @@ Progress: [######....] 60%
 | Phase 05 P03 | 4 min | 1 task | 2 files |
 | Phase 05 P04 | 6 min | 2 tasks | 4 files |
 | Phase 05 P05 | 5 min | 2 tasks | 7 files |
+| Phase 05 P06 | 8 min | 2 tasks | 10 files |
 
 ## Accumulated Context
 
@@ -121,6 +122,10 @@ Recent decisions affecting current work:
 - 05-05: Transcriber injected into AudioPipeline constructor for testability
 - 05-05: Config SeparationStep (Pydantic) converted to separator.SeparationStep (frozen dataclass) at pipeline boundary
 - 05-05: jobs/ gitignored to prevent large WAV intermediates from being committed
+- 05-06: PipelineProtocol decouples harness from concrete AudioPipeline for independent testing
+- 05-06: mir_eval used directly in evaluator tests (pure Python, safe for unit tests)
+- 05-06: Per-stem comparison against full reference MIDI -- precision meaningful, recall expected low per-stem
+- 05-06: BenchmarkConfig as local dataclass separate from settings.py pydantic model
 
 ### Roadmap Evolution
 
@@ -144,6 +149,6 @@ None yet.
 
 ## Session Continuity
 
-Last session: 2026-02-25
-Stopped at: Completed 05-05-PLAN.md -- Audio pipeline orchestration & CLI
-Resume file: .planning/phases/05-audio-input-pipeline/05-05-SUMMARY.md
+Last session: 2026-02-24
+Stopped at: Phase 05.1 context gathered
+Resume file: .planning/phases/05.1-promote-advn-01-into-v1-scope-for-dorico/05.1-CONTEXT.md
