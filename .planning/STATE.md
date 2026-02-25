@@ -62,6 +62,7 @@ Recent decisions affecting current work:
 - 02-01: chromadb.Client() is process-wide singleton -- unique collection names per test
 - 02-01: nomic-embed-text as default embedding model (configurable via engrave.toml)
 - [Phase quick]: audio-separator replaces demucs-infer as primary source separation package; per-stem model routing strategy documented
+- [Phase quick]: SDR benchmarks measure remix fidelity, NOT transcription accuracy — wrong metric for Engrave. Post-Phase 5 spike: run separation→transcription→MIDI comparison against ground truth charts to find best separator *for engraving*. Needs Sam's tracks (not yet available). No mandatory human review gates before Phase 7 demo.
 
 ### Pending Todos
 
