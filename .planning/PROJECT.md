@@ -18,7 +18,7 @@ When Sam uploads a rough demo recording and types "Big band, 4 trumpets, 4 bones
 
 - [ ] Audio input pipeline: accept MP3, WAV, AIFF, FLAC files and YouTube URLs
 - [ ] MIDI input pipeline: accept MIDI type 0 and 1 files (bypasses audio stages)
-- [ ] Source separation via Demucs v4 (drums, bass, vocals, other stems)
+- [ ] Source separation via best-available model per stem (BS-RoFormer, Mel-Band RoFormer, HTDemucs ft) using audio-separator package
 - [ ] MIDI transcription via MT3 or Basic Pitch from separated stems
 - [ ] Audio understanding via audio LM (Qwen3-Omni-30B-A3B-Captioner, LFM2.5-Audio, Gemini 3 Flash) producing structured musical descriptions
 - [ ] Natural language hint layer — user describes ensemble, style, structural markers, articulation intent

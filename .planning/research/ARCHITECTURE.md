@@ -28,8 +28,8 @@
  │ STAGE 0  │ │ STAGE 1  │ │ STAGE 2  │ │ STAGE 3  │ │   STAGE 4    │
  │ Ingest   │ │ Separate │ │Transcribe│ │ Describe │ │  Generate    │
  │          │ │          │ │          │ │          │ │  LilyPond    │
- │ yt-dlp   │ │ Demucs   │ │Basic     │ │Qwen2-   │ │  via LLM +   │
- │ ffmpeg   │ │ v4 (HT)  │ │Pitch    │ │Audio /   │ │  RAG         │
+ │ yt-dlp   │ │audio-sep │ │Basic     │ │Qwen3-   │ │  via LLM +   │
+ │ ffmpeg   │ │RoFormer+ │ │Pitch    │ │Omni /   │ │  RAG         │
  │ file I/O │ │          │ │         │ │Gemini    │ │              │
  └─────┬────┘ └─────┬────┘ └────┬────┘ └─────┬────┘ └──────┬───────┘
        |            |           |             |             |
@@ -66,7 +66,7 @@
 | **Web UI** | File upload, user hints, ensemble config, job status display, output download | Pipeline Orchestrator (HTTP) | FastAPI endpoints + vanilla HTML/JS with SSE for progress |
 | **Pipeline Orchestrator** | Route jobs through stages, manage state, handle MIDI-skip path, retry failures | All stages (in-process function calls) | Python async pipeline with stage functions |
 | **Stage 0: Ingest** | Accept audio files (MP3/WAV/AIFF/FLAC), YouTube URLs, MIDI files; normalize to WAV | Orchestrator, filesystem | yt-dlp (YouTube), ffmpeg (format conversion), shutil (file copy) |
-| **Stage 1: Source Separation** | Split audio into stems (drums, bass, vocals, other) | Stage 0 output (WAV), filesystem | Demucs v4 Hybrid Transformer via `demucs.api.Separator` |
+| **Stage 1: Source Separation** | Split audio into stems (drums, bass, vocals, other) | Stage 0 output (WAV), filesystem | audio-separator with per-stem model routing (BS-RoFormer for vocals, Mel-Band RoFormer for drums/other, HTDemucs ft for bass) |
 | **Stage 2: MIDI Transcription** | Convert each stem to MIDI with pitch, onset, duration, velocity | Stage 1 output (stem WAVs), filesystem | Basic Pitch `predict()` per stem |
 | **Stage 3: Audio Understanding** | Produce structured text description of musical content (key, tempo, form, style, dynamics, articulation patterns) | Stage 0/1 output (audio), Inference Router | Qwen3-Omni-Captioner (local via vllm-mlx) or Gemini 3 Flash (cloud API) |
 | **Stage 4: LilyPond Generation** | Generate LilyPond code from MIDI + description + user hints, section by section, with joint section-part coherence | Stage 2 (MIDI), Stage 3 (description), RAG system, Inference Router | LLM code generation with RAG context |
@@ -91,7 +91,7 @@ engrave/
 │   │   └── stages/             # Individual pipeline stages
 │   │       ├── __init__.py
 │   │       ├── ingest.py       # Stage 0: file/URL intake, normalization
-│   │       ├── separate.py     # Stage 1: Demucs source separation
+│   │       ├── separate.py     # Stage 1: audio-separator source separation
 │   │       ├── transcribe.py   # Stage 2: Basic Pitch MIDI transcription
 │   │       ├── describe.py     # Stage 3: Audio understanding via audio LM
 │   │       └── generate.py     # Stage 4: LilyPond code generation
@@ -156,7 +156,7 @@ engrave/
 
 ### Structure Rationale
 
-- **engrave/pipeline/stages/**: Each stage is an isolated module with a clear input/output contract. The orchestrator calls them; they do not call each other. This makes it trivial to skip stages (MIDI input skips Stage 0-1) or swap implementations (MT3 for Basic Pitch).
+- **engrave/pipeline/stages/**: Each stage is an isolated module with a clear input/output contract. The orchestrator calls them; they do not call each other. This makes it trivial to skip stages (MIDI input skips Stage 0-1) or swap implementations (different audio-separator models, MT3 for Basic Pitch).
 - **engrave/inference/**: Separating inference routing from pipeline logic means any stage can call any LLM without knowing which provider serves it. Provider configs live here, not scattered across stages.
 - **engrave/rag/**: The RAG system is a service consumed by Stage 4 but managed independently. Corpus changes (new examples indexed) do not require pipeline code changes.
 - **engrave/rendering/**: LilyPond compilation is isolated because it is a subprocess boundary (shelling out to `lilypond` CLI). Keeping it separate makes error handling and timeout management clean.
@@ -410,6 +410,7 @@ User uploads audio + hints + ensemble config
 [Stage 1: Source Separation]
     Input:  WAV from Stage 0
     Output: 4 stem WAVs (drums.wav, bass.wav, vocals.wav, other.wav) in job_dir/separate/
+    Notes:  Uses audio-separator with per-stem model routing (BS-RoFormer for vocals, Mel-Band RoFormer for drums/other, HTDemucs ft for bass). Different models may be used per stem target for optimal quality.
     |
     v
 [Stage 2: MIDI Transcription]
@@ -580,13 +581,13 @@ Stage 0 -> Stage 1 -> [Stage 2 ┐
 
 | Scale | Architecture Adjustments |
 |-------|--------------------------|
-| 1 user (Sam) | Monolith on M4 Max. Local Demucs/Basic Pitch. LMStudio for cheap prototyping. Cloud APIs when local models underperform. No queueing needed. |
-| 5-10 users | Add Celery/Redis job queue for background processing. Still single server. Multiple concurrent jobs need queuing since Demucs is memory-hungry (~8GB). |
-| 100+ users | Demucs/Basic Pitch on GPU workers (separate from web server). LLM calls already go to cloud APIs. ChromaDB may need migration to a hosted vector DB (Pinecone, Weaviate). |
+| 1 user (Sam) | Monolith on M4 Max. Local audio-separator/Basic Pitch. LMStudio for cheap prototyping. Cloud APIs when local models underperform. No queueing needed. |
+| 5-10 users | Add Celery/Redis job queue for background processing. Still single server. Multiple concurrent jobs need queuing since audio-separator models are memory-hungry (~4-6GB per model). |
+| 100+ users | audio-separator/Basic Pitch on GPU workers (separate from web server). LLM calls already go to cloud APIs. ChromaDB may need migration to a hosted vector DB (Pinecone, Weaviate). |
 
 ### Scaling Priorities (if ever needed)
 
-1. **First bottleneck:** Demucs memory usage. Hybrid Transformer Demucs needs ~8GB RAM per separation. On a 128GB M4 Max, this allows ~15 concurrent separations. A job queue with concurrency limits solves this without architectural changes.
+1. **First bottleneck:** audio-separator model memory usage. BS-RoFormer/Mel-Band RoFormer need ~4-6GB RAM per separation. On a 128GB M4 Max, this allows ~20 concurrent separations. A job queue with concurrency limits solves this without architectural changes.
 2. **Second bottleneck:** LLM call latency for Stage 4. Section-by-section generation of a long score means many sequential LLM calls. Mitigation: batch sections where possible, use faster models (local Qwen3-30B-a3B is very fast on M4 Max), cache RAG retrievals per section.
 
 ## Build Order Implications
@@ -599,7 +600,7 @@ The architecture has clear dependency chains that dictate build order:
 3. **Stage 0: Ingest** -- File handling, yt-dlp, ffmpeg normalization. The entry point for all data.
 
 ### Tier 2: Audio-to-MIDI Pipeline (build bottom-up)
-4. **Stage 1: Source Separation** -- Demucs integration. Depends on Ingest output format.
+4. **Stage 1: Source Separation** -- audio-separator integration. Depends on Ingest output format.
 5. **Stage 2: MIDI Transcription** -- Basic Pitch integration. Depends on Separation output format.
 6. **Pipeline Orchestrator (basic)** -- Wire Stages 0-1-2 together with job directory management.
 
@@ -621,8 +622,8 @@ Everything before Stage 4 is plumbing -- important but well-understood. Stage 4 
 
 ## Sources
 
-- [Demucs Python API (DeepWiki)](https://deepwiki.com/facebookresearch/demucs/4-python-api) -- HIGH confidence: official documentation mirror
-- [Demucs GitHub (facebookresearch)](https://github.com/facebookresearch/demucs) -- HIGH confidence: primary source (note: development moved to adefossez/demucs)
+- [audio-separator PyPI](https://pypi.org/project/audio-separator/) -- HIGH confidence: multi-model source separation wrapper
+- [Demucs GitHub (facebookresearch)](https://github.com/facebookresearch/demucs) -- HIGH confidence: primary source (note: development moved to adefossez/demucs, HTDemucs ft accessible via audio-separator)
 - [Basic Pitch GitHub (Spotify)](https://github.com/spotify/basic-pitch) -- HIGH confidence: official repository
 - [Basic Pitch PyPI](https://pypi.org/project/basic-pitch/) -- HIGH confidence: official package
 - [MT3 GitHub (Magenta)](https://github.com/magenta/mt3) -- HIGH confidence: official repository
@@ -635,7 +636,7 @@ Everything before Stage 4 is plumbing -- important but well-understood. Stage 4 
 - [Abjad (Python LilyPond API)](https://github.com/Abjad/abjad) -- HIGH confidence: official repository, v3.31 Oct 2025
 - [ChromaDB Documentation](https://www.trychroma.com/) -- MEDIUM confidence: well-established but RAG-for-code-gen is novel application
 - [Hierarchical Expansion for Long-Form Generation (OpenCredo)](https://opencredo.com/blogs/how-to-use-llms-to-generate-coherent-long-form-content-using-hierarchical-expansion) -- MEDIUM confidence: pattern description, not specific to music
-- [Audio-to-Sheet-Music Pipeline (Music Demixer)](https://freemusicdemixer.com/under-the-hood/2025/03/09/Audio-to-sheet-music) -- MEDIUM confidence: demonstrates Demucs + Basic Pitch combined workflow
+- [Audio-to-Sheet-Music Pipeline (Music Demixer)](https://freemusicdemixer.com/under-the-hood/2025/03/09/Audio-to-sheet-music) -- MEDIUM confidence: demonstrates source separation + Basic Pitch combined workflow
 - [MusicXML Diff Procedure (ACM)](https://dl.acm.org/doi/abs/10.1145/3358664.3358671) -- MEDIUM confidence: academic paper on score comparison
 - [Audiveris OMR](https://github.com/Audiveris/audiveris) -- MEDIUM confidence: established tool, Python automation less documented
 - [yt-dlp GitHub](https://github.com/yt-dlp/yt-dlp) -- HIGH confidence: official repository
