@@ -5,23 +5,23 @@
 See: .planning/PROJECT.md (updated 2026-02-24)
 
 **Core value:** When Sam uploads a recording and describes his ensemble, his players can sight-read the extracted parts at rehearsal and the brass section sounds like a section.
-**Current focus:** Phase 07.1 IN PROGRESS -- Minimal UI for UAT needs (smoke test harness + web UI + test plan)
+**Current focus:** Phase 07 IN PROGRESS -- Convergent sight-reading & ensemble intelligence
 
 ## Current Position
 
-Phase: 07.1 of 10
-Plan: 2 of 3 in current phase
-Status: Plan 07.1-02 complete. FastAPI web app with htmx polling, file upload, CLI serve command, 8 integration tests.
-Last activity: 2026-02-25 -- Completed 07.1-02-PLAN.md (web UI for UAT)
+Phase: 07 of 10
+Plan: 1 of 3 in current phase
+Status: Plan 07-01 complete. Two-level articulation post-processor (ENSM-03 token scanner + ENSM-05 rhythmic aligner).
+Last activity: 2026-02-25 -- Completed 07-01-PLAN.md (articulation post-processor)
 
-Progress: [########..] 87%
+Progress: [########..] 88%
 
 ## Performance Metrics
 
 **Velocity:**
-- Total plans completed: 21
-- Average duration: 5.4 min
-- Total execution time: 2.1 hours
+- Total plans completed: 22
+- Average duration: 5.3 min
+- Total execution time: 2.2 hours
 
 **By Phase:**
 
@@ -52,6 +52,7 @@ Progress: [########..] 87%
 | Phase 06 P02 | 6 min | 2 tasks | 11 files |
 | Phase 07.1 P01 | 5 min | 2 tasks | 7 files |
 | Phase 07.1 P02 | 5 min | 2 tasks | 7 files |
+| Phase 07 P01 | 4 min | 1 task | 3 files |
 
 ## Accumulated Context
 
@@ -170,6 +171,10 @@ Recent decisions affecting current work:
 - 07.1-02: HTTP 286 stops htmx polling on completion/failure
 - 07.1-02: Pipeline timeout of 30 minutes via asyncio.wait_for
 - 07.1-02: response_model=None on download endpoint for union return type support
+- 07-01: Regex token scanner (not python-ly tokenizer) matching existing restate_dynamics() pattern for ENSM-03
+- 07-01: Staccato+accent resolution returns telemetry dicts (bar, beat, original, resolved) for TUNE-02
+- 07-01: Omission-eligible marks as explicit frozenset allowlist (staccato, accent, tenuto, marcato)
+- 07-01: Sticky duration tracking for notes without explicit duration in token scanner
 
 ### Roadmap Evolution
 
@@ -195,5 +200,5 @@ Recent decisions affecting current work:
 ## Session Continuity
 
 Last session: 2026-02-25
-Stopped at: Completed 07.1-02-PLAN.md
-Resume file: .planning/phases/07.1-minimal-ui-for-uat-needs/07.1-02-SUMMARY.md
+Stopped at: Completed 07-01-PLAN.md
+Resume file: .planning/phases/07-convergent-sight-reading-ensemble-intelligence/07-01-SUMMARY.md

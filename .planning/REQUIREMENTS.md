@@ -55,9 +55,9 @@ Requirements for initial release. Each maps to roadmap phases.
 
 - [x] **ENSM-01**: System includes a big band ensemble preset encoding: 5 saxes (AATBT), 4 Bb trumpets, 4 trombones (3 tenor + 1 bass), piano, guitar, bass, drums -- with correct transpositions, clefs, score order, and staff sizes
 - [ ] **ENSM-02**: System generates section parts jointly (e.g., all 4 trumpets in one LLM call) so articulations, dynamics, and beam groupings co-vary -- enabling convergent sight-reading
-- [ ] **ENSM-03**: System applies Tim Davies jazz articulation defaults: unmarked quarter notes are short, unmarked eighth notes are long, swing assumed unless marked "Straight 8s," staccato+accent not paired (redundant)
+- [x] **ENSM-03**: System applies Tim Davies jazz articulation defaults: unmarked quarter notes are short, unmarked eighth notes are long, swing assumed unless marked "Straight 8s," staccato+accent not paired (redundant)
 - [x] **ENSM-04**: System generates chord symbols on rhythm section parts (guitar, piano, bass) with changes placed above the staff
-- [ ] **ENSM-05**: Section consistency rule: if all parts in a section have the same articulation, omit it (the default handles it) -- only mark departures from the section's collective default
+- [x] **ENSM-05**: Section consistency rule: if all parts in a section have the same articulation, omit it (the default handles it) -- only mark departures from the section's collective default
 
 ### UAT & Smoke Testing (Phase 07.1 -- Inserted)
 
@@ -153,9 +153,9 @@ Deferred to future release.
 | ENGR-10 | Phase 8 | Pending |
 | ENSM-01 | Phase 4 | Complete |
 | ENSM-02 | Phase 7 | Pending |
-| ENSM-03 | Phase 7 | Pending |
+| ENSM-03 | Phase 7 | Complete |
 | ENSM-04 | Phase 4 | Complete |
-| ENSM-05 | Phase 7 | Pending |
+| ENSM-05 | Phase 7 | Complete |
 | UAT-01 | Phase 07.1 | Complete |
 | UAT-02 | Phase 07.1 | Complete |
 | UAT-03 | Phase 07.1 | Complete |
