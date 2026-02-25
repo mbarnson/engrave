@@ -1,4 +1,4 @@
-"""Typer CLI entry point with check and corpus commands."""
+"""Typer CLI entry point with check, corpus, and generate commands."""
 
 from __future__ import annotations
 
@@ -268,6 +268,111 @@ def compile(
                 if raw.stderr:
                     console.print(raw.stderr)
                 raise typer.Exit(code=1)
+
+    except FileNotFoundError as e:
+        console.print(f"[red]Error:[/red] {e}")
+        console.print("Install LilyPond with: brew install lilypond")
+        raise typer.Exit(code=1) from e
+
+
+@app.command()
+def generate(
+    midi_path: str = typer.Argument(..., help="Path to MIDI file (.mid)"),
+    output: str = typer.Option(
+        None, "--output", "-o", help="Output .ly file path (default: input with .ly extension)"
+    ),
+    role: str = typer.Option("generator", "--role", help="LLM role for generation"),
+    labels: str = typer.Option(
+        None,
+        "--labels",
+        help='JSON string of track_index->instrument_name mappings (e.g. \'{"0": "Trumpet", "1": "Bass"}\')',
+    ),
+    no_rag: bool = typer.Option(
+        False, "--no-rag", help="Disable RAG retrieval (proceed without few-shot examples)"
+    ),
+) -> None:
+    """Generate LilyPond source from a MIDI file."""
+    import asyncio
+    import json
+    import logging
+    from pathlib import Path
+
+    from rich.console import Console
+
+    console = Console()
+    source_path = Path(midi_path)
+
+    if not source_path.exists():
+        console.print(f"[red]Error:[/red] File not found: {midi_path}")
+        raise typer.Exit(code=1)
+
+    # Determine output path
+    output_path = source_path.with_suffix(".ly") if output is None else Path(output)
+
+    # Parse user labels
+    user_labels: dict[int, str] | None = None
+    if labels:
+        try:
+            raw = json.loads(labels)
+            user_labels = {int(k): v for k, v in raw.items()}
+        except (json.JSONDecodeError, ValueError) as e:
+            console.print(f"[red]Error:[/red] Invalid --labels JSON: {e}")
+            raise typer.Exit(code=1) from e
+
+    try:
+        from engrave.config.settings import Settings
+        from engrave.generation.pipeline import generate_from_midi
+        from engrave.lilypond.compiler import LilyPondCompiler
+        from engrave.llm.router import InferenceRouter
+
+        settings = Settings()
+        router = InferenceRouter(settings)
+        compiler = LilyPondCompiler(timeout=settings.lilypond.compile_timeout)
+
+        # Set up RAG retriever (if available and not disabled)
+        rag_retriever = None
+        if not no_rag:
+            try:
+                from engrave.corpus.retrieval import retrieve
+                from engrave.corpus.store import CorpusStore
+
+                store = CorpusStore(config=settings.corpus)
+
+                def _rag_retriever(query: str, limit: int = 3) -> list[str]:
+                    results = retrieve(query_text=query, n_results=limit, store=store)
+                    return [r.chunk.source for r in results]
+
+                rag_retriever = _rag_retriever
+            except Exception:
+                logging.getLogger(__name__).warning(
+                    "RAG corpus not available. Generation quality may be lower without few-shot examples."
+                )
+
+        result = asyncio.run(
+            generate_from_midi(
+                midi_path=str(source_path),
+                router=router,
+                compiler=compiler,
+                rag_retriever=rag_retriever,
+                user_labels=user_labels,
+            )
+        )
+
+        if result.success:
+            output_path.write_text(result.ly_source)
+            console.print(f"[green]Success:[/green] {output_path}")
+            console.print(f"  Sections: {result.sections_completed}/{result.total_sections}")
+            console.print(f"  Instruments: {', '.join(result.instrument_names)}")
+            console.print(f"  Output: {output_path}")
+        else:
+            console.print("[red]Generation failed[/red]")
+            console.print(
+                f"  Sections completed: {result.sections_completed}/{result.total_sections}"
+            )
+            if result.failure_record:
+                console.print(f"  Failed at section: {result.failure_record.section_index}")
+                console.print(f"  Error: {result.failure_record.lilypond_error}")
+            raise typer.Exit(code=1)
 
     except FileNotFoundError as e:
         console.print(f"[red]Error:[/red] {e}")
