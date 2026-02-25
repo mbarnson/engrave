@@ -85,11 +85,12 @@ Plans:
   3. Parts include rehearsal marks (every 8-16 bars and at structural landmarks), measure numbers at the start of each line, and consolidated multi-bar rests
   4. Parts include dynamic markings with restatement after multi-bar rests
   5. Output is packaged as a ZIP containing selected PDFs and LilyPond source files (.ly), with chord symbols on rhythm section parts (guitar, piano, bass)
-**Plans**: TBD
+**Plans:** 3 plans
 
 Plans:
-- [ ] 04-01: TBD
-- [ ] 04-02: TBD
+- [ ] 04-01-PLAN.md -- Ensemble preset data model (BigBandPreset, InstrumentSpec) and LilyPond stylesheet constants
+- [ ] 04-02-PLAN.md -- LilyPond file generators (conductor score, parts, shared definitions) and dynamic restatement post-processor
+- [ ] 04-03-PLAN.md -- Render pipeline, ZIP packager, CLI render command, integration tests
 
 ### Phase 5: Audio Input Pipeline
 **Goal**: User can upload audio files or paste a YouTube URL and the system extracts MIDI data through source separation and transcription
@@ -191,7 +192,7 @@ Phases execute in numeric order: 1 -> 2 -> 3 -> 4 -> 5 -> 6 -> 7 -> 8 -> 9 -> 10
 | 1. Project Scaffolding & Inference Router | 0/2 | Complete    | 2026-02-24 |
 | 2. RAG Corpus & Retrieval | 0/4 | Planned | - |
 | 3. MIDI-to-LilyPond Generation | 0/3 | Planned | - |
-| 4. Rendering & Output Packaging | 0/TBD | Not started | - |
+| 4. Rendering & Output Packaging | 0/3 | Planned | - |
 | 5. Audio Input Pipeline | 0/TBD | Not started | - |
 | 6. Audio Understanding & Hints | 0/TBD | Not started | - |
 | 7. Convergent Sight-Reading & Ensemble Intelligence | 0/TBD | Not started | - |
