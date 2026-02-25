@@ -102,11 +102,14 @@ Plans:
   3. Demucs v4 separates uploaded audio into drums, bass, vocals, and other stems
   4. Basic Pitch (or MT3 for dense ensemble content) transcribes separated stems to MIDI with pitch, timing, and velocity per voice, with fallback when the primary model produces poor results
   5. The resulting MIDI feeds into the existing MIDI-to-LilyPond pipeline from Phase 3, producing sheet music output
-**Plans**: TBD
+**Plans:** 5 plans
 
 Plans:
-- [ ] 05-01: TBD
-- [ ] 05-02: TBD
+- [ ] 05-01-PLAN.md -- Audio ingestion, normalization (pydub), YouTube extraction (yt-dlp), audio config extension
+- [ ] 05-02-PLAN.md -- Source separation engine: hierarchical cascade with per-stem model routing (audio-separator)
+- [ ] 05-03-PLAN.md -- Transcription (Basic Pitch, Transcriber protocol) and post-transcription quality annotation
+- [ ] 05-04-PLAN.md -- Audio pipeline orchestration, job directory structure, CLI process-audio command, integration tests
+- [ ] 05-05-PLAN.md -- Benchmark harness: FluidSynth renderer, mir_eval evaluator, closed-loop harness, CLI benchmark command
 
 ### Phase 6: Audio Understanding & Hints
 **Goal**: The system understands musical character beyond pitch and rhythm, and the user can guide generation with natural language descriptions
@@ -193,7 +196,7 @@ Phases execute in numeric order: 1 -> 2 -> 3 -> 4 -> 5 -> 6 -> 7 -> 8 -> 9 -> 10
 | 2. RAG Corpus & Retrieval | 0/4 | Complete    | 2026-02-25 |
 | 3. MIDI-to-LilyPond Generation | 0/3 | Complete    | 2026-02-25 |
 | 4. Rendering & Output Packaging | 1/3 | In Progress | - |
-| 5. Audio Input Pipeline | 0/TBD | Not started | - |
+| 5. Audio Input Pipeline | 0/5 | Not started | - |
 | 6. Audio Understanding & Hints | 0/TBD | Not started | - |
 | 7. Convergent Sight-Reading & Ensemble Intelligence | 0/TBD | Not started | - |
 | 8. Engraving Polish | 0/TBD | Not started | - |
