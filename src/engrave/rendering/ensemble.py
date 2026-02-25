@@ -67,6 +67,9 @@ class InstrumentSpec:
         ``True`` when ``transpose_from != transpose_to``.
     is_grand_staff : bool
         ``True`` only for piano (two-staff ``PianoStaff``).
+    section_group : str | None
+        Joint generation group name (e.g. ``"saxes"``, ``"trumpets"``,
+        ``"trombones"``).  ``None`` means ungrouped (individual generation).
     """
 
     name: str
@@ -81,6 +84,7 @@ class InstrumentSpec:
     has_chord_symbols: bool = False
     is_transposing: bool = False
     is_grand_staff: bool = False
+    section_group: str | None = None
 
 
 # ---------------------------------------------------------------------------
@@ -122,6 +126,7 @@ BIG_BAND = BigBandPreset(
             group_type=StaffGroupType.BRACKET,
             score_order=0,
             is_transposing=True,
+            section_group="saxes",
         ),
         InstrumentSpec(
             name="Alto Sax 2",
@@ -134,6 +139,7 @@ BIG_BAND = BigBandPreset(
             group_type=StaffGroupType.BRACKET,
             score_order=1,
             is_transposing=True,
+            section_group="saxes",
         ),
         InstrumentSpec(
             name="Tenor Sax 1",
@@ -146,6 +152,7 @@ BIG_BAND = BigBandPreset(
             group_type=StaffGroupType.BRACKET,
             score_order=2,
             is_transposing=True,
+            section_group="saxes",
         ),
         InstrumentSpec(
             name="Tenor Sax 2",
@@ -158,6 +165,7 @@ BIG_BAND = BigBandPreset(
             group_type=StaffGroupType.BRACKET,
             score_order=3,
             is_transposing=True,
+            section_group="saxes",
         ),
         InstrumentSpec(
             name="Baritone Sax",
@@ -170,6 +178,7 @@ BIG_BAND = BigBandPreset(
             group_type=StaffGroupType.BRACKET,
             score_order=4,
             is_transposing=True,
+            section_group="saxes",
         ),
         # ── Trumpets (Bb, treble clef) ────────────────────────────────
         InstrumentSpec(
@@ -183,6 +192,7 @@ BIG_BAND = BigBandPreset(
             group_type=StaffGroupType.BRACKET,
             score_order=5,
             is_transposing=True,
+            section_group="trumpets",
         ),
         InstrumentSpec(
             name="Trumpet 2",
@@ -195,6 +205,7 @@ BIG_BAND = BigBandPreset(
             group_type=StaffGroupType.BRACKET,
             score_order=6,
             is_transposing=True,
+            section_group="trumpets",
         ),
         InstrumentSpec(
             name="Trumpet 3",
@@ -207,6 +218,7 @@ BIG_BAND = BigBandPreset(
             group_type=StaffGroupType.BRACKET,
             score_order=7,
             is_transposing=True,
+            section_group="trumpets",
         ),
         InstrumentSpec(
             name="Trumpet 4",
@@ -219,6 +231,7 @@ BIG_BAND = BigBandPreset(
             group_type=StaffGroupType.BRACKET,
             score_order=8,
             is_transposing=True,
+            section_group="trumpets",
         ),
         # ── Trombones (C, bass clef) ──────────────────────────────────
         InstrumentSpec(
@@ -231,6 +244,7 @@ BIG_BAND = BigBandPreset(
             section="Trombones",
             group_type=StaffGroupType.BRACKET,
             score_order=9,
+            section_group="trombones",
         ),
         InstrumentSpec(
             name="Trombone 2",
@@ -242,6 +256,7 @@ BIG_BAND = BigBandPreset(
             section="Trombones",
             group_type=StaffGroupType.BRACKET,
             score_order=10,
+            section_group="trombones",
         ),
         InstrumentSpec(
             name="Trombone 3",
@@ -253,6 +268,7 @@ BIG_BAND = BigBandPreset(
             section="Trombones",
             group_type=StaffGroupType.BRACKET,
             score_order=11,
+            section_group="trombones",
         ),
         InstrumentSpec(
             name="Bass Trombone",
@@ -264,6 +280,7 @@ BIG_BAND = BigBandPreset(
             section="Trombones",
             group_type=StaffGroupType.BRACKET,
             score_order=12,
+            section_group="trombones",
         ),
         # ── Rhythm Section (C, various clefs) ─────────────────────────
         InstrumentSpec(

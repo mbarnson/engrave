@@ -265,6 +265,69 @@ def test_instrument_is_frozen(instruments):
         instruments[0].name = "Soprano Sax"
 
 
+# ---------- section_group field ---------------------------------------------- #
+
+
+def test_section_group_field_exists(instruments):
+    """InstrumentSpec has a section_group attribute."""
+    for inst in instruments:
+        assert hasattr(inst, "section_group")
+
+
+def test_section_group_defaults_to_none():
+    """section_group defaults to None when not specified."""
+    from engrave.rendering.ensemble import InstrumentSpec, StaffGroupType
+
+    inst = InstrumentSpec(
+        name="Test",
+        short_name="T.",
+        variable_name="test",
+        transpose_from="c'",
+        transpose_to="c'",
+        clef="treble",
+        section="Test",
+        group_type=StaffGroupType.BRACKET,
+        score_order=0,
+    )
+    assert inst.section_group is None
+
+
+def test_big_band_saxes_group(by_name):
+    """All 5 saxophones have section_group='saxes'."""
+    sax_names = ["Alto Sax 1", "Alto Sax 2", "Tenor Sax 1", "Tenor Sax 2", "Baritone Sax"]
+    for name in sax_names:
+        assert by_name[name].section_group == "saxes", f"{name} should be saxes"
+
+
+def test_big_band_trumpets_group(by_name):
+    """All 4 trumpets have section_group='trumpets'."""
+    trumpet_names = ["Trumpet 1", "Trumpet 2", "Trumpet 3", "Trumpet 4"]
+    for name in trumpet_names:
+        assert by_name[name].section_group == "trumpets", f"{name} should be trumpets"
+
+
+def test_big_band_trombones_group(by_name):
+    """All 4 trombones have section_group='trombones'."""
+    trombone_names = ["Trombone 1", "Trombone 2", "Trombone 3", "Bass Trombone"]
+    for name in trombone_names:
+        assert by_name[name].section_group == "trombones", f"{name} should be trombones"
+
+
+def test_big_band_rhythm_ungrouped(by_name):
+    """All 4 rhythm section instruments have section_group=None."""
+    rhythm_names = ["Piano", "Guitar", "Bass", "Drums"]
+    for name in rhythm_names:
+        assert by_name[name].section_group is None, f"{name} should be ungrouped"
+
+
+def test_big_band_section_group_counts(instruments):
+    """5 saxes + 4 trumpets + 4 trombones grouped, 4 rhythm ungrouped."""
+    grouped = [i for i in instruments if i.section_group is not None]
+    ungrouped = [i for i in instruments if i.section_group is None]
+    assert len(grouped) == 13
+    assert len(ungrouped) == 4
+
+
 # ---------- preset metadata ------------------------------------------------- #
 
 
