@@ -10,18 +10,18 @@ See: .planning/PROJECT.md (updated 2026-02-24)
 ## Current Position
 
 Phase: 5 of 9 (Audio Input Pipeline)
-Plan: 5 of 6 in current phase
-Status: Plans 05-01 through 05-04 complete, continuing Phase 5
-Last activity: 2026-02-25 -- Completed 05-04-PLAN.md (Transcription engine & quality annotation)
+Plan: 6 of 6 in current phase
+Status: Plans 05-01 through 05-05 complete, continuing Phase 5
+Last activity: 2026-02-25 -- Completed 05-05-PLAN.md (Audio pipeline orchestration & CLI)
 
 Progress: [######....] 60%
 
 ## Performance Metrics
 
 **Velocity:**
-- Total plans completed: 15
-- Average duration: 5.7 min
-- Total execution time: 1.5 hours
+- Total plans completed: 16
+- Average duration: 5.6 min
+- Total execution time: 1.6 hours
 
 **By Phase:**
 
@@ -31,10 +31,10 @@ Progress: [######....] 60%
 | 2 | 4 | 27 min | 7 min |
 | 3 | 3 | 22 min | 7 min |
 | 4 | 3 | 13 min | 4 min |
-| 5 | 3 | 14 min | 5 min |
+| 5 | 4 | 19 min | 5 min |
 
 **Recent Trend:**
-- Last 5 plans: 04-01 (3 min), 04-02 (5 min), 04-03 (5 min), 05-02 (4 min), 05-04 (6 min)
+- Last 5 plans: 04-02 (5 min), 04-03 (5 min), 05-02 (4 min), 05-04 (6 min), 05-05 (5 min)
 - Trend: Consistent
 
 *Updated after each plan completion*
@@ -42,6 +42,7 @@ Progress: [######....] 60%
 | Phase 05 P02 | 4 min | 1 task | 4 files |
 | Phase 05 P03 | 4 min | 1 task | 2 files |
 | Phase 05 P04 | 6 min | 2 tasks | 4 files |
+| Phase 05 P05 | 5 min | 2 tasks | 7 files |
 
 ## Accumulated Context
 
@@ -116,6 +117,14 @@ Recent decisions affecting current work:
 - 05-04: Quality metrics are informational metadata for LLM, not binary pass/fail gates ("LLM IS the fallback")
 - 05-04: Onset cluster threshold 10ms matching neural transcription temporal resolution
 - 05-04: Drum tracks excluded from quality analysis (pitched content only)
+- 05-05: Pipeline stages run sequentially (not async) -- simplifies error handling and job directory state
+- 05-05: Transcriber injected into AudioPipeline constructor for testability
+- 05-05: Config SeparationStep (Pydantic) converted to separator.SeparationStep (frozen dataclass) at pipeline boundary
+- 05-05: jobs/ gitignored to prevent large WAV intermediates from being committed
+
+### Roadmap Evolution
+
+- Phase 05.1 inserted after Phase 5: Promote ADVN-01 into v1 scope for Dorico (URGENT)
 
 ### Pending Todos
 
@@ -136,5 +145,5 @@ None yet.
 ## Session Continuity
 
 Last session: 2026-02-25
-Stopped at: Completed 05-04-PLAN.md -- Transcription engine & quality annotation
-Resume file: .planning/phases/05-audio-input-pipeline/05-04-SUMMARY.md
+Stopped at: Completed 05-05-PLAN.md -- Audio pipeline orchestration & CLI
+Resume file: .planning/phases/05-audio-input-pipeline/05-05-SUMMARY.md

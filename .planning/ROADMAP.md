@@ -112,6 +112,15 @@ Plans:
 - [ ] 05-05-PLAN.md -- Audio pipeline orchestration, job directory structure, CLI process-audio command, integration tests
 - [ ] 05-06-PLAN.md -- Benchmark harness: FluidSynth renderer, mir_eval evaluator, closed-loop harness, CLI benchmark command
 
+### Phase 05.1: Promote ADVN-01 into v1 scope for Dorico (INSERTED)
+
+**Goal:** [Urgent work - to be planned]
+**Depends on:** Phase 5
+**Plans:** 5/6 plans executed
+
+Plans:
+- [ ] TBD (run /gsd:plan-phase 05.1 to break down)
+
 ### Phase 6: Audio Understanding & Hints
 **Goal**: The system understands musical character beyond pitch and rhythm, and the user can guide generation with natural language descriptions
 **Depends on**: Phase 5
