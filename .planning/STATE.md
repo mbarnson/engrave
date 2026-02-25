@@ -5,22 +5,22 @@
 See: .planning/PROJECT.md (updated 2026-02-24)
 
 **Core value:** When Sam uploads a recording and describes his ensemble, his players can sight-read the extracted parts at rehearsal and the brass section sounds like a section.
-**Current focus:** Phase 2: RAG Corpus & Retrieval
+**Current focus:** Phase 3: LilyPond Code Generation
 
 ## Current Position
 
-Phase: 2 of 9 (RAG Corpus & Retrieval)
-Plan: 4 of 4 in current phase
-Status: Executing
-Last activity: 2026-02-25 -- Completed 02-03-PLAN.md (ingestion pipeline: Mutopia + PDMX adapters)
+Phase: 3 of 9 (LilyPond Code Generation)
+Plan: 1 of ? in current phase
+Status: Ready
+Last activity: 2026-02-25 -- Completed 02-04-PLAN.md (retrieval interface: public API + CLI)
 
-Progress: [###.......] 28%
+Progress: [###.......] 33%
 
 ## Performance Metrics
 
 **Velocity:**
-- Total plans completed: 5
-- Average duration: 6.8 min
+- Total plans completed: 6
+- Average duration: 6.3 min
 - Total execution time: 0.6 hours
 
 **By Phase:**
@@ -28,10 +28,10 @@ Progress: [###.......] 28%
 | Phase | Plans | Total | Avg/Plan |
 |-------|-------|-------|----------|
 | 1 | 2 | 12 min | 6 min |
-| 2 | 3 | 23 min | 8 min |
+| 2 | 4 | 27 min | 7 min |
 
 **Recent Trend:**
-- Last 5 plans: 01-01 (6 min), 01-02 (6 min), 02-02 (7 min), 02-01 (9 min), 02-03 (7 min)
+- Last 5 plans: 01-02 (6 min), 02-02 (7 min), 02-01 (9 min), 02-03 (7 min), 02-04 (4 min)
 - Trend: Consistent
 
 *Updated after each plan completion*
@@ -66,6 +66,9 @@ Recent decisions affecting current work:
 - 02-03: PDMX originals stored alongside converted LilyPond for provenance
 - 02-03: Instrument family classification via case-insensitive lookup table (70+ instruments)
 - 02-03: Era inference from Mutopia style field or date-based ranges
+- 02-04: retrieve() convenience wrapper with lazy store creation and optional store injection for testing/batch
+- 02-04: Public API exports both retrieval and ingestion from engrave.corpus package
+- 02-04: CLI corpus ingest is placeholder -- full CLI ingestion deferred until needed
 - [Phase quick]: audio-separator replaces demucs-infer as primary source separation package; per-stem model routing strategy documented
 - [Phase quick]: SDR benchmarks measure remix fidelity, NOT transcription accuracy — wrong metric for Engrave. Post-Phase 5 spike: run separation→transcription→MIDI comparison against ground truth charts to find best separator *for engraving*. Needs Sam's tracks (not yet available). No mandatory human review gates before Phase 7 demo.
 
@@ -88,5 +91,5 @@ None yet.
 ## Session Continuity
 
 Last session: 2026-02-25
-Stopped at: Completed 02-03-PLAN.md -- ingestion pipeline
-Resume file: .planning/phases/02-rag-corpus-retrieval/02-03-SUMMARY.md
+Stopped at: Completed 02-04-PLAN.md -- retrieval interface (Phase 2 complete)
+Resume file: .planning/phases/02-rag-corpus-retrieval/02-04-SUMMARY.md
