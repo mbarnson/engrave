@@ -10,6 +10,8 @@ Public API::
 """
 
 from engrave.generation.coherence import CoherenceState
+from engrave.generation.failure_log import FailureRecord, load_failure_log, log_failure
+from engrave.generation.prompts import PromptBudget, build_section_prompt
 from engrave.generation.templates import (
     build_instrument_variable,
     build_score_template,
@@ -18,7 +20,12 @@ from engrave.generation.templates import (
 
 __all__ = [
     "CoherenceState",
+    "FailureRecord",
+    "PromptBudget",
     "build_instrument_variable",
     "build_score_template",
+    "build_section_prompt",
+    "load_failure_log",
+    "log_failure",
     "parse_instrument_blocks",
 ]
