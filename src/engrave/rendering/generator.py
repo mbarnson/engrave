@@ -207,7 +207,7 @@ def generate_conductor_score(
             delimiter = "SystemStartBracket"
 
         lines.append(f'    \\new StaffGroup = "{section}" \\with {{')
-        lines.append(f"      systemStartDelimiter = #{delimiter}")
+        lines.append(f"      systemStartDelimiter = #'{delimiter}")
         lines.append("    } <<")
 
         for inst in group_list:

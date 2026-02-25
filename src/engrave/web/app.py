@@ -270,6 +270,11 @@ async def _generate_and_render(
 ) -> Path:
     """Shared generation + render step for both pipeline paths.
 
+    Compiles the assembled LilyPond source directly (the assembler already
+    produces a complete score with header, paper, layout, and all staves).
+    This avoids the variable-name mismatch between LLM-generated names and
+    the render pipeline's canonical instrument names.
+
     Args:
         midi_path: Path to MIDI file (from audio pipeline or direct upload).
         hints: User-provided hints text.
@@ -279,12 +284,13 @@ async def _generate_and_render(
     Returns:
         Path to the output ZIP file.
     """
+    import zipfile
+    from datetime import date
+
     from engrave.config.settings import Settings
     from engrave.generation.pipeline import generate_from_midi
     from engrave.lilypond.compiler import LilyPondCompiler
     from engrave.llm.router import InferenceRouter
-    from engrave.rendering.ensemble import BIG_BAND
-    from engrave.rendering.packager import RenderPipeline
 
     settings = Settings() if not isinstance(settings, Settings) else settings
     router = InferenceRouter(settings)
@@ -302,46 +308,24 @@ async def _generate_and_render(
         msg = f"Generation failed at section {gen_result.sections_completed}/{gen_result.total_sections}"
         raise RuntimeError(msg)
 
-    # Parse the assembled LilyPond to extract music variables for render.
-    import re
+    # Save assembled source.
+    score_path = job_dir / "score.ly"
+    score_path.write_text(gen_result.ly_source)
 
-    music_vars: dict[str, str] = {}
-    global_music = ""
-    chord_symbols: str | None = None
+    # Compile the assembled .ly directly -- it is already a complete score
+    # with header, paper, layout, staves, and all variable definitions inline.
+    compile_result = compiler.compile(gen_result.ly_source, output_dir=job_dir)
 
-    var_pattern = re.compile(
-        r"^(\w+)\s*=\s*\{(.*?)\}",
-        re.MULTILINE | re.DOTALL,
-    )
-    for match in var_pattern.finditer(gen_result.ly_source):
-        var_name = match.group(1)
-        content = match.group(2).strip()
-        if var_name == "globalMusic":
-            global_music = content
-        elif var_name == "chordSymbols":
-            chord_symbols = content
-        else:
-            music_vars[var_name] = content
+    if not compile_result.success:
+        logger.error("Score compilation failed: %s", compile_result.stderr[:500])
 
-    # Write music-definitions.ly for rendering.
-    defs_path = job_dir / "music-definitions.ly"
-    defs_path.write_text(gen_result.ly_source)
+    # Package ZIP with whatever we have (PDF if compilation succeeded, .ly always).
+    title_slug = midi_path.stem
+    zip_name = f"{title_slug}-{date.today().isoformat()}.zip"
+    zip_path = job_dir / zip_name
+    with zipfile.ZipFile(zip_path, "w", zipfile.ZIP_DEFLATED) as zf:
+        zf.write(score_path, "score.ly")
+        if compile_result.output_path and compile_result.output_path.exists():
+            zf.write(compile_result.output_path, "score.pdf")
 
-    # Render pipeline.
-    render_pipeline = RenderPipeline(
-        preset=BIG_BAND,
-        compiler=compiler,
-        include_musicxml=True,
-    )
-
-    render_result = render_pipeline.render(
-        music_vars=music_vars,
-        global_music=global_music,
-        chord_symbols=chord_symbols,
-        song_title=midi_path.stem,
-        output_dir=job_dir,
-        json_sections=gen_result.json_sections,
-        instrument_names=gen_result.instrument_names,
-    )
-
-    return render_result.zip_path
+    return zip_path

@@ -73,7 +73,12 @@ class LilyPondCompiler:
         Returns:
             RawCompileResult with success status, return code, and captured output.
         """
-        with tempfile.NamedTemporaryFile(suffix=".ly", mode="w", delete=False) as f:
+        # Write temp file in output_dir (when provided) so \include directives
+        # resolve relative to the same directory as music-definitions.ly.
+        tmp_kwargs: dict = {"suffix": ".ly", "mode": "w", "delete": False}
+        if output_dir is not None:
+            tmp_kwargs["dir"] = str(output_dir)
+        with tempfile.NamedTemporaryFile(**tmp_kwargs) as f:
             f.write(source)
             input_path = Path(f.name)
 
