@@ -114,12 +114,23 @@ Plans:
 
 ### Phase 05.1: Promote ADVN-01 into v1 scope for Dorico (INSERTED)
 
-**Goal:** [Urgent work - to be planned]
+**Goal:** MusicXML export generated from internal representation (not converted from LilyPond) for reliable import into Dorico/Sibelius/MuseScore, via parallel LLM fan-out producing structured JSON notation events alongside LilyPond
 **Depends on:** Phase 5
-**Plans:** 6/6 plans complete
+**Requirements:** ADVN-01
+**Success Criteria** (what must be TRUE):
+  1. Generation pipeline fans out two concurrent LLM requests per section: one for LilyPond (existing), one for structured JSON notation events (new), using the Chatterfart prefix-caching pattern
+  2. JSON notation events are validated via Pydantic models and converted to music21 Score objects via a JSON-to-music21 builder
+  3. music21 Score is written to MusicXML 4.0 and validated against XSD before packaging
+  4. Output ZIP includes a single .musicxml file at top level alongside existing PDFs, .ly, and MIDI files
+  5. Invalid JSON does not halt LilyPond generation -- MusicXML is skipped gracefully
+  6. Aligned (LilyPond, JSON) pairs are saved as training data for future fine-tuning
+**Plans:** 4 plans
 
 Plans:
-- [ ] TBD (run /gsd:plan-phase 05.1 to break down)
+- [ ] 05.1-01-PLAN.md -- MusicXML core: pitch map, Pydantic models, JSON-to-music21 builder (TDD)
+- [ ] 05.1-02-PLAN.md -- Generation pipeline fan-out: JSON prompt suffix, asyncio.gather, training pair storage
+- [ ] 05.1-03-PLAN.md -- XSD validation, telemetry, JSON assembler, RenderPipeline integration, CLI --no-musicxml
+- [ ] 05.1-04-PLAN.md -- Integration tests: MusicXML export, roundtrip, fan-out, graceful degradation
 
 ### Phase 6: Audio Understanding & Hints
 **Goal**: The system understands musical character beyond pitch and rhythm, and the user can guide generation with natural language descriptions
