@@ -5,23 +5,23 @@
 See: .planning/PROJECT.md (updated 2026-02-24)
 
 **Core value:** When Sam uploads a recording and describes his ensemble, his players can sight-read the extracted parts at rehearsal and the brass section sounds like a section.
-**Current focus:** Phase 5 in progress -- Audio Input Pipeline
+**Current focus:** Phase 05.1 in progress -- Promote ADVN-01 into v1 scope for Dorico
 
 ## Current Position
 
-Phase: 5 of 9 (Audio Input Pipeline)
-Plan: 6 of 6 in current phase -- PHASE COMPLETE
-Status: All 6 plans complete. Phase 5 done.
-Last activity: 2026-02-25 -- Completed 05-06-PLAN.md (Benchmark harness)
+Phase: 05.1 of 9 (Promote ADVN-01 into v1 scope for Dorico)
+Plan: 2 of 4 in current phase
+Status: Plan 02 complete. Continuing with Plan 03.
+Last activity: 2026-02-25 -- Completed 05.1-02-PLAN.md (Parallel LilyPond + JSON fan-out)
 
 Progress: [######....] 60%
 
 ## Performance Metrics
 
 **Velocity:**
-- Total plans completed: 16
-- Average duration: 5.6 min
-- Total execution time: 1.6 hours
+- Total plans completed: 17
+- Average duration: 5.5 min
+- Total execution time: 1.7 hours
 
 **By Phase:**
 
@@ -44,6 +44,7 @@ Progress: [######....] 60%
 | Phase 05 P04 | 6 min | 2 tasks | 4 files |
 | Phase 05 P05 | 5 min | 2 tasks | 7 files |
 | Phase 05 P06 | 8 min | 2 tasks | 10 files |
+| Phase 05.1 P02 | 4 min | 2 tasks | 4 files |
 
 ## Accumulated Context
 
@@ -126,6 +127,10 @@ Recent decisions affecting current work:
 - 05-06: mir_eval used directly in evaluator tests (pure Python, safe for unit tests)
 - 05-06: Per-stem comparison against full reference MIDI -- precision meaningful, recall expected low per-stem
 - 05-06: BenchmarkConfig as local dataclass separate from settings.py pydantic model
+- 05.1-02: JSON extraction three-stage fallback: json.loads array, json.loads object wrapped, regex individual objects -- never raises
+- 05.1-02: _request_json_notation isolated coroutine so JSON failure cannot affect LilyPond generation
+- 05.1-02: asyncio.gather with NotImplementedError fallback to sequential for non-async routers
+- 05.1-02: Training pairs saved as section_{N}.json with ly_source and json_notation fields
 
 ### Roadmap Evolution
 
@@ -150,5 +155,5 @@ Recent decisions affecting current work:
 ## Session Continuity
 
 Last session: 2026-02-25
-Stopped at: Phase 05.1 context revised -- parallel generation via prefix caching
-Resume file: .planning/phases/05.1-promote-advn-01-into-v1-scope-for-dorico/05.1-CONTEXT.md
+Stopped at: Completed 05.1-02-PLAN.md (Parallel LilyPond + JSON fan-out)
+Resume file: .planning/phases/05.1-promote-advn-01-into-v1-scope-for-dorico/05.1-03-PLAN.md
