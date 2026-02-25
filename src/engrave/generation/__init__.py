@@ -8,6 +8,7 @@ Public API::
     from engrave.generation import build_score_template, build_instrument_variable
     from engrave.generation import parse_instrument_blocks
     from engrave.generation import build_section_prompt, PromptBudget
+    from engrave.generation import build_json_generation_suffix, extract_json_from_response
     from engrave.generation import FailureRecord, log_failure, load_failure_log
 """
 
@@ -19,7 +20,12 @@ from engrave.generation.pipeline import (
     GenerationResult,
     generate_from_midi,
 )
-from engrave.generation.prompts import PromptBudget, build_section_prompt
+from engrave.generation.prompts import (
+    PromptBudget,
+    build_json_generation_suffix,
+    build_section_prompt,
+    extract_json_from_response,
+)
 from engrave.generation.templates import (
     build_instrument_variable,
     build_score_template,
@@ -34,8 +40,10 @@ __all__ = [
     "PromptBudget",
     "assemble_sections",
     "build_instrument_variable",
+    "build_json_generation_suffix",
     "build_score_template",
     "build_section_prompt",
+    "extract_json_from_response",
     "generate_from_midi",
     "load_failure_log",
     "log_failure",
