@@ -15,7 +15,7 @@ Decimal phases appear between their surrounding integers in numeric order.
 - [x] **Phase 1: Project Scaffolding & Inference Router** - Python project structure, LLM multi-provider routing, LilyPond installation, compile-check-fix loop (completed 2026-02-24)
 - [x] **Phase 2: RAG Corpus & Retrieval** - Ingest open-source LilyPond scores, build ChromaDB index, phrase-level chunking, metadata-filtered retrieval (completed 2026-02-25)
 - [x] **Phase 3: MIDI-to-LilyPond Generation** - Core code generation from MIDI input via RAG-augmented LLM, section-by-section with coherence state, concert-pitch storage (completed 2026-02-25)
-- [ ] **Phase 4: Rendering & Output Packaging** - LilyPond-to-PDF rendering, conductor score, extracted transposed parts, ZIP packaging with LilyPond source
+- [x] **Phase 4: Rendering & Output Packaging** - LilyPond-to-PDF rendering, conductor score, extracted transposed parts, ZIP packaging with LilyPond source (completed 2026-02-25)
 - [ ] **Phase 5: Audio Input Pipeline** - Audio file ingestion, YouTube URL extraction, Demucs source separation, Basic Pitch MIDI transcription
 - [ ] **Phase 6: Audio Understanding & Hints** - Audio LM structured descriptions, natural language hint processing, user intent as authoritative override
 - [ ] **Phase 7: Convergent Sight-Reading & Ensemble Intelligence** - Joint section-part generation, Tim Davies articulation defaults, section consistency rules, big band preset
@@ -85,7 +85,7 @@ Plans:
   3. Parts include rehearsal marks (every 8-16 bars and at structural landmarks), measure numbers at the start of each line, and consolidated multi-bar rests
   4. Parts include dynamic markings with restatement after multi-bar rests
   5. Output is packaged as a ZIP containing selected PDFs and LilyPond source files (.ly), with chord symbols on rhythm section parts (guitar, piano, bass)
-**Plans:** 3 plans
+**Plans:** 3/3 plans complete
 
 Plans:
 - [ ] 04-01-PLAN.md -- Ensemble preset data model (BigBandPreset, InstrumentSpec) and LilyPond stylesheet constants
@@ -196,7 +196,7 @@ Phases execute in numeric order: 1 -> 2 -> 3 -> 4 -> 5 -> 6 -> 7 -> 8 -> 9 -> 10
 | 1. Project Scaffolding & Inference Router | 0/2 | Complete    | 2026-02-24 |
 | 2. RAG Corpus & Retrieval | 0/4 | Complete    | 2026-02-25 |
 | 3. MIDI-to-LilyPond Generation | 0/3 | Complete    | 2026-02-25 |
-| 4. Rendering & Output Packaging | 1/3 | In Progress | - |
+| 4. Rendering & Output Packaging | 1/3 | Complete    | 2026-02-25 |
 | 5. Audio Input Pipeline | 0/6 | Not started | - |
 | 6. Audio Understanding & Hints | 0/TBD | Not started | - |
 | 7. Convergent Sight-Reading & Ensemble Intelligence | 0/TBD | Not started | - |
