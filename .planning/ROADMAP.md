@@ -14,7 +14,7 @@ Decimal phases appear between their surrounding integers in numeric order.
 
 - [x] **Phase 1: Project Scaffolding & Inference Router** - Python project structure, LLM multi-provider routing, LilyPond installation, compile-check-fix loop (completed 2026-02-24)
 - [x] **Phase 2: RAG Corpus & Retrieval** - Ingest open-source LilyPond scores, build ChromaDB index, phrase-level chunking, metadata-filtered retrieval (completed 2026-02-25)
-- [ ] **Phase 3: MIDI-to-LilyPond Generation** - Core code generation from MIDI input via RAG-augmented LLM, section-by-section with coherence state, concert-pitch storage
+- [x] **Phase 3: MIDI-to-LilyPond Generation** - Core code generation from MIDI input via RAG-augmented LLM, section-by-section with coherence state, concert-pitch storage (completed 2026-02-25)
 - [ ] **Phase 4: Rendering & Output Packaging** - LilyPond-to-PDF rendering, conductor score, extracted transposed parts, ZIP packaging with LilyPond source
 - [ ] **Phase 5: Audio Input Pipeline** - Audio file ingestion, YouTube URL extraction, Demucs source separation, Basic Pitch MIDI transcription
 - [ ] **Phase 6: Audio Understanding & Hints** - Audio LM structured descriptions, natural language hint processing, user intent as authoritative override
@@ -71,9 +71,9 @@ Plans:
 **Plans:** 3 plans
 
 Plans:
-- [ ] 03-01-PLAN.md -- MIDI subsystem: loader, analyzer, tokenizer, section detection (TDD)
-- [ ] 03-02-PLAN.md -- Generation foundation: coherence state, templates, prompt budget, failure log (TDD)
-- [ ] 03-03-PLAN.md -- Pipeline orchestration, section assembly, CLI generate command, integration tests
+- [x] 03-01-PLAN.md -- MIDI subsystem: loader, analyzer, tokenizer, section detection (TDD)
+- [x] 03-02-PLAN.md -- Generation foundation: coherence state, templates, prompt budget, failure log (TDD)
+- [x] 03-03-PLAN.md -- Pipeline orchestration, section assembly, CLI generate command, integration tests
 
 ### Phase 4: Rendering & Output Packaging
 **Goal**: User receives professional-quality PDF output -- a full conductor score and individual transposed parts -- packaged in a ZIP with source files
