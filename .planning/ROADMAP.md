@@ -13,7 +13,7 @@ Engrave transforms audio recordings, MIDI files, and YouTube URLs into publicati
 Decimal phases appear between their surrounding integers in numeric order.
 
 - [x] **Phase 1: Project Scaffolding & Inference Router** - Python project structure, LLM multi-provider routing, LilyPond installation, compile-check-fix loop (completed 2026-02-24)
-- [ ] **Phase 2: RAG Corpus & Retrieval** - Ingest open-source LilyPond scores, build ChromaDB index, phrase-level chunking, metadata-filtered retrieval
+- [x] **Phase 2: RAG Corpus & Retrieval** - Ingest open-source LilyPond scores, build ChromaDB index, phrase-level chunking, metadata-filtered retrieval (completed 2026-02-25)
 - [ ] **Phase 3: MIDI-to-LilyPond Generation** - Core code generation from MIDI input via RAG-augmented LLM, section-by-section with coherence state, concert-pitch storage
 - [ ] **Phase 4: Rendering & Output Packaging** - LilyPond-to-PDF rendering, conductor score, extracted transposed parts, ZIP packaging with LilyPond source
 - [ ] **Phase 5: Audio Input Pipeline** - Audio file ingestion, YouTube URL extraction, Demucs source separation, Basic Pitch MIDI transcription
@@ -50,7 +50,7 @@ Plans:
   3. A retrieval query for "big band trumpet section, swing style" returns relevant LilyPond phrase examples ranked by similarity
   4. Corpus is chunked at phrase level (4-8 bars), expanding 2K+ source scores into 10K+ retrievable examples
   5. Retrieval filters by structured metadata (instrument family, ensemble type, style, musical context)
-**Plans:** 4 plans
+**Plans:** 4/4 plans complete
 
 Plans:
 - [ ] 02-01-PLAN.md -- Corpus foundation: data models, ChromaDB store, configurable embeddings, config extension
@@ -190,7 +190,7 @@ Phases execute in numeric order: 1 -> 2 -> 3 -> 4 -> 5 -> 6 -> 7 -> 8 -> 9 -> 10
 | Phase | Plans Complete | Status | Completed |
 |-------|----------------|--------|-----------|
 | 1. Project Scaffolding & Inference Router | 0/2 | Complete    | 2026-02-24 |
-| 2. RAG Corpus & Retrieval | 0/4 | Planned | - |
+| 2. RAG Corpus & Retrieval | 0/4 | Complete    | 2026-02-25 |
 | 3. MIDI-to-LilyPond Generation | 0/3 | Planned | - |
 | 4. Rendering & Output Packaging | 0/3 | Planned | - |
 | 5. Audio Input Pipeline | 0/TBD | Not started | - |
