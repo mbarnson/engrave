@@ -2,7 +2,7 @@
 
 **Gathered:** 2026-02-24
 **Revised:** 2026-02-24
-**Status:** Ready for planning (replanning needed -- 06-02 targets pre-5.1 pipeline)
+**Status:** Ready for planning
 
 <domain>
 ## Phase Boundary
@@ -57,7 +57,7 @@ Requirements: AUDP-03 (structured audio descriptions), AUDP-04 (user hints with 
 - **Prompt-only context.** Audio description is observed context (from input analysis). Coherence state tracks generated context (from LLM output). Don't mix them. Per-section audio labels are injected fresh; coherence state carries key/harmony/articulation consistency from generated output
 - **Same three-tier template always**, even for pure MIDI input (no audio). When no audio exists, the CONTEXTUAL section is empty/absent. Consistent prompt structure regardless of input type
 - **Prompt structure per section:** compact global header (tempo, key, style) + per-section block with audio description summary + user hints (full block) + current section MIDI data + coherence state summary from previous sections
-- **Post-Phase 5.1 pipeline awareness:** Phase 5.1 restructures `generate_section()` for parallel fan-out (two requests per section with prefix caching -- one for LilyPond, one for MusicXML JSON). Audio description and user hints must flow into BOTH fan-out requests, since both the LilyPond and JSON requests need the same musical context. The three-tier prompt template applies to both request types. Existing plans (06-02) were written against the pre-5.1 single-request function signature and need replanning to target the post-5.1 fan-out pipeline
+- **Post-Phase 5.1 pipeline awareness:** Phase 5.1 (not yet executed) would restructure `generate_section()` for parallel fan-out (two requests per section with prefix caching -- one for LilyPond, one for MusicXML JSON). If Phase 5.1 executes before Phase 6, audio description and user hints must flow into BOTH fan-out requests, since both the LilyPond and JSON requests need the same musical context. The three-tier prompt template applies to both request types. Plans (06-02) target the current single-request pipeline and include a conditional note that the pipeline integration task will need revision if Phase 5.1 executes first. The prompt restructuring (at the `build_section_prompt()` level) is architecture-agnostic and works for both single-request and fan-out pipelines
 
 ### Claude's Discretion
 - Exact Pydantic model field types and validation rules for AudioDescription
