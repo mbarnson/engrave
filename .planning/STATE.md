@@ -133,7 +133,7 @@ Recent decisions affecting current work:
 
 ### Pending Todos
 
-None yet.
+1. Standalone LilyPond-to-MusicXML converter via fine-tuned Qwen3-4B (v2 scope, data collection in Phase 05.1)
 
 ### Blockers/Concerns
 
