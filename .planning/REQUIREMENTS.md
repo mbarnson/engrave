@@ -28,7 +28,7 @@ Requirements for initial release. Each maps to roadmap phases.
 
 - [ ] **CORP-01**: System ingests open-source LilyPond scores from Mutopia Project (2,124 pieces) and indexes them as (LilyPond source, MIDI, structured text description) triples in ChromaDB
 - [ ] **CORP-02**: System ingests MusicXML scores from PDMX and converts to LilyPond via musicxml2ly for RAG corpus expansion
-- [ ] **CORP-03**: RAG system retrieves relevant few-shot examples based on structured metadata (instrument family, ensemble type, style, musical context) to provide context for LilyPond generation
+- [x] **CORP-03**: RAG system retrieves relevant few-shot examples based on structured metadata (instrument family, ensemble type, style, musical context) to provide context for LilyPond generation
 - [x] **CORP-04**: Corpus is chunked at phrase level (4-8 bars) to expand 2K+ scores into 10K+ retrievable examples
 
 ### LilyPond Generation
@@ -127,7 +127,7 @@ Deferred to future release.
 | AUDP-04 | Phase 6 | Pending |
 | CORP-01 | Phase 2 | Pending |
 | CORP-02 | Phase 2 | Pending |
-| CORP-03 | Phase 2 | Pending |
+| CORP-03 | Phase 2 | Complete |
 | CORP-04 | Phase 2 | Complete |
 | LILY-01 | Phase 3 | Pending |
 | LILY-02 | Phase 3 | Pending |

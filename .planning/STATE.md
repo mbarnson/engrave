@@ -10,28 +10,28 @@ See: .planning/PROJECT.md (updated 2026-02-24)
 ## Current Position
 
 Phase: 2 of 9 (RAG Corpus & Retrieval)
-Plan: 2 of 4 in current phase
+Plan: 3 of 4 in current phase
 Status: Executing
-Last activity: 2026-02-24 -- Completed 02-02-PLAN.md (chunking, metadata extraction, description templating)
+Last activity: 2026-02-25 -- Completed 02-01-PLAN.md (corpus storage foundation: ChromaDB, models, embeddings)
 
-Progress: [##........] 16%
+Progress: [##........] 22%
 
 ## Performance Metrics
 
 **Velocity:**
-- Total plans completed: 3
-- Average duration: 6.3 min
-- Total execution time: 0.3 hours
+- Total plans completed: 4
+- Average duration: 6.8 min
+- Total execution time: 0.5 hours
 
 **By Phase:**
 
 | Phase | Plans | Total | Avg/Plan |
 |-------|-------|-------|----------|
 | 1 | 2 | 12 min | 6 min |
-| 2 | 1 | 7 min | 7 min |
+| 2 | 2 | 16 min | 8 min |
 
 **Recent Trend:**
-- Last 5 plans: 01-01 (6 min), 01-02 (6 min), 02-02 (7 min)
+- Last 5 plans: 01-01 (6 min), 01-02 (6 min), 02-02 (7 min), 02-01 (9 min)
 - Trend: Consistent
 
 *Updated after each plan completion*
@@ -58,6 +58,9 @@ Recent decisions affecting current work:
 - 02-02: 8-bar fallback chunking when no structural boundaries detected
 - 02-02: Deterministic regex metadata extraction -- no LLM involvement per user decision
 - 02-02: python-ly 0.9.9 works on Python 3.13 despite PyPI listing 3.8-3.11
+- 02-01: ChromaDB Rust bindings reject None metadata values -- filter before add()
+- 02-01: chromadb.Client() is process-wide singleton -- unique collection names per test
+- 02-01: nomic-embed-text as default embedding model (configurable via engrave.toml)
 
 ### Pending Todos
 
@@ -71,6 +74,6 @@ None yet.
 
 ## Session Continuity
 
-Last session: 2026-02-24
-Stopped at: Completed 02-02-PLAN.md -- chunking, metadata, description modules
-Resume file: .planning/phases/02-rag-corpus-retrieval/02-02-SUMMARY.md
+Last session: 2026-02-25
+Stopped at: Completed 02-01-PLAN.md -- corpus storage foundation
+Resume file: .planning/phases/02-rag-corpus-retrieval/02-01-SUMMARY.md
