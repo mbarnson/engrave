@@ -671,6 +671,26 @@ def smoke_test(
 
 
 # ---------------------------------------------------------------------------
+# Web UI serve command
+# ---------------------------------------------------------------------------
+
+
+@app.command("serve")
+def serve(
+    host: str = typer.Option("127.0.0.1", help="Host to bind to"),
+    port: int = typer.Option(8000, help="Port to bind to"),
+) -> None:
+    """Start the minimal web UI for UAT testing."""
+    import uvicorn
+
+    from engrave.web.app import create_app
+
+    web_app = create_app()
+    typer.echo(f"Starting Engrave web UI at http://{host}:{port}")
+    uvicorn.run(web_app, host=host, port=port)
+
+
+# ---------------------------------------------------------------------------
 # Benchmark command group
 # ---------------------------------------------------------------------------
 
