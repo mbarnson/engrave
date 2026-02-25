@@ -34,6 +34,7 @@ Section parts are generated jointly so musicians within a section independently 
 - **Dynamics always printed**: omission rule applies only to articulation marks (staccato, accent, tenuto, marcato). Dynamics, tempo markings, expression text, and rehearsal marks are always printed on every part. Explicit allowlist of mark types eligible for omission
 - **No visual indicator of omission**: no "simile" or "sect." markings. Absence of marking IS the indicator — that's the Tim Davies convention. Players know the defaults before they sit down
 - **Processing pipeline order**: LLM output -> apply ENSM-03 defaults -> apply ENSM-05 omission rule -> final LilyPond. Each step operates on complete data from the previous step
+- **Two distinct parsing levels — not one post-processor, two**: Articulation defaults (ENSM-03) are a token-level transform — scan LilyPond for duration tokens (`c4`, `d8`), match duration, add/strip articulation marks. No positional context needed. The omission rule (ENSM-05) is a cross-part comparison that requires lightweight rhythmic alignment — accumulate beat position within each bar by summing durations (`4` = 1 beat, `8` = 0.5 beat, `r4` = 1 beat rest), then compare articulations across parts at the same (bar, beat) coordinate. LilyPond durations are explicit in the token stream so the alignment is arithmetic, not music theory. But these are two separate components: a token scanner for defaults and a rhythmic aligner for omission. The coding agent must build both
 
 ### Style-Aware Beaming (ENGR-05)
 - **Template-level, not post-processing**: beaming is controlled by `\set Timing.beamExceptions`, `\set Timing.baseMoment`, `\set Timing.beatStructure` in the LilyPond score template. Not per-note beam brackets
@@ -44,7 +45,8 @@ Section parts are generated jointly so musicians within a section independently 
 - **Jazz swing 4/4 incantation**: `beamExceptions = #'()`, `baseMoment = #(ly:make-moment 1/4)`, `beatStructure = 1,1,1,1` — clears the default half-bar grouping, beams eighths in pairs within beats
 
 ### Claude's Discretion
-- Post-processor implementation: AST vs regex vs token scanner approach for articulation scanning
+- Token scanner implementation details for ENSM-03 defaults (regex vs proper tokenizer)
+- Rhythmic aligner implementation details for ENSM-05 omission (data structure for beat-position indexing)
 - Exact Pydantic schema for the multi-instrument JSON blob in section-group fan-out
 - Error handling when section-group generation fails for one group but succeeds for others
 - How to handle the edge case where a section group has instruments with different note content (e.g., trumpet 1 solo while 2-4 have whole notes) — still joint generation, but the comparison logic needs to handle sparse data
