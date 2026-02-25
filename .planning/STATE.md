@@ -5,23 +5,23 @@
 See: .planning/PROJECT.md (updated 2026-02-24)
 
 **Core value:** When Sam uploads a recording and describes his ensemble, his players can sight-read the extracted parts at rehearsal and the brass section sounds like a section.
-**Current focus:** Phase 4: LilyPond Rendering -- Plan 3 next
+**Current focus:** Phase 4 complete -- Phase 5 next
 
 ## Current Position
 
-Phase: 4 of 9 (LilyPond Rendering)
-Plan: 3 of 3 in current phase
-Status: Executing Phase 4
-Last activity: 2026-02-25 -- Completed 04-02-PLAN.md (Score & part generators with dynamic restatement)
+Phase: 5 of 9 (Audio Understanding)
+Plan: 1 of ? in current phase
+Status: Phase 4 complete, ready for Phase 5
+Last activity: 2026-02-25 -- Completed 04-03-PLAN.md (Render pipeline & ZIP packaging)
 
-Progress: [######....] 55%
+Progress: [######....] 60%
 
 ## Performance Metrics
 
 **Velocity:**
-- Total plans completed: 11
-- Average duration: 6.1 min
-- Total execution time: 1.2 hours
+- Total plans completed: 12
+- Average duration: 6.0 min
+- Total execution time: 1.3 hours
 
 **By Phase:**
 
@@ -30,15 +30,16 @@ Progress: [######....] 55%
 | 1 | 2 | 12 min | 6 min |
 | 2 | 4 | 27 min | 7 min |
 | 3 | 3 | 22 min | 7 min |
-| 4 | 2 | 8 min | 4 min |
+| 4 | 3 | 13 min | 4 min |
 
 **Recent Trend:**
-- Last 5 plans: 03-01 (8 min), 03-02 (5 min), 03-03 (9 min), 04-01 (3 min), 04-02 (5 min)
+- Last 5 plans: 03-02 (5 min), 03-03 (9 min), 04-01 (3 min), 04-02 (5 min), 04-03 (5 min)
 - Trend: Consistent
 
 *Updated after each plan completion*
 | Phase 04 P01 | 3 min | 2 tasks | 4 files |
 | Phase 04 P02 | 5 min | 2 tasks | 6 files |
+| Phase 04 P03 | 5 min | 2 tasks | 7 files |
 
 ## Accumulated Context
 
@@ -99,6 +100,10 @@ Recent decisions affecting current work:
 - 04-02: Piano PianoStaff splits into upper/lower staves with separate variable refs (piano, pianoLeft)
 - 04-02: Non-transposing instruments omit \transpose wrapper entirely (no no-op \transpose c' c')
 - 04-02: Conductor score concert pitch throughout with no \transpose commands
+- 04-03: python-slugify for Unicode-safe song title slugification (instrument names are ASCII-only)
+- 04-03: RenderPipeline sets compiler.timeout before score (300s) vs part (60s) compilation
+- 04-03: Partial compilation: .ly source files always included in ZIP even for failed parts
+- 04-03: CLI render command uses regex variable extraction from music-definitions.ly as placeholder
 
 ### Pending Todos
 
@@ -119,5 +124,5 @@ None yet.
 ## Session Continuity
 
 Last session: 2026-02-25
-Stopped at: Completed 04-02-PLAN.md -- Score & part generators with dynamic restatement
-Resume file: .planning/phases/04-rendering-output-packaging/04-02-SUMMARY.md
+Stopped at: Completed 04-03-PLAN.md -- Render pipeline & ZIP packaging (Phase 4 complete)
+Resume file: .planning/phases/04-rendering-output-packaging/04-03-SUMMARY.md

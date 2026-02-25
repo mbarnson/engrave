@@ -14,7 +14,7 @@ Requirements for initial release. Each maps to roadmap phases.
 - [ ] **FNDN-03**: System accepts YouTube URLs as input via yt-dlp, extracts audio, and routes through audio processing pipeline
 - [x] **FNDN-04**: System supports multiple LLM providers (Anthropic API, OpenAI API, LMStudio local) via LiteLLM, configurable per pipeline stage
 - [x] **FNDN-05**: System provides a compile-check-fix retry loop that detects LilyPond compilation errors, feeds them back to the LLM, and retries up to 5 times
-- [ ] **FNDN-06**: System packages output as a ZIP containing selected PDFs, LilyPond source files, and MusicXML export
+- [x] **FNDN-06**: System packages output as a ZIP containing selected PDFs, LilyPond source files, and MusicXML export
 - [ ] **FNDN-07**: Web UI provides a single-page interface (FastAPI + HTML/JS) with drag-and-drop file upload, text description field, output format checkboxes, and "Engrave" button
 
 ### Audio Processing
@@ -48,7 +48,7 @@ Requirements for initial release. Each maps to roadmap phases.
 - [ ] **ENGR-06**: Parts include cue notes from an audible instrument after 8+ bars of rest, transposed to the player's reading key
 - [ ] **ENGR-07**: Parts include repeat signs, first/second endings, D.S. al Coda, and other navigation marks as inferred from structural analysis or user hints
 - [ ] **ENGR-08**: System generates chord chart / lead sheet output with Nashville number system or chord symbol notation, optional melody line, and lyric underlay if text is provided
-- [ ] **ENGR-09**: LilyPond source files (.ly) are always included in the output ZIP for downstream editing in Frescobaldi or text editor
+- [x] **ENGR-09**: LilyPond source files (.ly) are always included in the output ZIP for downstream editing in Frescobaldi or text editor
 - [ ] **ENGR-10**: Page turns in parts are placed at rests, never mid-phrase
 
 ### Ensemble & Articulation
@@ -119,7 +119,7 @@ Deferred to future release.
 | FNDN-03 | Phase 5 | Pending |
 | FNDN-04 | Phase 1 | Complete |
 | FNDN-05 | Phase 1 | Complete |
-| FNDN-06 | Phase 4 | Pending |
+| FNDN-06 | Phase 4 | Complete |
 | FNDN-07 | Phase 10 | Pending |
 | AUDP-01 | Phase 5 | Pending |
 | AUDP-02 | Phase 5 | Pending |
@@ -141,7 +141,7 @@ Deferred to future release.
 | ENGR-06 | Phase 8 | Pending |
 | ENGR-07 | Phase 8 | Pending |
 | ENGR-08 | Phase 8 | Pending |
-| ENGR-09 | Phase 4 | Pending |
+| ENGR-09 | Phase 4 | Complete |
 | ENGR-10 | Phase 8 | Pending |
 | ENSM-01 | Phase 4 | Complete |
 | ENSM-02 | Phase 7 | Pending |
