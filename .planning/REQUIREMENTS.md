@@ -22,7 +22,7 @@ Requirements for initial release. Each maps to roadmap phases.
 - [x] **AUDP-01**: System performs source separation on audio input via best-available model per stem (BS-RoFormer for vocals, Mel-Band RoFormer for drums/other, HTDemucs ft for bass) using audio-separator, producing drums, bass, vocals, and other stems
 - [x] **AUDP-02**: System transcribes separated stems to MIDI via Basic Pitch (default, single-instrument) or MT3 (multi-instrument mode for dense ensemble content), extracting pitch, timing, and velocity per voice -- with fallback strategy when primary model produces poor results
 - [x] **AUDP-03**: System produces structured musical descriptions from audio via audio LM (Qwen3-Omni-30B-A3B-Instruct for local inference, Gemini 3 Flash for cloud/long-form), capturing key, tempo, style, dynamics, articulation intent, and structural form
-- [ ] **AUDP-04**: User can provide natural language hints describing ensemble composition, style, structural markers, and articulation intent -- hints are treated as authoritative when conflicting with audio inference
+- [x] **AUDP-04**: User can provide natural language hints describing ensemble composition, style, structural markers, and articulation intent -- hints are treated as authoritative when conflicting with audio inference
 
 ### RAG & Corpus
 
@@ -124,7 +124,7 @@ Deferred to future release.
 | AUDP-01 | Phase 5 | Complete |
 | AUDP-02 | Phase 5 | Complete |
 | AUDP-03 | Phase 6 | Complete |
-| AUDP-04 | Phase 6 | Pending |
+| AUDP-04 | Phase 6 | Complete |
 | CORP-01 | Phase 2 | Complete |
 | CORP-02 | Phase 2 | Complete |
 | CORP-03 | Phase 2 | Complete |

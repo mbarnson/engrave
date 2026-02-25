@@ -5,23 +5,23 @@
 See: .planning/PROJECT.md (updated 2026-02-24)
 
 **Core value:** When Sam uploads a recording and describes his ensemble, his players can sight-read the extracted parts at rehearsal and the brass section sounds like a section.
-**Current focus:** Phase 06 IN PROGRESS -- Audio understanding & hints (audio LM integration + prompt restructuring)
+**Current focus:** Phase 06 COMPLETE -- Audio understanding & hints (audio LM integration + prompt restructuring)
 
 ## Current Position
 
 Phase: 06 of 9
-Plan: 1 of 2 in current phase
-Status: Phase 06 Plan 01 complete. AudioDescription schema, GeminiDescriber, NL templates, DescriberConfig delivered.
-Last activity: 2026-02-25 -- Completed 06-01-PLAN.md (audio description foundation)
+Plan: 2 of 2 in current phase
+Status: Phase 06 complete. Three-tier prompt, hint loader, audit log, pipeline integration, CLI --hints delivered.
+Last activity: 2026-02-25 -- Completed 06-02-PLAN.md (pipeline integration)
 
-Progress: [########..] 80%
+Progress: [########..] 85%
 
 ## Performance Metrics
 
 **Velocity:**
-- Total plans completed: 19
+- Total plans completed: 20
 - Average duration: 5.4 min
-- Total execution time: 1.9 hours
+- Total execution time: 2.0 hours
 
 **By Phase:**
 
@@ -49,6 +49,7 @@ Progress: [########..] 80%
 | Phase 05.1 P03 | 5 min | 2 tasks | 11 files |
 | Phase 05.1 P04 | 6 min | 2 tasks | 4 files |
 | Phase 06 P01 | 4 min | 2 tasks | 8 files |
+| Phase 06 P02 | 6 min | 2 tasks | 11 files |
 
 ## Accumulated Context
 
@@ -150,10 +151,16 @@ Recent decisions affecting current work:
 - 06-01: GeminiDescriber retries once on validation failure with simplified prompt, then returns minimal defaults
 - 06-01: Audio downsampled to 16kHz via pydub when exceeding max_file_size_mb threshold
 - 06-01: NL templates produce compact prose for CONTEXTUAL prompt block -- no raw JSON in generation prompt
+- 06-02: Three-tier prompt uses same template always (DEFINITIVE/CONTEXTUAL/RAW INPUT) -- placeholders for empty tiers
+- 06-02: Audio description and user hints NEVER truncated -- only MIDI, RAG, coherence participate in budget fitting
+- 06-02: Audit log skeletal in Phase 6 -- hint_value always None, infrastructure forward-looking
+- 06-02: MIDI/audio disagreements logged at WARNING level -- disagreement itself is the signal
+- 06-02: PromptBudget safety_margin reduced 4000->3200 to accommodate description_tokens=800
 
 ### Roadmap Evolution
 
 - Phase 05.1 inserted after Phase 5: Promote ADVN-01 into v1 scope for Dorico (URGENT)
+- Phase 07.1 inserted after Phase 7: Minimal UI for UAT needs (URGENT)
 
 ### Pending Todos
 
@@ -174,5 +181,5 @@ Recent decisions affecting current work:
 ## Session Continuity
 
 Last session: 2026-02-25
-Stopped at: Completed 06-01-PLAN.md (audio description foundation)
-Resume file: 06-02-PLAN.md
+Stopped at: Completed 06-02-PLAN.md (pipeline integration)
+Resume file: Phase 06 complete, ready for Phase 07
