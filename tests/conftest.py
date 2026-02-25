@@ -456,3 +456,166 @@ def populated_corpus_store(request, tmp_path: Path):
 
     store.add_chunks(chunks)
     return store
+
+
+# ---------------------------------------------------------------------------
+# Generation pipeline fixtures
+# ---------------------------------------------------------------------------
+
+
+@pytest.fixture
+def mock_rag_retriever():
+    """Return a callable that always returns 3 hardcoded LilyPond example strings."""
+
+    def _retriever(query: str, limit: int = 3) -> list[str]:
+        examples = [
+            "c'4 d'4 e'4 f'4 | g'2 g'2 |",
+            "c4 e4 g4 c'4 | e'2 c'2 |",
+            "g4 a4 b4 c'4 | d'2. r4 |",
+        ]
+        return examples[:limit]
+
+    return _retriever
+
+
+@pytest.fixture
+def sample_midi_type0(tmp_path: Path) -> Path:
+    """Create a simple type 0 MIDI file programmatically, return path."""
+    import mido
+
+    path = tmp_path / "test_type0.mid"
+    mid = mido.MidiFile(type=0, ticks_per_beat=480)
+    track = mido.MidiTrack()
+    mid.tracks.append(track)
+
+    track.append(mido.MetaMessage("set_tempo", tempo=500000, time=0))
+    track.append(mido.MetaMessage("time_signature", numerator=4, denominator=4, time=0))
+    track.append(mido.Message("program_change", channel=0, program=0, time=0))
+    track.append(mido.Message("program_change", channel=1, program=32, time=0))
+
+    # Piano (ch0): 8 quarter notes
+    for i in range(8):
+        pitch = 60 + (i % 4)
+        track.append(
+            mido.Message("note_on", channel=0, note=pitch, velocity=80, time=0 if i == 0 else 30)
+        )
+        track.append(mido.Message("note_off", channel=0, note=pitch, velocity=0, time=450))
+
+    # Bass (ch1): 2 whole notes
+    for i in range(2):
+        pitch = 36 + (i * 5)
+        start_offset = i * 1920
+        track.append(
+            mido.Message(
+                "note_on",
+                channel=1,
+                note=pitch,
+                velocity=70,
+                time=start_offset if i == 0 else 1920 - 450 + 30,
+            )
+        )
+        track.append(mido.Message("note_off", channel=1, note=pitch, velocity=0, time=1800))
+
+    track.append(mido.MetaMessage("end_of_track", time=0))
+    mid.save(str(path))
+    return path
+
+
+@pytest.fixture
+def sample_midi_type1(tmp_path: Path) -> Path:
+    """Create a simple type 1 MIDI file programmatically, return path."""
+    import mido
+
+    path = tmp_path / "test_type1.mid"
+    mid = mido.MidiFile(type=1, ticks_per_beat=480)
+
+    # Conductor track
+    conductor = mido.MidiTrack()
+    mid.tracks.append(conductor)
+    conductor.append(mido.MetaMessage("set_tempo", tempo=500000, time=0))
+    conductor.append(mido.MetaMessage("time_signature", numerator=4, denominator=4, time=0))
+    conductor.append(mido.MetaMessage("end_of_track", time=0))
+
+    # Piano track
+    piano = mido.MidiTrack()
+    mid.tracks.append(piano)
+    piano.append(mido.MetaMessage("track_name", name="Piano", time=0))
+    piano.append(mido.Message("program_change", channel=0, program=0, time=0))
+    for i in range(8):
+        pitch = 60 + (i % 4)
+        piano.append(
+            mido.Message("note_on", channel=0, note=pitch, velocity=80, time=0 if i == 0 else 30)
+        )
+        piano.append(mido.Message("note_off", channel=0, note=pitch, velocity=0, time=450))
+    piano.append(mido.MetaMessage("end_of_track", time=0))
+
+    # Bass track
+    bass = mido.MidiTrack()
+    mid.tracks.append(bass)
+    bass.append(mido.MetaMessage("track_name", name="Bass", time=0))
+    bass.append(mido.Message("program_change", channel=1, program=32, time=0))
+    for i in range(4):
+        pitch = 36 + (i * 2)
+        bass.append(
+            mido.Message("note_on", channel=1, note=pitch, velocity=70, time=0 if i == 0 else 60)
+        )
+        bass.append(mido.Message("note_off", channel=1, note=pitch, velocity=0, time=900))
+    bass.append(mido.MetaMessage("end_of_track", time=0))
+
+    mid.save(str(path))
+    return path
+
+
+@pytest.fixture
+def mock_generator_router():
+    """Mock InferenceRouter that returns formatted instrument blocks for parse_instrument_blocks().
+
+    The response is formatted with ``% varName`` markers for parsing.
+    """
+    router = AsyncMock()
+
+    def _generate_response(*args, **kwargs):
+        """Return LilyPond music content formatted as instrument blocks."""
+        messages = kwargs.get("messages", args[0] if args else [])
+        # Extract prompt to determine instrument variable names
+        prompt = ""
+        if messages:
+            for msg in messages:
+                if isinstance(msg, dict) and msg.get("role") == "user":
+                    prompt = msg.get("content", "")
+                    break
+
+        # Parse variable names from the template in the prompt
+        import re
+
+        var_pattern = re.compile(r"^([a-zA-Z]\w*)\s*=\s*\{", re.MULTILINE)
+        var_names = var_pattern.findall(prompt)
+
+        if not var_names:
+            var_names = ["piano", "bass"]
+
+        # Build response with instrument blocks
+        blocks = []
+        for var_name in var_names:
+            blocks.append(f"% {var_name}\nc'4 d'4 e'4 f'4 | g'2 g'2 |")
+
+        return "\n\n".join(blocks)
+
+    router.complete.side_effect = _generate_response
+    return router
+
+
+@pytest.fixture
+def mock_compiler_success():
+    """Mock LilyPondCompiler that always returns compilation success."""
+    from engrave.lilypond.compiler import RawCompileResult
+
+    compiler = MagicMock()
+    compiler.compile.return_value = RawCompileResult(
+        success=True,
+        returncode=0,
+        stdout="",
+        stderr="",
+        output_path=Path("/tmp/out.pdf"),
+    )
+    return compiler
