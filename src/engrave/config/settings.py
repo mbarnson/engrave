@@ -63,6 +63,17 @@ class LilyPondConfig(BaseModel):
     context_lines: int = 20
 
 
+class CorpusConfig(BaseModel):
+    """Corpus storage and embedding configuration.
+
+    Read from the ``[corpus]`` section of ``engrave.toml``.
+    """
+
+    embedding_model: str = "nomic-embed-text"
+    db_path: str = "data/corpus_db"
+    collection_name: str = "lilypond_phrases"
+
+
 class Settings(BaseSettings):
     """Application settings loaded from engrave.toml + .env with env var override.
 
@@ -72,6 +83,7 @@ class Settings(BaseSettings):
     providers: ProvidersConfig = ProvidersConfig()
     roles: dict[str, RoleConfig] = {}
     lilypond: LilyPondConfig = LilyPondConfig()
+    corpus: CorpusConfig = CorpusConfig()
 
     model_config = SettingsConfigDict(
         env_file=str(PROJECT_ROOT / ".env"),

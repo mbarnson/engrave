@@ -42,6 +42,11 @@ min_version = "2.24"
 compile_timeout = 60
 max_fix_attempts = 5
 context_lines = 20
+
+[corpus]
+embedding_model = "nomic-embed-text"
+db_path = "data/corpus_db"
+collection_name = "lilypond_phrases"
 """
 
 
@@ -127,3 +132,31 @@ def mock_router():
     router = AsyncMock()
     router.complete.return_value = '\\version "2.24.4"\n\\relative c\' { c4 d e f | g2 g | }\n'
     return router
+
+
+# ---------------------------------------------------------------------------
+# Corpus fixtures
+# ---------------------------------------------------------------------------
+
+
+@pytest.fixture
+def corpus_config(tmp_path: Path):
+    """Return a CorpusConfig pointing at a temp directory."""
+    from engrave.config.settings import CorpusConfig
+
+    return CorpusConfig(
+        embedding_model="all-MiniLM-L6-v2",
+        db_path=str(tmp_path / "test_corpus_db"),
+        collection_name="test_phrases",
+    )
+
+
+@pytest.fixture
+def corpus_store(corpus_config):
+    """Return a CorpusStore backed by an in-memory ChromaDB client."""
+    import chromadb
+
+    from engrave.corpus.store import CorpusStore
+
+    client = chromadb.Client()
+    return CorpusStore(config=corpus_config, client=client)

@@ -30,3 +30,8 @@ min_version = "2.24"
 compile_timeout = 60
 max_fix_attempts = 5
 context_lines = 20
+
+[corpus]
+embedding_model = "nomic-embed-text"
+db_path = "data/corpus_db"
+collection_name = "lilypond_phrases"

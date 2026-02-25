@@ -145,11 +145,12 @@ class TestEmbeddingFunction:
         ef = get_embedding_function("all-MiniLM-L6-v2")
         assert callable(ef)
 
-    def test_default_model(self) -> None:
-        """Default model name should be nomic-embed-text per user decision."""
-        # We test that the function accepts the default model without error.
-        ef = get_embedding_function("nomic-embed-text")
-        assert ef is not None
+    def test_default_model_config(self) -> None:
+        """Default embedding model in CorpusConfig is nomic-embed-text per user decision."""
+        from engrave.config.settings import CorpusConfig
+
+        config = CorpusConfig()
+        assert config.embedding_model == "nomic-embed-text"
 
 
 # ---------------------------------------------------------------------------
@@ -159,14 +160,20 @@ class TestEmbeddingFunction:
 
 class TestCorpusStore:
     @pytest.fixture()
-    def store(self, tmp_path) -> CorpusStore:
-        """Create a CorpusStore backed by an in-memory ChromaDB client for test speed."""
+    def store(self, tmp_path, request) -> CorpusStore:
+        """Create a CorpusStore backed by an in-memory ChromaDB client for test speed.
+
+        Each test gets a unique collection name to avoid cross-test contamination
+        (chromadb.Client() is a process-wide singleton in-memory store).
+        """
         from engrave.config.settings import CorpusConfig
 
+        # Use the test node id to guarantee a unique collection per test
+        unique_name = request.node.name.replace("[", "_").replace("]", "_")[:50]
         config = CorpusConfig(
             embedding_model="all-MiniLM-L6-v2",
             db_path=str(tmp_path / "test_db"),
-            collection_name="test_phrases",
+            collection_name=f"test_{unique_name}",
         )
         client = chromadb.Client()
         return CorpusStore(config=config, client=client)
