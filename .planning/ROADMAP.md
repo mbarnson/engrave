@@ -68,11 +68,12 @@ Plans:
   3. Scores are generated in 4-8 bar sections with coherence state passing (key, articulations, dynamics, voicing patterns) maintaining consistency across sections
   4. All music is stored internally in concert pitch -- no transposed pitch in the intermediate representation
   5. First-attempt LilyPond compilation success rate exceeds 90% across test corpus (before retry loop)
-**Plans**: TBD
+**Plans:** 3 plans
 
 Plans:
-- [ ] 03-01: TBD
-- [ ] 03-02: TBD
+- [ ] 03-01-PLAN.md -- MIDI subsystem: loader, analyzer, tokenizer, section detection (TDD)
+- [ ] 03-02-PLAN.md -- Generation foundation: coherence state, templates, prompt budget, failure log (TDD)
+- [ ] 03-03-PLAN.md -- Pipeline orchestration, section assembly, CLI generate command, integration tests
 
 ### Phase 4: Rendering & Output Packaging
 **Goal**: User receives professional-quality PDF output -- a full conductor score and individual transposed parts -- packaged in a ZIP with source files
@@ -189,7 +190,7 @@ Phases execute in numeric order: 1 -> 2 -> 3 -> 4 -> 5 -> 6 -> 7 -> 8 -> 9 -> 10
 |-------|----------------|--------|-----------|
 | 1. Project Scaffolding & Inference Router | 0/2 | Complete    | 2026-02-24 |
 | 2. RAG Corpus & Retrieval | 0/4 | Planned | - |
-| 3. MIDI-to-LilyPond Generation | 0/TBD | Not started | - |
+| 3. MIDI-to-LilyPond Generation | 0/3 | Planned | - |
 | 4. Rendering & Output Packaging | 0/TBD | Not started | - |
 | 5. Audio Input Pipeline | 0/TBD | Not started | - |
 | 6. Audio Understanding & Hints | 0/TBD | Not started | - |
