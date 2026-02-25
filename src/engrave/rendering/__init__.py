@@ -1,5 +1,9 @@
 """Rendering package -- ensemble presets, LilyPond file generation, and output packaging."""
 
+from engrave.rendering.articulation import (
+    apply_articulation_defaults,
+    apply_section_consistency,
+)
 from engrave.rendering.ensemble import (
     BIG_BAND,
     BigBandPreset,
@@ -45,6 +49,8 @@ __all__ = [
     "RenderPipeline",
     "RenderResult",
     "StaffGroupType",
+    "apply_articulation_defaults",
+    "apply_section_consistency",
     "generate_conductor_score",
     "generate_music_definitions",
     "generate_part",
