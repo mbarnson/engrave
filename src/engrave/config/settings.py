@@ -63,6 +63,76 @@ class LilyPondConfig(BaseModel):
     context_lines: int = 20
 
 
+class SeparationStep(BaseModel):
+    """A single step in a hierarchical source separation cascade."""
+
+    model: str
+    input_stem: str = "mix"
+    output_stems: list[str]
+
+
+class SeparationConfig(BaseModel):
+    """Source separation pipeline configuration."""
+
+    steps: list[SeparationStep] = []
+
+    @classmethod
+    def default_steps(cls) -> SeparationConfig:
+        """Return a big band default cascade.
+
+        1. htdemucs_ft splits the mix into drums, bass, vocals, other.
+        2. bs_roformer isolates piano from the 'other' residual.
+        """
+        return cls(
+            steps=[
+                SeparationStep(
+                    model="htdemucs_ft",
+                    input_stem="mix",
+                    output_stems=["drums", "bass", "vocals", "other"],
+                ),
+                SeparationStep(
+                    model="bs_roformer",
+                    input_stem="other",
+                    output_stems=["piano", "residual"],
+                ),
+            ]
+        )
+
+
+class TranscriptionConfig(BaseModel):
+    """Audio-to-MIDI transcription settings."""
+
+    backend: str = "basic_pitch"
+    venv_python: str | None = None
+    onset_threshold: float = 0.5
+    frame_threshold: float = 0.3
+    minimum_note_length_ms: int = 58
+
+
+class BenchmarkConfig(BaseModel):
+    """Benchmark harness configuration."""
+
+    soundfont_path: str | None = None
+    onset_tolerance: float = 0.05
+    results_dir: str = "data/benchmark_results"
+
+
+class AudioConfig(BaseModel):
+    """Audio input pipeline configuration.
+
+    Controls format normalization, source separation, transcription,
+    and benchmark harness settings.  Read from ``[audio]`` in engrave.toml.
+    """
+
+    target_sample_rate: int = 44100
+    target_channels: int = 1
+    max_duration_seconds: int = 900
+    supported_formats: list[str] = ["mp3", "wav", "aiff", "flac"]
+    separation: SeparationConfig = SeparationConfig()
+    transcription: TranscriptionConfig = TranscriptionConfig()
+    benchmark: BenchmarkConfig = BenchmarkConfig()
+
+
 class CorpusConfig(BaseModel):
     """Corpus storage and embedding configuration.
 
@@ -84,6 +154,7 @@ class Settings(BaseSettings):
     roles: dict[str, RoleConfig] = {}
     lilypond: LilyPondConfig = LilyPondConfig()
     corpus: CorpusConfig = CorpusConfig()
+    audio: AudioConfig = AudioConfig()
 
     model_config = SettingsConfigDict(
         env_file=str(PROJECT_ROOT / ".env"),

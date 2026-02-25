@@ -2,6 +2,9 @@
 
 from __future__ import annotations
 
+import math
+import struct
+import wave
 from pathlib import Path
 from typing import TYPE_CHECKING, Any
 from unittest.mock import AsyncMock, MagicMock, patch
@@ -47,6 +50,12 @@ context_lines = 20
 embedding_model = "nomic-embed-text"
 db_path = "data/corpus_db"
 collection_name = "lilypond_phrases"
+
+[audio]
+target_sample_rate = 44100
+target_channels = 1
+max_duration_seconds = 900
+supported_formats = ["mp3", "wav", "aiff", "flac"]
 """
 
 
@@ -132,6 +141,33 @@ def mock_router():
     router = AsyncMock()
     router.complete.return_value = '\\version "2.24.4"\n\\relative c\' { c4 d e f | g2 g | }\n'
     return router
+
+
+# ---------------------------------------------------------------------------
+# Audio fixtures
+# ---------------------------------------------------------------------------
+
+
+@pytest.fixture
+def sample_wav(tmp_path: Path) -> Path:
+    """Create a minimal valid WAV file (1 second, 44.1kHz, mono, 440Hz sine).
+
+    Uses the ``wave`` stdlib module -- no pydub dependency.
+    """
+    path = tmp_path / "sample.wav"
+    sample_rate = 44100
+    duration_s = 1.0
+    frequency = 440.0
+    n_frames = int(sample_rate * duration_s)
+
+    with wave.open(str(path), "wb") as wf:
+        wf.setnchannels(1)
+        wf.setsampwidth(2)  # 16-bit
+        wf.setframerate(sample_rate)
+        for i in range(n_frames):
+            sample = int(32767 * math.sin(2 * math.pi * frequency * i / sample_rate))
+            wf.writeframes(struct.pack("<h", sample))
+    return path
 
 
 # ---------------------------------------------------------------------------
