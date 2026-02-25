@@ -3,13 +3,21 @@
 Allocates tokens across MIDI, RAG, coherence, template, and output reserve.
 Truncates gracefully when components exceed allocation (RAG first, then
 coherence, then MIDI as last resort).
+
+Also provides JSON generation prompt suffix and extraction utilities for the
+parallel LilyPond + JSON fan-out (Chatterfart prefix-caching pattern).
 """
 
 from __future__ import annotations
 
+import json
+import logging
+import re
 from dataclasses import dataclass
 
 from engrave.generation.coherence import CoherenceState
+
+logger = logging.getLogger(__name__)
 
 
 @dataclass
@@ -192,3 +200,128 @@ MIDI CONTENT FOR THIS SECTION:
 {fitted_midi}
 
 Generate the LilyPond music content for each instrument variable:"""
+
+
+def build_json_generation_suffix(instrument_names: list[str]) -> str:
+    """Build the suffix appended to the shared prompt that instructs JSON output.
+
+    The suffix tells the LLM to produce structured JSON notation events
+    instead of LilyPond.  It includes a concrete example matching the
+    format from CONTEXT.md (measure-level structure, flat note internals,
+    LilyPond-style pitch names).
+
+    Args:
+        instrument_names: List of instrument names; one SectionNotation
+            object per instrument is requested.
+
+    Returns:
+        Prompt suffix string with JSON format instructions and example.
+    """
+    instruments_list = ", ".join(f'"{name}"' for name in instrument_names)
+
+    return f"""Instead of LilyPond, generate structured JSON notation events for this section.
+
+OUTPUT FORMAT:
+Return a JSON array with one object per instrument.  The instruments are: {instruments_list}.
+
+Each object follows this structure:
+```json
+[
+  {{
+    "instrument": "trumpet_1",
+    "key": "bf_major",
+    "time_signature": "4/4",
+    "measures": [
+      {{
+        "number": 17,
+        "notes": [
+          {{"pitch": "bf4", "beat": 1.0, "duration": 1.0, "articulations": ["marcato"], "dynamic": "f"}},
+          {{"pitch": "d5", "beat": 2.0, "duration": 0.5}},
+          {{"pitch": "ef5", "beat": 2.5, "duration": 0.5}},
+          {{"pitch": "f5", "beat": 3.0, "duration": 2.0, "expressions": ["tenuto"]}}
+        ]
+      }},
+      {{
+        "number": 18,
+        "notes": [
+          {{"type": "rest", "beat": 1.0, "duration": 4.0}}
+        ]
+      }}
+    ]
+  }}
+]
+```
+
+RULES:
+1. Use "type": "rest" for rests (no pitch field needed).
+2. Place "dynamic" on the FIRST note where the dynamic level changes, not on every note.
+3. "articulations" and "expressions" are arrays; omit them when empty rather than using an empty array.
+4. Pitch uses LilyPond-style names: bf4 for B-flat 4, ef5 for E-flat 5, fis3 for F-sharp 3.
+5. "duration" is in quarterLength units: 1.0 = quarter note, 0.5 = eighth note, 2.0 = half note.
+6. Measure numbers must be explicit and sequential.
+7. Output ONLY the JSON array.  No commentary, no markdown, no explanation.
+
+Generate the JSON notation events:"""
+
+
+# -- JSON extraction from LLM response -----------------------------------
+
+# Pattern to extract JSON from markdown code blocks
+_JSON_CODE_BLOCK_PATTERN = re.compile(
+    r"```(?:json)?\s*\n(.*?)```",
+    re.DOTALL,
+)
+
+# Pattern to find individual JSON objects with one level of brace nesting
+_JSON_OBJECT_PATTERN = re.compile(
+    r"\{[^{}]*(?:\{[^{}]*(?:\{[^{}]*\}[^{}]*)*\}[^{}]*)*\}",
+    re.DOTALL,
+)
+
+
+def extract_json_from_response(response: str) -> list[dict]:
+    """Extract JSON notation events from an LLM response.
+
+    Handles responses that are:
+    - Clean JSON arrays or objects
+    - Wrapped in markdown code blocks (``\\`\\`\\`json ... \\`\\`\\```)
+    - Mixed with surrounding commentary text
+    - Malformed (returns empty list, never raises)
+
+    Args:
+        response: Raw LLM response text.
+
+    Returns:
+        List of parsed dicts (one per instrument).  Empty list on
+        complete parse failure.
+    """
+    # Step 1: Strip markdown code blocks if present
+    match = _JSON_CODE_BLOCK_PATTERN.search(response)
+    text = match.group(1).strip() if match else response.strip()
+
+    # Step 2: Try json.loads on cleaned text -- array first, then object
+    try:
+        parsed = json.loads(text)
+        if isinstance(parsed, list):
+            return parsed
+        if isinstance(parsed, dict):
+            return [parsed]
+    except (json.JSONDecodeError, ValueError):
+        pass
+
+    # Step 3: Try extracting individual JSON objects via regex
+    objects: list[dict] = []
+    for obj_match in _JSON_OBJECT_PATTERN.finditer(text):
+        try:
+            obj = json.loads(obj_match.group())
+            if isinstance(obj, dict):
+                objects.append(obj)
+        except (json.JSONDecodeError, ValueError):
+            continue
+
+    if objects:
+        return objects
+
+    # Step 4: Complete failure
+    logger.warning("Failed to extract JSON from LLM response (length=%d)", len(response))
+    return []
