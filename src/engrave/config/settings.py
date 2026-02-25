@@ -117,11 +117,33 @@ class BenchmarkConfig(BaseModel):
     results_dir: str = "data/benchmark_results"
 
 
+class DescriberConfig(BaseModel):
+    """Audio LM describer configuration.
+
+    Controls the audio description backend that sends audio to an LLM
+    for structured musical analysis.  Read from ``[audio.describer]``
+    in engrave.toml.
+    """
+
+    model: str = "gemini/gemini-3-flash"
+    """LiteLLM model identifier for the audio LM backend."""
+
+    timeout: int = 120
+    """Request timeout in seconds."""
+
+    max_file_size_mb: int = 15
+    """Threshold above which audio is downsampled to 16 kHz before sending."""
+
+    max_retries: int = 1
+    """Retries on validation failure before returning minimal defaults."""
+
+
 class AudioConfig(BaseModel):
     """Audio input pipeline configuration.
 
     Controls format normalization, source separation, transcription,
-    and benchmark harness settings.  Read from ``[audio]`` in engrave.toml.
+    description (audio LM), and benchmark harness settings.
+    Read from ``[audio]`` in engrave.toml.
     """
 
     target_sample_rate: int = 44100
@@ -130,6 +152,7 @@ class AudioConfig(BaseModel):
     supported_formats: list[str] = ["mp3", "wav", "aiff", "flac"]
     separation: SeparationConfig = SeparationConfig()
     transcription: TranscriptionConfig = TranscriptionConfig()
+    describer: DescriberConfig = DescriberConfig()
     benchmark: BenchmarkConfig = BenchmarkConfig()
 
 
