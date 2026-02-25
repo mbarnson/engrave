@@ -14,26 +14,35 @@
 | FastAPI | 0.132.0 | HTTP API server | De facto Python API framework for ML apps. Async-native, Pydantic v2 integration, OpenAPI auto-docs. Install as `fastapi[standard]`. |
 | Pydantic | 2.12.x | Data validation / config | Required by FastAPI. Use v2 -- significant perf gains over v1. Drives request/response schemas and pipeline config. |
 | Uvicorn | latest | ASGI server | Ships with `fastapi[standard]`. Use `uvicorn[standard]` for uvloop on macOS. |
-| PyTorch | 2.10.0 | ML framework | Required by Demucs, MT3, Basic Pitch, and Qwen3-Omni. MPS backend for Apple Silicon GPU acceleration. |
+| PyTorch | 2.10.0 | ML framework | Required by audio-separator, MT3, Basic Pitch, and Qwen3-Omni. MPS backend for Apple Silicon GPU acceleration. |
 
 ### Source Separation (Stage 1)
 
 | Technology | Version | Purpose | Why Recommended |
 |------------|---------|---------|-----------------|
-| demucs-infer | 4.1.2 | Audio source separation | Use `demucs-infer` NOT `demucs`. The original `demucs` package (4.0.1) is abandoned (last release Sep 2023, repo archived). `demucs-infer` is inference-only, optimized for PyTorch 2.x, supports Python 3.12, released Jan 2026. Uses htdemucs model (Hybrid Transformer, 9.0 dB SDR). Runs on MPS (Apple Silicon GPU). |
+| audio-separator | latest | Audio source separation (multi-model) | Wraps SOTA models (BS-RoFormer, Mel-Band RoFormer, Demucs HTDemucs, MDX-NET, SCNet) under one `pip install audio-separator` API. Enables per-stem model selection for optimal quality. PolUVR fork adds CoreML acceleration on Apple Silicon. Replaces `demucs-infer` which only supports HTDemucs (~9.0 dB SDR vocals) with access to BS-RoFormer (~12.9 dB SDR vocals). |
 
-**Model choice:** `htdemucs_ft` (fine-tuned) for best quality. 4x slower than `htdemucs` but worth it for a non-realtime pipeline. Separates into drums, bass, vocals, other. The `htdemucs_6s` model adds piano and guitar stems but piano quality is poor -- avoid for v1.
+**Per-stem model strategy:** For an offline (non-realtime) pipeline, use the highest-quality model per stem:
+
+| Stem | Best Model | SDR | Why |
+|------|-----------|-----|-----|
+| Vocals | BS-RoFormer-Viperx-1297 | ~12.9 dB | Cleanest vocal isolation, won SDX23 |
+| Drums | Mel-Band RoFormer or HTDemucs ft | ~12.5 / ~9.0 dB | Mel-Band better for transients; HTDemucs ft solid fallback |
+| Bass | HTDemucs ft or SCNet XL | ~9.0 / ~10.7 dB | HTDemucs historically strongest on bass |
+| Other | Mel-Band RoFormer | ~12.5 dB | Better frequency separation via mel-scale subbands |
+
+All models accessible via `audio-separator`. For offline pipeline (non-realtime), use highest-quality model per stem.
 
 ### MIDI Transcription (Stage 2)
 
 | Technology | Version | Purpose | Why Recommended |
 |------------|---------|---------|-----------------|
-| basic-pitch | 0.4.0 | Primary MIDI transcription | Spotify's lightweight CNN-based AMT. <20MB memory, <17K params. Pip-installable. Polyphonic, instrument-agnostic, pitch bend detection. Best on single-instrument stems (which is exactly what Demucs produces). |
+| basic-pitch | 0.4.0 | Primary MIDI transcription | Spotify's lightweight CNN-based AMT. <20MB memory, <17K params. Pip-installable. Polyphonic, instrument-agnostic, pitch bend detection. Best on single-instrument stems (which is exactly what audio-separator produces). |
 | MT3 (magenta/mt3) | research | Multi-track transcription fallback | Google's transformer-based multi-instrument AMT. SOTA accuracy on multi-instrument audio. Use as validation/comparison, not primary path. Requires T5X/JAX stack which conflicts with PyTorch ecosystem -- run in isolated environment. |
 
-**Rationale for Basic Pitch as primary:** After Demucs separation, each stem is effectively single-instrument. Basic Pitch excels at single-instrument transcription with pitch bends. MT3's multi-track capability is redundant post-separation and its JAX dependency creates friction in a PyTorch-centric pipeline.
+**Rationale for Basic Pitch as primary:** After source separation, each stem is effectively single-instrument. Basic Pitch excels at single-instrument transcription with pitch bends. MT3's multi-track capability is redundant post-separation and its JAX dependency creates friction in a PyTorch-centric pipeline.
 
-**Pipeline strategy:** Demucs separates -> Basic Pitch transcribes each stem individually -> merge MIDI tracks. Fall back to MT3 for validation or for pre-mixed audio where separation is skipped (e.g., piano solo recordings).
+**Pipeline strategy:** audio-separator separates -> Basic Pitch transcribes each stem individually -> merge MIDI tracks. Fall back to MT3 for validation or for pre-mixed audio where separation is skipped (e.g., piano solo recordings).
 
 ### Audio Understanding (Stage 3)
 
@@ -107,10 +116,10 @@ This means pipeline code calls `litellm.completion()` everywhere, provider selec
 | Technology | Version | Purpose | Why Recommended |
 |------------|---------|---------|-----------------|
 | yt-dlp | 2026.02.x | YouTube audio extraction | Actively maintained (weekly releases). Extracts audio from YouTube URLs. Sam's 350 recordings are on YouTube. |
-| ffmpeg | latest | Audio format conversion | Required by Demucs and most audio processing. Convert between WAV/MP3/FLAC/AIFF. Install via Homebrew. |
+| ffmpeg | latest | Audio format conversion | Required by audio-separator and most audio processing. Convert between WAV/MP3/FLAC/AIFF. Install via Homebrew. |
 | mido | latest | MIDI file parsing | Lightweight Python MIDI library. Read/write Type 0 and Type 1 MIDI files. Use for MIDI input pathway and post-Basic-Pitch processing. |
 | pretty_midi | latest | MIDI analysis | Higher-level MIDI analysis (tempo estimation, instrument programs, note statistics). Complements mido. |
-| librosa | latest | Audio analysis | Audio feature extraction (tempo, key, onset detection, spectrograms). Use for pre-processing before Demucs and for audio feature extraction. |
+| librosa | latest | Audio analysis | Audio feature extraction (tempo, key, onset detection, spectrograms). Use for pre-processing before source separation and for audio feature extraction. |
 
 ### Corpus & Evaluation
 
@@ -148,7 +157,7 @@ uv add fastapi[standard] pydantic uvicorn[standard]
 uv add torch torchvision torchaudio
 
 # Source separation (Stage 1)
-uv add demucs-infer
+uv add audio-separator  # Wraps BS-RoFormer, Mel-Band RoFormer, Demucs, MDX-NET, SCNet
 
 # MIDI transcription (Stage 2)
 uv add basic-pitch
@@ -202,7 +211,8 @@ brew install lilypond ffmpeg
 
 | Recommended | Alternative | When to Use Alternative |
 |-------------|-------------|-------------------------|
-| demucs-infer | demucs (original) | Never. Original package abandoned, stuck on PyTorch 1.x. |
+| audio-separator | demucs-infer | If you only need HTDemucs and want a minimal dependency. demucs-infer is inference-only, lighter weight, but limited to HTDemucs family models (~9.0 dB SDR vocals). |
+| audio-separator | demucs (original) | Never. Original package abandoned, stuck on PyTorch 1.x. |
 | Basic Pitch (primary) | MT3 (secondary) | When transcribing pre-mixed multi-instrument audio without prior separation. MT3 handles polyphony better but needs JAX. |
 | LiteLLM | Direct SDK per provider | If LiteLLM introduces latency issues or doesn't support a needed feature. Unlikely. |
 | LlamaIndex | LangChain | If pipeline needs complex multi-step agent orchestration beyond RAG retrieval. Not needed for v1. |
@@ -219,20 +229,20 @@ brew install lilypond ffmpeg
 |-------|-----|-------------|
 | Qwen2-Audio-7B-Instruct | Obsolete (Aug 2024). Two generations behind. | Qwen3-Omni-30B-A3B-Captioner |
 | Qwen2.5-Omni-7B | Superseded (Mar 2025). One generation behind. | Qwen3-Omni-30B-A3B-Captioner |
-| demucs (original PyPI package) | Abandoned Sept 2023. Incompatible with PyTorch 2.x and Python 3.12. | demucs-infer 4.1.2 |
+| demucs (original PyPI package) | Abandoned Sept 2023. Incompatible with PyTorch 2.x and Python 3.12. | audio-separator (or demucs-infer for HTDemucs-only) |
 | LangChain for RAG | Over-abstracted for focused retrieval. LlamaIndex has 35% better retrieval accuracy. | LlamaIndex |
 | Gemini 2.5 Flash | Retires June 2026. | Gemini 3 Flash |
 | pip + venv | Slow, no lockfile, no resolver. | uv |
 | black + isort + flake8 | Three tools doing what one does. | ruff |
 | MuseScore / Finale for rendering | GUI-based, not scriptable, not LLM-friendly. | LilyPond (text-based, subprocess) |
-| TensorFlow/JAX as primary | Pipeline is PyTorch-centric (Demucs, transformers). Adding JAX fragments the stack. | PyTorch + MPS |
+| TensorFlow/JAX as primary | Pipeline is PyTorch-centric (audio-separator, transformers). Adding JAX fragments the stack. | PyTorch + MPS |
 | Ollama for local inference | LMStudio has better MLX integration, GGUF support, and GUI for model management. Matt already uses LMStudio. | LM Studio |
 | htdemucs_6s model | Piano stem quality is poor ("not working great"). | htdemucs_ft (4-stem, fine-tuned) |
 
 ## Stack Patterns by Variant
 
 **If audio input (MP3/WAV/YouTube):**
-- Full pipeline: yt-dlp (if YouTube) -> ffmpeg -> Demucs -> Basic Pitch -> Audio LM -> LLM -> LilyPond
+- Full pipeline: yt-dlp (if YouTube) -> ffmpeg -> audio-separator -> Basic Pitch -> Audio LM -> LLM -> LilyPond
 - All stages active
 
 **If MIDI input:**
@@ -246,17 +256,18 @@ brew install lilypond ffmpeg
 - Benchmark against Claude/GPT-4 cloud APIs for ceiling
 
 **If running full pipeline concurrently:**
-- M4 Max 128GB budget: Demucs (~4GB) + Basic Pitch (~0.5GB) + Qwen3-Omni-Captioner-AWQ-4bit (~18GB) + Qwen3-Coder-Next-4bit (~46GB) = ~69GB
+- M4 Max 128GB budget: audio-separator/BS-RoFormer (~4-6GB) + Basic Pitch (~0.5GB) + Qwen3-Omni-Captioner-AWQ-4bit (~18GB) + Qwen3-Coder-Next-4bit (~46GB) = ~71GB
 - Leaves ~56GB for OS + ChromaDB + LilyPond rendering
 - Feasible but avoid running all models simultaneously; pipeline is sequential anyway
 - **NOTE:** On Apple Silicon, use mlx_lm (loads HF models natively, including MoE) or vllm-mlx for serving. On Linux/GPU, use vLLM
+- audio-separator model memory varies: BS-RoFormer ~4-6GB, HTDemucs ft ~4GB, Mel-Band RoFormer ~4GB
 
 ## Version Compatibility
 
 | Package A | Compatible With | Notes |
 |-----------|-----------------|-------|
 | PyTorch 2.10.0 | Python 3.10-3.12 | MPS backend for Apple Silicon. Avoid Python 3.13+ until torch fully supports it. |
-| demucs-infer 4.1.2 | PyTorch 2.x, Python 3.8-3.12 | Specifically built for modern PyTorch. |
+| audio-separator | PyTorch 2.x, Python 3.9+ | Wraps BS-RoFormer, Mel-Band RoFormer, Demucs, MDX-NET, SCNet under one API. |
 | basic-pitch 0.4.0 | Python 3.8-3.11 | **WARNING: officially only supports up to Python 3.11.** Frozen since Aug 2024 (Snyk: "Inactive"). Mac Apple Silicon requires Python 3.10 — this is a hard constraint, not a workaround. **Plan a Python 3.10 isolated venv for basic-pitch from day one.** Draft PR for 3.12/3.13 support exists (#187, Nov 2025) but is unmerged. |
 | FastAPI 0.132.0 | Python >=3.10, Pydantic v2 | `fastapi-slim` dropped; use `fastapi[standard]` only. |
 | Abjad 3.31 | LilyPond 2.25.26+, Python 3.12+ | Requires LilyPond *dev* branch. Install alongside stable for rendering. |
@@ -282,11 +293,13 @@ brew install lilypond ffmpeg
 - **vllm-mlx:** Use when you need an always-on OpenAI-compatible serving layer rather than direct Python inference via mlx_lm.
 - **Unified memory:** Models share memory with OS. Budget 10-15GB for macOS + apps. Effective ML memory: ~113GB.
 - **Thermal throttling:** M4 Max will throttle under sustained load. Pipeline is sequential (not concurrent model inference), which helps thermal management.
-- **Memory allocation order:** Load models in pipeline order, unload when stage completes. Don't keep all models resident simultaneously.
+- **Memory allocation order:** Load models in pipeline order, unload when stage completes. Don't keep all models resident simultaneously. audio-separator loads/unloads models per stem separation call.
 
 ## Sources
 
-- [demucs-infer PyPI](https://pypi.org/project/demucs-infer/) -- Version 4.1.2, Jan 2026 (HIGH confidence)
+- [audio-separator PyPI](https://pypi.org/project/audio-separator/) -- Multi-model source separation wrapper (HIGH confidence)
+- [BS-RoFormer SDX23 Results](https://paperswithcode.com/paper/music-source-separation-with-band-split) -- ~12.9 dB SDR vocals, SDX23 winner (HIGH confidence)
+- [demucs-infer PyPI](https://pypi.org/project/demucs-infer/) -- Version 4.1.2, Jan 2026, HTDemucs-only alternative (HIGH confidence)
 - [demucs PyPI](https://pypi.org/project/demucs/) -- Version 4.0.1, Sept 2023, abandoned (HIGH confidence)
 - [Basic Pitch GitHub](https://github.com/spotify/basic-pitch) -- Version 0.4.0, Aug 2024 (HIGH confidence)
 - [MT3 GitHub](https://github.com/magenta/mt3) -- Research code, not pip-installable (HIGH confidence)
