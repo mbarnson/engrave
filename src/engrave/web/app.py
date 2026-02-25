@@ -27,8 +27,8 @@ from fastapi.templating import Jinja2Templates
 
 logger = logging.getLogger(__name__)
 
-# Default pipeline timeout in seconds (30 minutes).
-PIPELINE_TIMEOUT_SECONDS = 30 * 60
+# Default pipeline timeout in seconds (60 minutes for local 30B models).
+PIPELINE_TIMEOUT_SECONDS = 60 * 60
 
 
 class JobStatus(str, Enum):
