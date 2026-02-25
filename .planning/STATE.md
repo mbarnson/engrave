@@ -12,7 +12,7 @@ See: .planning/PROJECT.md (updated 2026-02-24)
 Phase: 2 of 9 (RAG Corpus & Retrieval)
 Plan: 3 of 4 in current phase
 Status: Executing
-Last activity: 2026-02-25 -- Completed 02-01-PLAN.md (corpus storage foundation: ChromaDB, models, embeddings)
+Last activity: 2026-02-25 - Completed quick task 1: Update planning docs to replace demucs with audio-separator/RoFormer SOTA stem-splitting models
 
 Progress: [##........] 22%
 
@@ -72,6 +72,12 @@ None yet.
 - basic-pitch HARD CONSTRAINT: requires Python 3.10 isolated venv on Apple Silicon (official support 3.8-3.11 only, frozen since Aug 2024). Phase 5 must implement subprocess invocation or venv isolation to run basic-pitch alongside the Python 3.12 project.
 - LilyPond LLM generation quality ceiling unknown -- benchmark models early in Phase 3
 - RAG corpus is mostly classical (Mutopia); big band jazz coverage is sparse until Sam's charts are added (v1.1)
+
+### Quick Tasks Completed
+
+| # | Description | Date | Commit | Directory |
+|---|-------------|------|--------|-----------|
+| 1 | Update planning docs to replace demucs with audio-separator/RoFormer SOTA stem-splitting models | 2026-02-25 | c39562e | [1-update-planning-docs-to-replace-demucs-w](./quick/1-update-planning-docs-to-replace-demucs-w/) |
 
 ## Session Continuity
 
