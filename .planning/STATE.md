@@ -10,18 +10,18 @@ See: .planning/PROJECT.md (updated 2026-02-24)
 ## Current Position
 
 Phase: 3 of 9 (LilyPond Code Generation)
-Plan: 2 of 3 in current phase
+Plan: 3 of 3 in current phase
 Status: In Progress
-Last activity: 2026-02-25 -- Completed 03-02-PLAN.md (generation foundation)
+Last activity: 2026-02-25 -- Completed 03-01-PLAN.md (MIDI subsystem: loader, analyzer, tokenizer, sections)
 
-Progress: [####......] 37%
+Progress: [####......] 40%
 
 ## Performance Metrics
 
 **Velocity:**
-- Total plans completed: 7
-- Average duration: 6.1 min
-- Total execution time: 0.7 hours
+- Total plans completed: 8
+- Average duration: 6.4 min
+- Total execution time: 0.9 hours
 
 **By Phase:**
 
@@ -29,13 +29,14 @@ Progress: [####......] 37%
 |-------|-------|-------|----------|
 | 1 | 2 | 12 min | 6 min |
 | 2 | 4 | 27 min | 7 min |
-| 3 | 1 | 5 min | 5 min |
+| 3 | 2 | 13 min | 7 min |
 
 **Recent Trend:**
-- Last 5 plans: 02-02 (7 min), 02-01 (9 min), 02-03 (7 min), 02-04 (4 min), 03-02 (5 min)
+- Last 5 plans: 02-01 (9 min), 02-03 (7 min), 02-04 (4 min), 03-02 (5 min), 03-01 (8 min)
 - Trend: Consistent
 
 *Updated after each plan completion*
+| Phase 03 P01 | 8 | 2 tasks | 15 files |
 
 ## Accumulated Context
 
@@ -71,6 +72,12 @@ Recent decisions affecting current work:
 - 02-04: Public API exports both retrieval and ingestion from engrave.corpus package
 - 02-04: CLI corpus ingest is placeholder -- full CLI ingestion deferred until needed
 - [Phase quick]: audio-separator replaces demucs-infer as primary source separation package; per-stem model routing strategy documented
+- 03-01: NoteEvent velocity from note_on (not note_off) for accurate dynamics
+- 03-01: Krumhansl-Kessler profiles for key estimation via chroma correlation
+- 03-01: Sharps-only pitch naming (no enharmonic context yet); LilyPond absolute octave: c = MIDI 48-59
+- 03-01: Velocity-to-dynamic mapping with hysteresis (>8 velocity change threshold)
+- 03-01: Section boundary dedup by bar number, highest priority wins
+- 03-01: Programmatic MIDI fixture generation for deterministic tests
 - 03-02: CoherenceState carries 12 musical context fields; summary capped at 1200 chars with simple oldest-content truncation
 - 03-02: Prompt budget 32K total with RAG-first truncation priority (RAG > coherence > MIDI)
 - 03-02: Variable-per-instrument LilyPond templates: LLM fills music content, never generates score structure
@@ -96,5 +103,5 @@ None yet.
 ## Session Continuity
 
 Last session: 2026-02-25
-Stopped at: Completed 03-02-PLAN.md -- generation foundation (coherence, templates, prompts, failure logging)
-Resume file: .planning/phases/03-midi-to-lilypond-generation/03-02-SUMMARY.md
+Stopped at: Completed 03-01-PLAN.md -- MIDI subsystem (loader, analyzer, tokenizer, sections)
+Resume file: .planning/phases/03-midi-to-lilypond-generation/03-01-SUMMARY.md

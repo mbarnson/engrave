@@ -9,7 +9,7 @@ Requirements for initial release. Each maps to roadmap phases.
 
 ### Foundation
 
-- [ ] **FNDN-01**: System accepts MIDI type 0 and type 1 files as input and routes them directly to the notation stage (bypassing audio processing)
+- [x] **FNDN-01**: System accepts MIDI type 0 and type 1 files as input and routes them directly to the notation stage (bypassing audio processing)
 - [ ] **FNDN-02**: System accepts audio files (MP3, WAV, AIFF, FLAC) as input and routes them through the full audio processing pipeline
 - [ ] **FNDN-03**: System accepts YouTube URLs as input via yt-dlp, extracts audio, and routes through audio processing pipeline
 - [x] **FNDN-04**: System supports multiple LLM providers (Anthropic API, OpenAI API, LMStudio local) via LiteLLM, configurable per pipeline stage
@@ -33,7 +33,7 @@ Requirements for initial release. Each maps to roadmap phases.
 
 ### LilyPond Generation
 
-- [ ] **LILY-01**: System generates compilable LilyPond source code from MIDI tokens + structured text description + user hints + ensemble preset + RAG examples
+- [x] **LILY-01**: System generates compilable LilyPond source code from MIDI tokens + structured text description + user hints + ensemble preset + RAG examples
 - [x] **LILY-02**: System generates scores section-by-section (4-8 bar chunks) with coherence state passing to maintain consistency across sections (key, articulations, dynamics, voicing patterns)
 - [x] **LILY-03**: All music is stored internally in concert pitch; transposition is applied deterministically at render time using a verified transposition table
 - [x] **LILY-04**: System achieves >90% LilyPond compilation success rate on first attempt (before retry loop)
@@ -114,7 +114,7 @@ Deferred to future release.
 
 | Requirement | Phase | Status |
 |-------------|-------|--------|
-| FNDN-01 | Phase 3 | Pending |
+| FNDN-01 | Phase 3 | Complete |
 | FNDN-02 | Phase 5 | Pending |
 | FNDN-03 | Phase 5 | Pending |
 | FNDN-04 | Phase 1 | Complete |
@@ -129,7 +129,7 @@ Deferred to future release.
 | CORP-02 | Phase 2 | Complete |
 | CORP-03 | Phase 2 | Complete |
 | CORP-04 | Phase 2 | Complete |
-| LILY-01 | Phase 3 | Pending |
+| LILY-01 | Phase 3 | Complete |
 | LILY-02 | Phase 3 | Complete |
 | LILY-03 | Phase 3 | Complete |
 | LILY-04 | Phase 3 | Complete |
