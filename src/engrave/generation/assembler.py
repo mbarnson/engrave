@@ -13,6 +13,47 @@ from datetime import UTC, datetime
 from engrave.generation.templates import sanitize_var_name
 from engrave.midi.analyzer import MidiAnalysis
 
+# Regex matching a LilyPond command mangled with staccato dots, e.g.
+# ``\time-.``, ``\ke-.y``, ``\se-.t``.  This pattern never appears in valid
+# LilyPond: staccato attaches to notes (``c4-.``), not to commands.
+_MANGLED_CMD_RE = re.compile(r"\\[a-zA-Z]+-\.")
+
+# Clean global-level commands that belong in the ``global`` block, not
+# inside individual instrument variables.
+_CLEAN_GLOBAL_RE = re.compile(r"^\s*\\(time|key|tempo|clef|set)\s")
+
+# A line containing only ``{`` is a LLM artifact from echoing variable
+# wrappers.  Stripping only ``{`` (not ``}``) is safe because the
+# assembler provides the outer braces for each variable.
+_BARE_OPEN_BRACE_RE = re.compile(r"^\s*\{\s*$")
+
+
+def _sanitize_music_content(content: str) -> str:
+    """Strip LLM artifacts from instrument music content.
+
+    Three categories of artifacts are removed:
+
+    1. **Mangled commands** -- LLMs echo ``\\time``, ``\\key``, ``\\tempo``,
+       ``\\set``, ``\\dynamicUp`` etc. with staccato dots injected
+       (``\\time-. 4/4``, ``\\se-.t Sta-.f-.f-..mid-.i...``).
+    2. **Misplaced global commands** -- clean ``\\time 4/4``, ``\\key g \\minor``
+       etc. that belong in the global block, not in instrument variables.
+    3. **Bare opening braces** -- a lone ``{`` line from the LLM echoing
+       variable wrapper syntax.
+    """
+    lines = content.split("\n")
+    cleaned = []
+    for line in lines:
+        if _MANGLED_CMD_RE.search(line):
+            continue
+        if _CLEAN_GLOBAL_RE.match(line):
+            continue
+        if _BARE_OPEN_BRACE_RE.match(line):
+            continue
+        cleaned.append(line)
+    result = "\n".join(cleaned).strip()
+    return result if result else "R1"
+
 
 def _extract_variable_content(section_source: str, var_name: str) -> str:
     """Extract the music content for a given variable from section source.
@@ -77,6 +118,7 @@ def assemble_sections(
         for var_name in var_names:
             content = _extract_variable_content(section_source, var_name)
             if content:
+                content = _sanitize_music_content(content)
                 instrument_music[var_name].append(content)
 
     # Build variable declarations with concatenated music

@@ -465,33 +465,33 @@ def render(
             include_musicxml=not no_musicxml,
         )
 
-        # Read music variables from input directory
-        # For now, read the music-definitions.ly file and extract variables
-        # This is a placeholder interface -- Phase 3's assembler will produce
-        # the dict[str, str] of music variables directly
+        # Find the LilyPond source file
         defs_file = source_dir / "music-definitions.ly"
         if not defs_file.exists():
-            console.print(f"[red]Error:[/red] music-definitions.ly not found in {input_dir}")
-            raise typer.Exit(code=1)
+            # Fall back to any .ly file in the directory
+            ly_files = sorted(source_dir.glob("*.ly"))
+            if ly_files:
+                defs_file = ly_files[0]
+                console.print(f"Using {defs_file.name} as source")
+            else:
+                console.print(f"[red]Error:[/red] No .ly files found in {input_dir}")
+                raise typer.Exit(code=1)
 
-        # Read the raw content and parse music variables
         defs_content = defs_file.read_text()
 
-        # Extract globalMusic and instrument variables from definitions file
-        # Simple regex-based parsing of LilyPond variable definitions
+        # Extract variables from the source file
         music_vars: dict[str, str] = {}
         global_music = ""
         chord_symbols: str | None = None
 
-        # Match variable = { content } blocks
         var_pattern = re.compile(
-            r"^(\w+)\s*=\s*\{(.*?)\}",
+            r"^(\w+)\s*=\s*\{(.*?)\n\}",
             re.MULTILINE | re.DOTALL,
         )
         for match in var_pattern.finditer(defs_content):
             var_name = match.group(1)
             content = match.group(2).strip()
-            if var_name == "globalMusic":
+            if var_name in ("globalMusic", "global"):
                 global_music = content
             elif var_name == "chordSymbols":
                 chord_symbols = content
@@ -499,25 +499,65 @@ def render(
                 music_vars[var_name] = content
 
         if not music_vars:
-            console.print("[red]Error:[/red] No music variables found in music-definitions.ly")
+            console.print("[red]Error:[/red] No music variables found")
             raise typer.Exit(code=1)
 
-        console.print(f"[bold]Rendering {len(music_vars)} instruments...[/bold]")
+        # Check if variables match the BigBandPreset for full render pipeline
+        preset_vars = {i.variable_name for i in BIG_BAND.instruments}
+        actual_vars = set(music_vars.keys())
+        can_use_preset = actual_vars.issubset(preset_vars)
 
-        result = pipeline.render(
-            music_vars=music_vars,
-            global_music=global_music,
-            chord_symbols=chord_symbols,
-            song_title=title,
-            output_dir=output_path,
-        )
+        if can_use_preset:
+            console.print(f"[bold]Rendering {len(music_vars)} instruments...[/bold]")
+            result = pipeline.render(
+                music_vars=music_vars,
+                global_music=global_music,
+                chord_symbols=chord_symbols,
+                song_title=title,
+                output_dir=output_path,
+            )
+        else:
+            # Standalone compilation: variables don't match preset
+            # (e.g. section-group names like "trumpets" instead of "trumpetOne")
+            console.print(
+                f"[bold]Standalone compile: {len(music_vars)} variables (section-group mode)[/bold]"
+            )
+            import shutil
+            import zipfile
+
+            work_dir = output_path / "_work"
+            work_dir.mkdir(parents=True, exist_ok=True)
+            shutil.copy2(defs_file, work_dir / defs_file.name)
+
+            compile_result = compiler.compile(defs_content, output_dir=work_dir)
+            if not compile_result.success:
+                console.print(f"[red]Compilation failed:[/red] {compile_result.stderr[:500]}")
+                raise typer.Exit(code=1)
+
+            # Package into ZIP
+            zip_name = f"{title or 'score'}.zip"
+            zip_path = output_path / zip_name
+            with zipfile.ZipFile(zip_path, "w", zipfile.ZIP_DEFLATED) as zf:
+                for pdf in work_dir.glob("*.pdf"):
+                    zf.write(pdf, pdf.name)
+                for ly in work_dir.glob("*.ly"):
+                    zf.write(ly, ly.name)
+
+            from engrave.rendering.packager import RenderResult
+
+            result = RenderResult(
+                zip_path=zip_path,
+                success=True,
+                compiled=[defs_file.name],
+                failed=[],
+                errors={},
+            )
 
         # Report results
         if result.success:
             console.print(f"[green]Success:[/green] {result.zip_path}")
             console.print(f"  Compiled: {len(result.compiled)} files")
         else:
-            # Check if score failed
             score_failed = "score.ly" in result.failed
             if score_failed:
                 console.print("[red]Score compilation failed[/red]")
@@ -525,7 +565,6 @@ def render(
                     console.print(f"  Error: {result.errors['score.ly']}")
                 raise typer.Exit(code=1)
 
-            # Some parts failed
             console.print(f"[yellow]Partial success:[/yellow] {result.zip_path}")
             console.print(f"  Compiled: {len(result.compiled)} files")
             console.print(f"  Failed:   {len(result.failed)} files")
