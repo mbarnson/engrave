@@ -34,9 +34,9 @@ Requirements for initial release. Each maps to roadmap phases.
 ### LilyPond Generation
 
 - [ ] **LILY-01**: System generates compilable LilyPond source code from MIDI tokens + structured text description + user hints + ensemble preset + RAG examples
-- [ ] **LILY-02**: System generates scores section-by-section (4-8 bar chunks) with coherence state passing to maintain consistency across sections (key, articulations, dynamics, voicing patterns)
-- [ ] **LILY-03**: All music is stored internally in concert pitch; transposition is applied deterministically at render time using a verified transposition table
-- [ ] **LILY-04**: System achieves >90% LilyPond compilation success rate on first attempt (before retry loop)
+- [x] **LILY-02**: System generates scores section-by-section (4-8 bar chunks) with coherence state passing to maintain consistency across sections (key, articulations, dynamics, voicing patterns)
+- [x] **LILY-03**: All music is stored internally in concert pitch; transposition is applied deterministically at render time using a verified transposition table
+- [x] **LILY-04**: System achieves >90% LilyPond compilation success rate on first attempt (before retry loop)
 
 ### Engraving Output
 
@@ -130,9 +130,9 @@ Deferred to future release.
 | CORP-03 | Phase 2 | Complete |
 | CORP-04 | Phase 2 | Complete |
 | LILY-01 | Phase 3 | Pending |
-| LILY-02 | Phase 3 | Pending |
-| LILY-03 | Phase 3 | Pending |
-| LILY-04 | Phase 3 | Pending |
+| LILY-02 | Phase 3 | Complete |
+| LILY-03 | Phase 3 | Complete |
+| LILY-04 | Phase 3 | Complete |
 | ENGR-01 | Phase 4 | Pending |
 | ENGR-02 | Phase 4 | Pending |
 | ENGR-03 | Phase 4 | Pending |

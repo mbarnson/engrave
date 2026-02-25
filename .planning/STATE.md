@@ -10,18 +10,18 @@ See: .planning/PROJECT.md (updated 2026-02-24)
 ## Current Position
 
 Phase: 3 of 9 (LilyPond Code Generation)
-Plan: 1 of ? in current phase
-Status: Ready
-Last activity: 2026-02-25 -- Completed 02-04-PLAN.md (retrieval interface: public API + CLI)
+Plan: 2 of 3 in current phase
+Status: In Progress
+Last activity: 2026-02-25 -- Completed 03-02-PLAN.md (generation foundation)
 
-Progress: [###.......] 33%
+Progress: [####......] 37%
 
 ## Performance Metrics
 
 **Velocity:**
-- Total plans completed: 6
-- Average duration: 6.3 min
-- Total execution time: 0.6 hours
+- Total plans completed: 7
+- Average duration: 6.1 min
+- Total execution time: 0.7 hours
 
 **By Phase:**
 
@@ -29,9 +29,10 @@ Progress: [###.......] 33%
 |-------|-------|-------|----------|
 | 1 | 2 | 12 min | 6 min |
 | 2 | 4 | 27 min | 7 min |
+| 3 | 1 | 5 min | 5 min |
 
 **Recent Trend:**
-- Last 5 plans: 01-02 (6 min), 02-02 (7 min), 02-01 (9 min), 02-03 (7 min), 02-04 (4 min)
+- Last 5 plans: 02-02 (7 min), 02-01 (9 min), 02-03 (7 min), 02-04 (4 min), 03-02 (5 min)
 - Trend: Consistent
 
 *Updated after each plan completion*
@@ -70,6 +71,10 @@ Recent decisions affecting current work:
 - 02-04: Public API exports both retrieval and ingestion from engrave.corpus package
 - 02-04: CLI corpus ingest is placeholder -- full CLI ingestion deferred until needed
 - [Phase quick]: audio-separator replaces demucs-infer as primary source separation package; per-stem model routing strategy documented
+- 03-02: CoherenceState carries 12 musical context fields; summary capped at 1200 chars with simple oldest-content truncation
+- 03-02: Prompt budget 32K total with RAG-first truncation priority (RAG > coherence > MIDI)
+- 03-02: Variable-per-instrument LilyPond templates: LLM fills music content, never generates score structure
+- 03-02: Failure records stored as individual JSON files with timestamp-based filenames for TUNE-02
 - [Phase quick]: SDR benchmarks measure remix fidelity, NOT transcription accuracy — wrong metric for Engrave. Post-Phase 5 spike: run separation→transcription→MIDI comparison against ground truth charts to find best separator *for engraving*. Needs Sam's tracks (not yet available). No mandatory human review gates before Phase 7 demo.
 
 ### Pending Todos
@@ -91,5 +96,5 @@ None yet.
 ## Session Continuity
 
 Last session: 2026-02-25
-Stopped at: Completed 02-04-PLAN.md -- retrieval interface (Phase 2 complete)
-Resume file: .planning/phases/02-rag-corpus-retrieval/02-04-SUMMARY.md
+Stopped at: Completed 03-02-PLAN.md -- generation foundation (coherence, templates, prompts, failure logging)
+Resume file: .planning/phases/03-midi-to-lilypond-generation/03-02-SUMMARY.md
