@@ -6,6 +6,12 @@ from engrave.rendering.ensemble import (
     InstrumentSpec,
     StaffGroupType,
 )
+from engrave.rendering.generator import (
+    generate_conductor_score,
+    generate_music_definitions,
+    generate_part,
+    restate_dynamics,
+)
 from engrave.rendering.stylesheet import (
     CONDUCTOR_SCORE_HEADER,
     CONDUCTOR_SCORE_LAYOUT,
@@ -36,4 +42,8 @@ __all__ = [
     "BigBandPreset",
     "InstrumentSpec",
     "StaffGroupType",
+    "generate_conductor_score",
+    "generate_music_definitions",
+    "generate_part",
+    "restate_dynamics",
 ]
