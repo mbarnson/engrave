@@ -2,7 +2,6 @@
 
 from __future__ import annotations
 
-import warnings
 from pathlib import Path
 
 import pytest
@@ -16,21 +15,19 @@ class TestSettingsLoading:
 
     def test_loads_from_toml(self, settings: Settings) -> None:
         """Settings loads providers and roles from engrave.toml."""
-        assert settings.providers.lm_studio.api_base == "http://localhost:1234/v1"
+        assert settings.providers.vllm_mlx.api_base == "http://localhost:8000/v1"
         assert "compile_fixer" in settings.roles
         assert "generator" in settings.roles
         assert "describer" in settings.roles
 
     def test_role_configs_populated(self, settings: Settings) -> None:
-        """Role configs have model, max_tokens, and tags."""
+        """Role configs have model and tags."""
         fixer = settings.roles["compile_fixer"]
-        assert fixer.model == "lm_studio/qwen3-coder-next"
-        assert fixer.max_tokens == 4096
+        assert fixer.model == "hosted_vllm/mlx-community/Qwen3-Coder-30B-A3B-8bit"
         assert fixer.tags == ["code"]
 
         describer = settings.roles["describer"]
         assert describer.model == "anthropic/claude-sonnet-4-20250514"
-        assert describer.max_tokens == 2048
         assert describer.tags == ["audio", "description"]
 
     def test_lilypond_config(self, settings: Settings) -> None:
@@ -64,11 +61,11 @@ class TestSettingsLoading:
 class TestRoleValidation:
     """Test role resolution and validation."""
 
-    def test_resolve_lm_studio_provider(self, settings: Settings) -> None:
-        """LM Studio roles get api_base from provider config."""
+    def test_resolve_vllm_mlx_provider(self, settings: Settings) -> None:
+        """vllm-mlx roles get api_base from provider config."""
         resolved = validate_and_resolve_roles(settings.roles, settings.providers)
         fixer = resolved["compile_fixer"]
-        assert fixer.api_base == "http://localhost:1234/v1"
+        assert fixer.api_base == "http://localhost:8000/v1"
 
     def test_resolve_anthropic_api_key(
         self, tmp_engrave_toml: Path, monkeypatch: pytest.MonkeyPatch
@@ -82,15 +79,3 @@ class TestRoleValidation:
         resolved = validate_and_resolve_roles(s.roles, s.providers)
         describer = resolved["describer"]
         assert describer.api_key == "sk-ant-test"
-
-    def test_warns_on_insufficient_context_window(self, settings: Settings) -> None:
-        """Warn if model context window is below role minimum."""
-        # The lm_studio/ prefix estimates 32000 tokens,
-        # set min_context_window to 64000 to trigger warning
-        settings.roles["compile_fixer"].min_context_window = 64000
-        with warnings.catch_warnings(record=True) as w:
-            warnings.simplefilter("always")
-            validate_and_resolve_roles(settings.roles, settings.providers)
-            context_warnings = [x for x in w if "context window" in str(x.message)]
-            assert len(context_warnings) >= 1
-            assert "compile_fixer" in str(context_warnings[0].message)

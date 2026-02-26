@@ -21,17 +21,16 @@ if TYPE_CHECKING:
 
 
 MINIMAL_TOML = """\
-[providers.lm_studio]
-api_base = "http://localhost:1234/v1"
+[providers.vllm_mlx]
+api_base = "http://localhost:8000/v1"
 
 [roles.compile_fixer]
-model = "lm_studio/qwen3-coder-next"
+model = "hosted_vllm/mlx-community/Qwen3-Coder-30B-A3B-8bit"
 max_tokens = 4096
-min_context_window = 32000
 tags = ["code"]
 
 [roles.generator]
-model = "lm_studio/qwen3-coder-next"
+model = "hosted_vllm/mlx-community/Qwen3-Coder-30B-A3B-8bit"
 max_tokens = 8192
 tags = ["code", "lilypond"]
 
