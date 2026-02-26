@@ -37,6 +37,7 @@ class ProvidersConfig(BaseModel):
     """All provider configurations."""
 
     lm_studio: ProviderConfig = ProviderConfig()
+    vllm_mlx: ProviderConfig = ProviderConfig()
     runpod: ProviderConfig = ProviderConfig()
     anthropic_api_key: str | None = None
     openai_api_key: str | None = None
@@ -47,7 +48,6 @@ class RoleConfig(BaseModel):
 
     model: str
     max_tokens: int = 4096
-    min_context_window: int = 8000
     tags: list[str] = []
     # Resolved from provider config during validation
     api_base: str | None = None
