@@ -261,44 +261,33 @@ class TestGenerationFanout:
         # Coherence should have advanced (section_index incremented)
         assert updated_coherence.section_index > ctx["coherence"].section_index
 
-    def test_sequential_fallback_on_not_implemented(self) -> None:
-        """Pipeline falls back to sequential when asyncio.gather raises NotImplementedError."""
+    def test_sequential_ly_then_json(self) -> None:
+        """LilyPond and JSON requests run sequentially (LilyPond first)."""
         ctx = _build_test_context(self.INSTRUMENTS)
         compiler = _make_mock_compiler_for_fanout()
 
-        # Create a router whose first complete() call raises NotImplementedError
-        # (simulating the asyncio.gather failure), then works normally for
-        # sequential calls
         router = AsyncMock()
         ly_response = _build_lilypond_response(self.INSTRUMENTS)
         json_response = _build_json_response(self.INSTRUMENTS)
 
-        call_count = 0
+        call_order: list[str] = []
 
-        async def _sequential_route(*args, **kwargs):
-            nonlocal call_count
-            call_count += 1
-
+        async def _track_order(*args, **kwargs):
             messages = kwargs.get("messages", args[0] if args else [])
             prompt = ""
             if messages:
                 for msg in messages:
                     if isinstance(msg, dict) and msg.get("role") == "user":
                         prompt = msg.get("content", "")
-                        break
 
             is_json = "structured JSON notation events" in prompt or "JSON array" in prompt
-
-            # First two calls are from asyncio.gather (LilyPond coro + JSON coro).
-            # We raise NotImplementedError on the first to trigger fallback.
-            if call_count == 1:
-                raise NotImplementedError("Router does not support concurrent dispatch")
+            call_order.append("json" if is_json else "ly")
 
             if is_json:
                 return json_response
             return ly_response
 
-        router.complete.side_effect = _sequential_route
+        router.complete.side_effect = _track_order
 
         ly_source, _json_data, _ = asyncio.run(
             generate_section(
@@ -308,13 +297,10 @@ class TestGenerationFanout:
             )
         )
 
-        # Despite the NotImplementedError, LilyPond should still be generated
         assert ly_source is not None
         assert len(ly_source) > 0
-
-        # Sequential fallback should have made at least 3 calls total
-        # (1 failed gather + 2 sequential)
-        assert call_count >= 3
+        # LilyPond must be called before JSON (sequential, not gathered)
+        assert call_order[0] == "ly"
 
     def test_empty_json_response_returns_none(self) -> None:
         """Empty/invalid JSON response results in json_data=None."""

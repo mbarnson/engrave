@@ -101,6 +101,23 @@ class InferenceRouter:
                 api_key=role_config.api_key,
                 num_retries=0,  # Fail, don't fallback -- user decision
             )
+            # Log token usage for prefix cache observability
+            usage = getattr(response, "usage", None)
+            if usage:
+                prompt_tok = getattr(usage, "prompt_tokens", 0)
+                compl_tok = getattr(usage, "completion_tokens", 0)
+                cached_tok = getattr(usage, "prompt_tokens_details", None)
+                cached_str = ""
+                if cached_tok and hasattr(cached_tok, "cached_tokens"):
+                    cached_str = f", cached={cached_tok.cached_tokens}"
+                logger.debug(
+                    "Usage for '%s': prompt=%d, completion=%d%s",
+                    role,
+                    prompt_tok,
+                    compl_tok,
+                    cached_str,
+                )
+
             content = response.choices[0].message.content
             if content is None:
                 logger.warning(

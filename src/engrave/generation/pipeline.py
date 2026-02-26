@@ -253,25 +253,16 @@ async def generate_section(
         user_hints=user_hints,
     )
 
-    # Fan out LilyPond + JSON requests concurrently
-    ly_coro = router.complete(
+    # LilyPond first (critical path — feeds compile-fix loop), then JSON.
+    # Sequential within each group keeps total active LLM requests equal to
+    # max_concurrent_groups (8) instead of 2x that (16), preventing vllm-mlx
+    # OOM from KV cache pressure.
+    ly_response = await router.complete(
         role="generator",
         messages=messages,
         temperature=0.3,
     )
-    json_coro = _request_json_notation(messages, instrument_names, router)
-
-    try:
-        ly_response, json_data = await asyncio.gather(ly_coro, json_coro)
-    except NotImplementedError:
-        # Router doesn't support async -- fall back to sequential
-        logger.info("Router does not support concurrent dispatch; falling back to sequential")
-        ly_response = await router.complete(
-            role="generator",
-            messages=messages,
-            temperature=0.3,
-        )
-        json_data = await _request_json_notation(messages, instrument_names, router)
+    json_data = await _request_json_notation(messages, instrument_names, router)
 
     # -- LilyPond processing (unchanged) ----------------------------------
 
