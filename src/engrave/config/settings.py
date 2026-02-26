@@ -156,6 +156,16 @@ class AudioConfig(BaseModel):
     benchmark: BenchmarkConfig = BenchmarkConfig()
 
 
+class PipelineConfig(BaseModel):
+    """Generation pipeline concurrency settings.
+
+    Read from the ``[pipeline]`` section of ``engrave.toml``.
+    """
+
+    max_concurrent_groups: int = 8
+    """Maximum number of instrument groups dispatched concurrently within a section."""
+
+
 class CorpusConfig(BaseModel):
     """Corpus storage and embedding configuration.
 
@@ -178,6 +188,7 @@ class Settings(BaseSettings):
     lilypond: LilyPondConfig = LilyPondConfig()
     corpus: CorpusConfig = CorpusConfig()
     audio: AudioConfig = AudioConfig()
+    pipeline: PipelineConfig = PipelineConfig()
 
     model_config = SettingsConfigDict(
         env_file=str(PROJECT_ROOT / ".env"),

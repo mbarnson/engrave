@@ -45,6 +45,9 @@ compile_timeout = 60
 max_fix_attempts = 5
 context_lines = 20
 
+[pipeline]
+max_concurrent_groups = 8
+
 [corpus]
 embedding_model = "nomic-embed-text"
 db_path = "data/corpus_db"
