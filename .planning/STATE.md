@@ -90,6 +90,7 @@ Recent decisions affecting current work:
 - 02-04: Public API exports both retrieval and ingestion from engrave.corpus package
 - 02-04: CLI corpus ingest is placeholder -- full CLI ingestion deferred until needed
 - [Phase quick]: audio-separator replaces demucs-infer as primary source separation package; per-stem model routing strategy documented
+- [Phase quick]: Context window estimation removed entirely -- server-side rejection is the correct enforcement mechanism
 - 03-01: NoteEvent velocity from note_on (not note_off) for accurate dynamics
 - 03-01: Krumhansl-Kessler profiles for key estimation via chroma correlation
 - 03-01: Sharps-only pitch naming (no enharmonic context yet); LilyPond absolute octave: c = MIDI 48-59
@@ -204,9 +205,10 @@ Recent decisions affecting current work:
 | # | Description | Date | Commit | Directory |
 |---|-------------|------|--------|-----------|
 | 1 | Update planning docs to replace demucs with audio-separator/RoFormer SOTA stem-splitting models | 2026-02-25 | c39562e | [1-update-planning-docs-to-replace-demucs-w](./quick/1-update-planning-docs-to-replace-demucs-w/) |
+| 2 | Remove min_context_window field and all context window estimation logic | 2026-02-25 | de059f1 | [1-remove-min-context-window-field-and-all-](./quick/1-remove-min-context-window-field-and-all-/) |
 
 ## Session Continuity
 
 Last session: 2026-02-25
-Stopped at: Completed 07-03-PLAN.md (Phase 07 COMPLETE)
-Resume file: .planning/phases/07-convergent-sight-reading-ensemble-intelligence/07-03-SUMMARY.md
+Stopped at: Completed quick-1 (remove min_context_window)
+Resume file: .planning/quick/1-remove-min-context-window-field-and-all-/1-SUMMARY.md
