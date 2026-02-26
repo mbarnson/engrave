@@ -172,11 +172,15 @@ def _filter_notes_for_section(
 
 
 async def _request_json_notation(
-    prompt: str,
+    messages: list[dict[str, str]],
     instrument_names: list[str],
     router: InferenceRouter,
 ) -> list[dict] | None:
     """Dispatch the JSON notation generation request.
+
+    Reuses the prefix messages (system, shared user, assistant) from the
+    LilyPond prompt and replaces the last user message with JSON instructions.
+    This maximizes prefix cache hits on vllm-mlx.
 
     Isolated so that any failure is caught without affecting LilyPond.
 
@@ -184,11 +188,16 @@ async def _request_json_notation(
         Parsed JSON notation events, or None on any failure.
     """
     json_suffix = build_json_generation_suffix(instrument_names)
-    json_prompt = prompt + "\n\n" + json_suffix
+    # Replace last user message content with JSON variant
+    json_messages = [m.copy() for m in messages]
+    json_messages[-1] = {
+        "role": "user",
+        "content": messages[-1]["content"] + "\n\n" + json_suffix,
+    }
     try:
         json_response = await router.complete(
             role="generator",
-            messages=[{"role": "user", "content": json_prompt}],
+            messages=json_messages,
             temperature=0.1,
         )
         result = extract_json_from_response(json_response)
@@ -234,8 +243,8 @@ async def generate_section(
     Raises:
         GenerationHaltError: If compilation fails after all retries.
     """
-    # Build shared prompt prefix (identical context for both requests)
-    prompt = build_section_prompt(
+    # Build shared prompt as multi-message list (optimized for prefix caching)
+    messages = build_section_prompt(
         section_midi,
         coherence,
         rag_examples,
@@ -247,10 +256,10 @@ async def generate_section(
     # Fan out LilyPond + JSON requests concurrently
     ly_coro = router.complete(
         role="generator",
-        messages=[{"role": "user", "content": prompt}],
+        messages=messages,
         temperature=0.3,
     )
-    json_coro = _request_json_notation(prompt, instrument_names, router)
+    json_coro = _request_json_notation(messages, instrument_names, router)
 
     try:
         ly_response, json_data = await asyncio.gather(ly_coro, json_coro)
@@ -259,10 +268,10 @@ async def generate_section(
         logger.info("Router does not support concurrent dispatch; falling back to sequential")
         ly_response = await router.complete(
             role="generator",
-            messages=[{"role": "user", "content": prompt}],
+            messages=messages,
             temperature=0.3,
         )
-        json_data = await _request_json_notation(prompt, instrument_names, router)
+        json_data = await _request_json_notation(messages, instrument_names, router)
 
     # -- LilyPond processing (unchanged) ----------------------------------
 
@@ -445,6 +454,158 @@ def _group_identifier(group: list[tuple[str, object]]) -> str:
     return sanitize_var_name(group[0][0])
 
 
+@dataclass
+class _GroupResult:
+    """Result of processing a single generation group within a section."""
+
+    gid: str
+    group_names: list[str]
+    success: bool
+    blocks: dict[str, str]  # var_name -> music content
+    json_data: list[dict] | None
+    updated_coherence: CoherenceState | None
+    used_fallback: bool
+
+
+async def _process_group(
+    group: list[tuple[str, MidiTrackInfo]],
+    coherence: CoherenceState,
+    sec_idx: int,
+    start_bar: int,
+    end_bar: int,
+    ticks_per_beat: int,
+    beats_per_bar: float,
+    time_sig_tuple: tuple[int, int],
+    key_sig: str,
+    tempo_bpm: int,
+    beam_cmds: str,
+    section_label: str,
+    router: InferenceRouter,
+    compiler: LilyPondCompiler,
+    rag_retriever: object | None,
+    audio_description: AudioDescription | None,
+    user_hints: str,
+    semaphore: asyncio.Semaphore,
+) -> _GroupResult:
+    """Process a single generation group (concurrency-safe).
+
+    Acquires a semaphore slot before dispatching the LLM request.
+    All state is local to the group; no cross-group mutation.
+    """
+    async with semaphore:
+        gid = _group_identifier(group)
+        group_names = [name for name, _track in group]
+        logger.info("  Group '%s': %s", gid, group_names)
+
+        # Filter and tokenize notes scoped to this group
+        group_midi: dict[str, str] = {}
+        for name, track in group:
+            filtered_notes = _filter_notes_for_section(
+                track, start_bar, end_bar, ticks_per_beat, beats_per_bar
+            )
+            tokens = tokenize_section_for_prompt(
+                notes=filtered_notes,
+                time_sig=time_sig_tuple,
+                key=key_sig,
+                bars=(start_bar, end_bar),
+                ticks_per_beat=ticks_per_beat,
+            )
+            group_midi[name] = tokens
+
+        # Query RAG scoped to group instruments
+        rag_examples: list[str] = []
+        if rag_retriever is not None:
+            query = f"{key_sig} {tempo_bpm}bpm {', '.join(group_names)}"
+            try:
+                rag_examples = rag_retriever(query, limit=3)
+            except Exception:
+                logger.warning("RAG retrieval failed for group %s", gid)
+                rag_examples = []
+
+        # Build template with beaming commands injected
+        template = build_score_template(
+            group_names, section_label, start_bar, end_bar, beaming=beam_cmds
+        )
+
+        # Generate for this group
+        group_generation_ok = True
+        updated_coherence: CoherenceState | None = coherence
+        json_data: list[dict] | None = None
+        group_source = ""
+        try:
+            group_source, json_data, updated_coherence = await generate_section(
+                section_midi=group_midi,
+                coherence=coherence,
+                rag_examples=rag_examples,
+                template=template,
+                instrument_names=group_names,
+                router=router,
+                compiler=compiler,
+                audio_description=_render_section_audio_text(
+                    audio_description, sec_idx, start_bar, end_bar
+                ),
+                user_hints=user_hints,
+            )
+        except Exception as exc:
+            logger.error("Generation failed for group '%s': %s", gid, exc)
+            group_generation_ok = False
+
+        # Check if compilation succeeded (coherence advanced)
+        if (
+            group_generation_ok
+            and updated_coherence is not None
+            and updated_coherence.section_index <= coherence.section_index
+        ):
+            logger.error(
+                "Compilation FAILED for group '%s' in section %d (coherence did not advance)",
+                gid,
+                sec_idx,
+            )
+            group_generation_ok = False
+
+        # Fallback: fill failed group with rests
+        if not group_generation_ok:
+            num_bars = max(1, end_bar - start_bar + 1)
+            rest_duration = f"R{time_sig_tuple[1]}" if time_sig_tuple[1] != 1 else "R1"
+            rest_content = f"{rest_duration}*{num_bars}"
+            logger.warning(
+                "Using rest fallback for group '%s' section %d (%d bars)",
+                gid,
+                sec_idx,
+                num_bars,
+            )
+            blocks: dict[str, str] = {}
+            for name in group_names:
+                var_name = sanitize_var_name(name)
+                blocks[var_name] = rest_content
+            return _GroupResult(
+                gid=gid,
+                group_names=group_names,
+                success=False,
+                blocks=blocks,
+                json_data=None,
+                updated_coherence=None,
+                used_fallback=True,
+            )
+
+        # Extract variable contents from group source
+        blocks = {}
+        for name in group_names:
+            var_name = sanitize_var_name(name)
+            content = _extract_var_content(group_source, var_name)
+            blocks[var_name] = content
+
+        return _GroupResult(
+            gid=gid,
+            group_names=group_names,
+            success=True,
+            blocks=blocks,
+            json_data=json_data,
+            updated_coherence=updated_coherence,
+            used_fallback=False,
+        )
+
+
 async def generate_from_midi(
     midi_path: str,
     router: InferenceRouter,
@@ -455,6 +616,7 @@ async def generate_from_midi(
     audio_description: AudioDescription | None = None,
     user_hints: str = "",
     preset: BigBandPreset | None = None,
+    max_concurrent_groups: int = 8,
 ) -> GenerationResult:
     """Orchestrate end-to-end MIDI-to-LilyPond generation.
 
@@ -463,7 +625,7 @@ async def generate_from_midi(
     3. Detect section boundaries
     4. For each temporal section:
        a. Resolve section groups from preset
-       b. For each group: tokenize scoped MIDI, build group prompt, generate, compile
+       b. Dispatch groups concurrently via asyncio.gather (Semaphore-bounded)
        c. Apply ENSM-03 articulation defaults + ENSM-05 section consistency
        d. Inject beaming commands per temporal section
     5. Assemble all sections into complete .ly file
@@ -484,6 +646,8 @@ async def generate_from_midi(
             provided, instruments sharing a ``section_group`` are generated
             by a single LLM call.  When ``None``, falls back to per-instrument
             generation (backward compatible).
+        max_concurrent_groups: Maximum concurrent LLM group dispatches per
+            section.  Matches vllm-mlx slot count (default 8).
 
     Returns:
         GenerationResult with success status and output.
@@ -588,109 +752,48 @@ async def generate_from_midi(
         )
         beam_cmds = beaming_commands(beam_style)
 
-        # b. Dispatch per generation group
-        all_group_blocks: dict[str, str] = {}  # var_name -> music content
+        # b. Dispatch generation groups concurrently via asyncio.gather
+        semaphore = asyncio.Semaphore(max_concurrent_groups)
+        group_coros = [
+            _process_group(
+                group=group,
+                coherence=group_coherence[_group_identifier(group)],
+                sec_idx=sec_idx,
+                start_bar=start_bar,
+                end_bar=end_bar,
+                ticks_per_beat=ticks_per_beat,
+                beats_per_bar=beats_per_bar,
+                time_sig_tuple=time_sig_tuple,
+                key_sig=key_sig,
+                tempo_bpm=tempo_bpm,
+                beam_cmds=beam_cmds,
+                section_label=section_label,
+                router=router,
+                compiler=compiler,
+                rag_retriever=rag_retriever,
+                audio_description=audio_description,
+                user_hints=user_hints,
+                semaphore=semaphore,
+            )
+            for group in generation_groups
+        ]
+        group_results: list[_GroupResult] = await asyncio.gather(*group_coros)
+
+        # Collect results from all groups
+        all_group_blocks: dict[str, str] = {}
         section_json_data: list[dict] | None = None
         section_had_fallback = False
 
-        for group in generation_groups:
-            gid = _group_identifier(group)
-            group_names = [name for name, _track in group]
-            logger.info("  Group '%s': %s", gid, group_names)
-
-            # Filter and tokenize notes scoped to this group
-            group_midi: dict[str, str] = {}
-            for name, track in group:
-                filtered_notes = _filter_notes_for_section(
-                    track, start_bar, end_bar, ticks_per_beat, beats_per_bar
-                )
-                tokens = tokenize_section_for_prompt(
-                    notes=filtered_notes,
-                    time_sig=time_sig_tuple,
-                    key=key_sig,
-                    bars=(start_bar, end_bar),
-                    ticks_per_beat=ticks_per_beat,
-                )
-                group_midi[name] = tokens
-
-            # Query RAG scoped to group instruments
-            rag_examples: list[str] = []
-            if rag_retriever is not None:
-                query = f"{key_sig} {tempo_bpm}bpm {', '.join(group_names)}"
-                try:
-                    rag_examples = rag_retriever(query, limit=3)
-                except Exception:
-                    logger.warning("RAG retrieval failed for group %s", gid)
-                    rag_examples = []
-
-            # Build template with beaming commands injected
-            template = build_score_template(
-                group_names, section_label, start_bar, end_bar, beaming=beam_cmds
-            )
-
-            # Generate for this group
-            group_generation_ok = True
-            try:
-                group_source, json_data, updated_coherence = await generate_section(
-                    section_midi=group_midi,
-                    coherence=group_coherence[gid],
-                    rag_examples=rag_examples,
-                    template=template,
-                    instrument_names=group_names,
-                    router=router,
-                    compiler=compiler,
-                    audio_description=_render_section_audio_text(
-                        audio_description, sec_idx, start_bar, end_bar
-                    ),
-                    user_hints=user_hints,
-                )
-            except Exception as exc:
-                logger.error("Generation failed for group '%s': %s", gid, exc)
-                group_generation_ok = False
-
-            # Check if compilation succeeded (coherence advanced)
-            if (
-                group_generation_ok
-                and updated_coherence.section_index <= group_coherence[gid].section_index
-            ):
-                logger.error(
-                    "Compilation FAILED for group '%s' in section %d (coherence did not advance)",
-                    gid,
-                    sec_idx,
-                )
-                group_generation_ok = False
-
-            # Fallback: fill failed group with rests and continue
-            if not group_generation_ok:
-                num_bars = max(1, end_bar - start_bar + 1)
-                rest_duration = f"R{time_sig_tuple[1]}" if time_sig_tuple[1] != 1 else "R1"
-                rest_content = f"{rest_duration}*{num_bars}"
-                logger.warning(
-                    "Using rest fallback for group '%s' section %d (%d bars)",
-                    gid,
-                    sec_idx,
-                    num_bars,
-                )
+        for gr in group_results:
+            all_group_blocks.update(gr.blocks)
+            if gr.used_fallback:
                 section_had_fallback = True
-                for name in group_names:
-                    var_name = sanitize_var_name(name)
-                    all_group_blocks[var_name] = rest_content
-                continue
-
-            # Update per-group coherence
-            group_coherence[gid] = updated_coherence
-
-            # Extract variable contents from group source
-            for name in group_names:
-                var_name = sanitize_var_name(name)
-                content = _extract_var_content(group_source, var_name)
-                all_group_blocks[var_name] = content
-
-            # Merge JSON data (combine from all groups)
-            if json_data is not None:
+            if gr.success and gr.updated_coherence is not None:
+                group_coherence[gr.gid] = gr.updated_coherence
+            if gr.json_data is not None:
                 if section_json_data is None:
                     section_json_data = []
-                section_json_data.extend(json_data)
+                section_json_data.extend(gr.json_data)
 
         # c. Log if any groups used rest fallback (pipeline continues)
         if section_had_fallback:

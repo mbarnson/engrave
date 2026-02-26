@@ -147,13 +147,19 @@ def build_section_prompt(
     budget: PromptBudget | None = None,
     audio_description: str = "",
     user_hints: str = "",
-) -> str:
-    """Assemble the complete prompt for section generation.
+) -> list[dict[str, str]]:
+    """Assemble the prompt as an OpenAI-format messages list for prefix caching.
 
-    Uses a three-tier authority format:
-    - **DEFINITIVE** (user hints): always authoritative
-    - **CONTEXTUAL** (audio analysis): structural observations
-    - **RAW INPUT** (MIDI): noisy suggestion
+    The message structure is optimized for vllm-mlx prefix caching:
+
+    - **system**: Rules + DEFINITIVE hints (shared across ALL requests)
+    - **user[0]**: CONTEXTUAL audio analysis (shared within a temporal section)
+    - **assistant**: Acknowledgement (shared within a temporal section)
+    - **user[1]**: Variable content — coherence, template, RAG, MIDI (unique per group)
+
+    vllm-mlx ``_compute_prefix_boundary()`` replaces the last user message
+    with a dummy to find the longest common prefix.  By placing shared content
+    in earlier messages, ~700 tokens are cached vs ~265 with a single message.
 
     Audio description and user hints are NEVER truncated (they are small and
     high-authority).  Only MIDI, RAG, and coherence participate in budget
@@ -169,7 +175,7 @@ def build_section_prompt(
         user_hints: Raw user hint text (free text, LLM is the parser).
 
     Returns:
-        Complete prompt string for LLM generation.
+        OpenAI-format messages list (list of dicts with "role" and "content").
     """
     if budget is None:
         budget = PromptBudget()
@@ -192,9 +198,8 @@ def build_section_prompt(
     definitive_content = user_hints if user_hints else "No user hints provided."
     contextual_content = audio_description if audio_description else "No audio analysis available."
 
-    return f"""Generate LilyPond music content for the following section.
-
-RULES:
+    # -- Message 1: system (shared across ALL requests) --
+    system_content = f"""You generate LilyPond music content. RULES:
 1. Use ABSOLUTE pitch mode (no \\relative). Every note must have explicit octave marks.
 2. Generate ONLY the music content for each instrument variable. Do NOT generate \\version, \\score, or \\new Staff blocks.
 3. All pitches must be in CONCERT PITCH. Do not transpose for any instrument.
@@ -203,12 +208,14 @@ RULES:
 6. Output each instrument's music as a separate block labeled with the variable name (% varName).
 
 === DEFINITIVE (User Hints -- always authoritative) ===
-{definitive_content}
+{definitive_content}"""
 
-=== CONTEXTUAL (Audio Analysis -- structural observations) ===
-{contextual_content}
+    # -- Message 2: user (shared within temporal section) --
+    shared_context = f"""=== CONTEXTUAL (Audio Analysis -- structural observations) ===
+{contextual_content}"""
 
-=== CURRENT MUSICAL STATE ===
+    # -- Message 4: user (variable per group -- last user msg for prefix boundary) --
+    variable_content = f"""=== CURRENT MUSICAL STATE ===
 {fitted_coherence}
 
 LILYPOND TEMPLATE (fill in the instrument variables):
@@ -221,6 +228,16 @@ SIMILAR EXAMPLES FROM CORPUS:
 {fitted_midi}
 
 Generate the LilyPond music content for each instrument variable:"""
+
+    return [
+        {"role": "system", "content": system_content},
+        {"role": "user", "content": shared_context},
+        {
+            "role": "assistant",
+            "content": "Understood. I'll follow the rules and context to generate LilyPond.",
+        },
+        {"role": "user", "content": variable_content},
+    ]
 
 
 def build_json_generation_suffix(instrument_names: list[str]) -> str:

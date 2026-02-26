@@ -22,12 +22,15 @@ class TestRouterResolution:
     def test_resolves_role_to_model(self, router: InferenceRouter) -> None:
         """Router has all configured roles with correct models."""
         assert "compile_fixer" in router._roles
-        assert router._roles["compile_fixer"].model == "lm_studio/qwen3-coder-next"
+        assert (
+            router._roles["compile_fixer"].model
+            == "hosted_vllm/mlx-community/Qwen3-Coder-30B-A3B-8bit"
+        )
 
     def test_resolves_api_base_for_local_provider(self, router: InferenceRouter) -> None:
         """Local providers get api_base from provider config."""
         fixer = router._roles["compile_fixer"]
-        assert fixer.api_base == "http://localhost:1234/v1"
+        assert fixer.api_base == "http://localhost:8000/v1"
 
     def test_cloud_provider_has_no_api_base(self, router: InferenceRouter) -> None:
         """Cloud providers (anthropic) have None api_base."""
@@ -42,17 +45,19 @@ class TestRouterCompletion:
     async def test_calls_acompletion_with_correct_params(
         self, router: InferenceRouter, mock_acompletion: AsyncMock
     ) -> None:
-        """Router passes model, messages, temperature, max_tokens to acompletion."""
+        """Router passes model, messages, temperature to acompletion."""
         messages = [{"role": "user", "content": "test"}]
         await router.complete(role="compile_fixer", messages=messages, temperature=0.1)
 
         mock_acompletion.assert_called_once()
         call_kwargs = mock_acompletion.call_args.kwargs
-        assert call_kwargs["model"] == "lm_studio/qwen3-coder-next"
-        assert call_kwargs["messages"] == messages
+        assert call_kwargs["model"] == "hosted_vllm/mlx-community/Qwen3-Coder-30B-A3B-8bit"
+        # hosted_vllm models get /no_think injected to suppress thinking mode
+        expected_messages = [{"role": "user", "content": "test /no_think"}]
+        assert call_kwargs["messages"] == expected_messages
         assert call_kwargs["temperature"] == 0.1
         assert call_kwargs["max_tokens"] == 4096  # from role config
-        assert call_kwargs["api_base"] == "http://localhost:1234/v1"
+        assert call_kwargs["api_base"] == "http://localhost:8000/v1"
         assert call_kwargs["num_retries"] == 0
 
     @pytest.mark.asyncio
@@ -109,8 +114,8 @@ class TestRouterErrors:
                 role="compile_fixer",
                 messages=[{"role": "user", "content": "test"}],
             )
-        assert exc_info.value.provider == "lm_studio"
-        assert exc_info.value.model == "lm_studio/qwen3-coder-next"
+        assert exc_info.value.provider == "hosted_vllm"
+        assert exc_info.value.model == "hosted_vllm/mlx-community/Qwen3-Coder-30B-A3B-8bit"
         assert "Connection refused" in str(exc_info.value.original_error)
 
     @pytest.mark.asyncio

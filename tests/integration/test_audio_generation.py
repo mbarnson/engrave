@@ -67,14 +67,15 @@ def _make_mock_router_that_captures_prompts() -> tuple[AsyncMock, list[str]]:
 
     def _generate_response(*args, **kwargs):
         messages = kwargs.get("messages", args[0] if args else [])
+        # Capture all message content combined (for assertion checks)
+        all_content = "\n".join(m.get("content", "") for m in messages if isinstance(m, dict))
+        captured_prompts.append(all_content)
+        # Use last user message for variable extraction
         prompt = ""
         if messages:
             for msg in messages:
                 if isinstance(msg, dict) and msg.get("role") == "user":
                     prompt = msg.get("content", "")
-                    break
-
-        captured_prompts.append(prompt)
 
         # Parse variable names from the template in the prompt
         var_pattern = re.compile(r"^([a-zA-Z]\w*)\s*=\s*\{", re.MULTILINE)

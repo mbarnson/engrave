@@ -116,7 +116,6 @@ def _make_fanout_router(
             for msg in messages:
                 if isinstance(msg, dict) and msg.get("role") == "user":
                     prompt = msg.get("content", "")
-                    break
 
         # Detect JSON vs LilyPond request by checking for JSON suffix markers
         is_json = "structured JSON notation events" in prompt or "JSON array" in prompt

@@ -621,7 +621,6 @@ def mock_generator_router():
             for msg in messages:
                 if isinstance(msg, dict) and msg.get("role") == "user":
                     prompt = msg.get("content", "")
-                    break
 
         # Parse variable names from the template in the prompt
         import re

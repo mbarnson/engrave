@@ -14,6 +14,26 @@ if TYPE_CHECKING:
 logger = logging.getLogger(__name__)
 
 
+def _inject_no_think(messages: list[dict]) -> list[dict]:
+    """Append '/no_think' to the last user message.
+
+    Qwen3 chat templates recognise this suffix as a signal to skip the
+    ``<think>`` reasoning block and produce content directly.  Without it
+    vllm-mlx returns ``content: null`` with only 1 completion token.
+
+    A shallow copy of the messages list is returned so the caller's
+    original is not mutated.
+    """
+    msgs = [m.copy() for m in messages]
+    for msg in reversed(msgs):
+        if msg.get("role") == "user":
+            text = msg.get("content", "")
+            if isinstance(text, str) and "/no_think" not in text:
+                msg["content"] = text.rstrip() + " /no_think"
+            break
+    return msgs
+
+
 class InferenceRouter:
     """Route LLM calls by pipeline role, not provider.
 
@@ -63,15 +83,32 @@ class InferenceRouter:
         logger.info("Routing role '%s' to model '%s'", role, model)
 
         try:
+            # Disable thinking mode for Qwen3 models served via vllm-mlx.
+            # vllm-mlx ignores the enable_thinking API parameter, so we
+            # inject "/no_think" into the last user message content.  This
+            # is the Qwen3 chat-template convention that suppresses the
+            # <think> block and returns content directly.
+            effective_messages = messages
+            if "qwen3" in model.lower() or "hosted_vllm/" in model:
+                effective_messages = _inject_no_think(messages)
+
             response = await litellm.acompletion(
                 model=model,
-                messages=messages,
+                messages=effective_messages,
                 temperature=temperature,
                 max_tokens=max_tokens or role_config.max_tokens,
                 api_base=role_config.api_base,
                 api_key=role_config.api_key,
                 num_retries=0,  # Fail, don't fallback -- user decision
             )
-            return response.choices[0].message.content
+            content = response.choices[0].message.content
+            if content is None:
+                logger.warning(
+                    "Model '%s' returned null content for role '%s'; returning empty string",
+                    model,
+                    role,
+                )
+                return ""
+            return content
         except Exception as e:
             raise ProviderError(provider, model, e) from e

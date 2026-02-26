@@ -154,7 +154,6 @@ def _make_mock_router_tracking():
             for msg in messages:
                 if isinstance(msg, dict) and msg.get("role") == "user":
                     prompt = msg.get("content", "")
-                    break
 
         # Parse variable names from template
         var_pattern = re.compile(r"^([a-zA-Z]\w*)\s*=\s*\{", re.MULTILINE)
@@ -354,7 +353,6 @@ class TestSectionConsistencyApplied:
             for msg in messages:
                 if isinstance(msg, dict) and msg.get("role") == "user":
                     prompt = msg.get("content", "")
-                    break
             var_names = re.compile(r"^([a-zA-Z]\w*)\s*=\s*\{", re.MULTILINE).findall(prompt)
             if not var_names:
                 var_names = ["instrument"]
@@ -623,7 +621,6 @@ class TestPerGroupCoherenceIsolation:
             for msg in messages:
                 if isinstance(msg, dict) and msg.get("role") == "user":
                     prompt = msg.get("content", "")
-                    break
             var_names = re.compile(r"^([a-zA-Z]\w*)\s*=\s*\{", re.MULTILINE).findall(prompt)
             call_count += 1
             call_sequence.append((call_count, var_names))

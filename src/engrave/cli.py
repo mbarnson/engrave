@@ -181,10 +181,10 @@ def check(
                 router.complete(
                     role=role_name,
                     messages=[{"role": "user", "content": "Say 'ok' and nothing else."}],
-                    max_tokens=5,
                 )
             )
-            console.print(f"[green]OK[/green] {role_name}: {result.strip()}")
+            text = (result or "").strip() or "(empty response)"
+            console.print(f"[green]OK[/green] {role_name}: {text}")
         except RoleNotFoundError as e:
             console.print(f"[red]ERROR[/red] {e}")
             raise typer.Exit(code=1) from e
@@ -379,6 +379,7 @@ def generate(
                 rag_retriever=rag_retriever,
                 user_labels=user_labels,
                 user_hints=user_hints,
+                max_concurrent_groups=settings.pipeline.max_concurrent_groups,
             )
         )
 

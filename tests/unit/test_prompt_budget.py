@@ -11,6 +11,11 @@ from engrave.generation.prompts import (
 )
 
 
+def _all_content(messages: list[dict[str, str]]) -> str:
+    """Concatenate all message content for assertion checks."""
+    return "\n".join(m["content"] for m in messages)
+
+
 class TestEstimateTokens:
     """Test rough token estimation."""
 
@@ -116,137 +121,155 @@ class TestFitWithinBudget:
 
 
 class TestBuildSectionPrompt:
-    """Test full prompt construction."""
+    """Test full prompt construction (now returns list[dict])."""
+
+    def test_build_section_prompt_returns_messages_list(self):
+        """Output should be a list of message dicts with correct roles."""
+        messages = build_section_prompt(
+            section_midi={"trumpet": "bar 1: c4(q) d4(q)"},
+            coherence=CoherenceState(),
+            rag_examples=["\\version \"2.24.4\"\nc''4 d'' e'' f''"],
+            template="trumpet = {\n  \n}\n\n\\score {\n  <<\n  >>\n}",
+        )
+        assert isinstance(messages, list)
+        assert len(messages) == 4
+        assert messages[0]["role"] == "system"
+        assert messages[1]["role"] == "user"
+        assert messages[2]["role"] == "assistant"
+        assert messages[3]["role"] == "user"
 
     def test_build_section_prompt_has_all_sections(self):
-        """Output should contain all major prompt sections."""
-        section_midi = {"trumpet": "bar 1: c4(q) d4(q)"}
-        coherence = CoherenceState()
-        rag_examples = ["\\version \"2.24.4\"\nc''4 d'' e'' f''"]
-        template = "trumpet = {\n  \n}\n\n\\score {\n  <<\n  >>\n}"
-
-        prompt = build_section_prompt(
-            section_midi=section_midi,
-            coherence=coherence,
-            rag_examples=rag_examples,
-            template=template,
+        """Combined content should contain all major prompt sections."""
+        messages = build_section_prompt(
+            section_midi={"trumpet": "bar 1: c4(q) d4(q)"},
+            coherence=CoherenceState(),
+            rag_examples=["\\version \"2.24.4\"\nc''4 d'' e'' f''"],
+            template="trumpet = {\n  \n}\n\n\\score {\n  <<\n  >>\n}",
         )
-        assert "RULES" in prompt
-        assert "MUSICAL STATE" in prompt or "CURRENT MUSICAL STATE" in prompt
-        assert "TEMPLATE" in prompt or "LILYPOND TEMPLATE" in prompt
-        assert "EXAMPLES" in prompt or "SIMILAR EXAMPLES" in prompt
-        assert "MIDI" in prompt
+        combined = _all_content(messages)
+        assert "RULES" in combined
+        assert "MUSICAL STATE" in combined or "CURRENT MUSICAL STATE" in combined
+        assert "TEMPLATE" in combined or "LILYPOND TEMPLATE" in combined
+        assert "EXAMPLES" in combined or "SIMILAR EXAMPLES" in combined
+        assert "MIDI" in combined
 
-    def test_build_section_prompt_rules_absolute_pitch(self):
-        """RULES section should mention absolute pitch."""
-        prompt = build_section_prompt(
+    def test_build_section_prompt_rules_in_system(self):
+        """RULES should be in the system message (shared across all requests)."""
+        messages = build_section_prompt(
             section_midi={"trumpet": "bar 1: c4(q)"},
             coherence=CoherenceState(),
             rag_examples=[],
             template="trumpet = { }",
         )
-        rules_idx = prompt.index("RULES")
-        rules_section = prompt[rules_idx : rules_idx + 500]
-        assert "absolute" in rules_section.lower() or "ABSOLUTE" in rules_section
-
-    def test_build_section_prompt_rules_concert_pitch(self):
-        """RULES section should mention concert pitch."""
-        prompt = build_section_prompt(
-            section_midi={"trumpet": "bar 1: c4(q)"},
-            coherence=CoherenceState(),
-            rag_examples=[],
-            template="trumpet = { }",
-        )
-        rules_idx = prompt.index("RULES")
-        rules_section = prompt[rules_idx : rules_idx + 500]
-        assert "concert" in rules_section.lower() or "CONCERT" in rules_section
+        system_content = messages[0]["content"]
+        assert "RULES" in system_content
+        assert "ABSOLUTE" in system_content
+        assert "CONCERT PITCH" in system_content
 
     def test_build_section_prompt_rules_no_score_block(self):
-        """RULES section should say not to generate \\score."""
-        prompt = build_section_prompt(
+        """System message should say not to generate \\score."""
+        messages = build_section_prompt(
             section_midi={"trumpet": "bar 1: c4(q)"},
             coherence=CoherenceState(),
             rag_examples=[],
             template="trumpet = { }",
         )
-        rules_idx = prompt.index("RULES")
-        rules_section = prompt[rules_idx : rules_idx + 600]
-        assert "\\score" in rules_section or "\\version" in rules_section
+        system_content = messages[0]["content"]
+        assert "\\score" in system_content or "\\version" in system_content
+
+    def test_build_section_prompt_variable_content_in_last_user(self):
+        """Template, RAG, and MIDI should be in the last user message."""
+        messages = build_section_prompt(
+            section_midi={"trumpet": "bar 1: c4(q)"},
+            coherence=CoherenceState(),
+            rag_examples=["example LilyPond"],
+            template="trumpet = { }",
+        )
+        last_user = messages[3]["content"]
+        assert "TEMPLATE" in last_user or "LILYPOND TEMPLATE" in last_user
+        assert "MIDI" in last_user
+        assert "EXAMPLES" in last_user or "SIMILAR EXAMPLES" in last_user
 
 
 class TestThreeTierPrompt:
     """Tests for three-tier authority prompt structure."""
 
-    def test_three_tier_prompt_has_definitive_section(self):
-        """Prompt with user_hints contains DEFINITIVE section."""
-        prompt = build_section_prompt(
+    def test_three_tier_prompt_has_definitive_in_system(self):
+        """System message with user_hints contains DEFINITIVE section."""
+        messages = build_section_prompt(
             section_midi={"trumpet": "bar 1: c4(q)"},
             coherence=CoherenceState(),
             rag_examples=[],
             template="trumpet = { }",
             user_hints="swing feel",
         )
-        assert "=== DEFINITIVE" in prompt
-        assert "swing feel" in prompt
+        system_content = messages[0]["content"]
+        assert "=== DEFINITIVE" in system_content
+        assert "swing feel" in system_content
 
-    def test_three_tier_prompt_has_contextual_section(self):
-        """Prompt with audio_description contains CONTEXTUAL section."""
-        prompt = build_section_prompt(
+    def test_three_tier_prompt_has_contextual_in_shared_user(self):
+        """Shared user message with audio_description contains CONTEXTUAL section."""
+        messages = build_section_prompt(
             section_midi={"trumpet": "bar 1: c4(q)"},
             coherence=CoherenceState(),
             rag_examples=[],
             template="trumpet = { }",
             audio_description="Bb major, 142 BPM",
         )
-        assert "=== CONTEXTUAL" in prompt
-        assert "Bb major, 142 BPM" in prompt
+        shared_user = messages[1]["content"]
+        assert "=== CONTEXTUAL" in shared_user
+        assert "Bb major, 142 BPM" in shared_user
 
-    def test_three_tier_prompt_has_raw_input_section(self):
-        """Prompt contains RAW INPUT section for MIDI content."""
-        prompt = build_section_prompt(
+    def test_three_tier_prompt_has_raw_input_in_last_user(self):
+        """Last user message contains RAW INPUT section for MIDI content."""
+        messages = build_section_prompt(
             section_midi={"trumpet": "bar 1: c4(q)"},
             coherence=CoherenceState(),
             rag_examples=[],
             template="trumpet = { }",
         )
-        assert "=== RAW INPUT" in prompt
+        last_user = messages[3]["content"]
+        assert "=== RAW INPUT" in last_user
 
     def test_three_tier_prompt_empty_hints_placeholder(self):
-        """Prompt without user hints contains placeholder text."""
-        prompt = build_section_prompt(
+        """System message without user hints contains placeholder text."""
+        messages = build_section_prompt(
             section_midi={"trumpet": "bar 1: c4(q)"},
             coherence=CoherenceState(),
             rag_examples=[],
             template="trumpet = { }",
         )
-        assert "No user hints provided." in prompt
+        system_content = messages[0]["content"]
+        assert "No user hints provided." in system_content
 
     def test_three_tier_prompt_empty_audio_placeholder(self):
-        """Prompt without audio description contains placeholder text."""
-        prompt = build_section_prompt(
+        """Shared user message without audio description contains placeholder text."""
+        messages = build_section_prompt(
             section_midi={"trumpet": "bar 1: c4(q)"},
             coherence=CoherenceState(),
             rag_examples=[],
             template="trumpet = { }",
         )
-        assert "No audio analysis available." in prompt
+        shared_user = messages[1]["content"]
+        assert "No audio analysis available." in shared_user
 
     def test_three_tier_prompt_backward_compatible(self):
-        """Prompt with no new args still produces valid prompt with all required sections."""
-        prompt = build_section_prompt(
+        """Messages with no new args still produce valid content with all required sections."""
+        messages = build_section_prompt(
             section_midi={"trumpet": "bar 1: c4(q)"},
             coherence=CoherenceState(),
             rag_examples=["example 1"],
             template="trumpet = { }",
         )
-        assert "RULES" in prompt
-        assert "TEMPLATE" in prompt or "LILYPOND TEMPLATE" in prompt
-        assert "EXAMPLES" in prompt or "SIMILAR EXAMPLES" in prompt
-        assert "=== DEFINITIVE" in prompt
-        assert "=== CONTEXTUAL" in prompt
-        assert "=== RAW INPUT" in prompt
-        assert "No user hints provided." in prompt
-        assert "No audio analysis available." in prompt
+        combined = _all_content(messages)
+        assert "RULES" in combined
+        assert "TEMPLATE" in combined or "LILYPOND TEMPLATE" in combined
+        assert "EXAMPLES" in combined or "SIMILAR EXAMPLES" in combined
+        assert "=== DEFINITIVE" in combined
+        assert "=== CONTEXTUAL" in combined
+        assert "=== RAW INPUT" in combined
+        assert "No user hints provided." in combined
+        assert "No audio analysis available." in combined
 
     def test_prompt_budget_description_tokens_field(self):
         """PromptBudget has description_tokens=800 and safety_margin=3200."""

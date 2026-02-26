@@ -25,10 +25,16 @@ _MANGLED_CMD_RE = re.compile(r"\\(?!(?:fff|ff|f|mf|mp|ppp|pp|p)-\.)[a-zA-Z]+-\."
 # inside individual instrument variables.
 _CLEAN_GLOBAL_RE = re.compile(r"^\s*\\(time|key|tempo|clef|set)\s")
 
-# A line containing only ``{`` is a LLM artifact from echoing variable
-# wrappers.  Stripping only ``{`` (not ``}``) is safe because the
-# assembler provides the outer braces for each variable.
+# A line containing only ``{`` or ``}`` is a LLM artifact from echoing
+# variable wrappers.  The assembler provides the outer braces for each
+# variable, so bare braces inside the content are always artifacts.
 _BARE_OPEN_BRACE_RE = re.compile(r"^\s*\{\s*$")
+_BARE_CLOSE_BRACE_RE = re.compile(r"^\s*\}\s*$")
+
+# Line containing only dynamics and/or articulations with no actual notes
+# or rests — orphaned LLM artifact.  Matches lines like ``\f-.f-.``,
+# ``-.\f``, ``-.``, etc.
+_ORPHANED_ARTIC_RE = re.compile(r"^\s*(?:-\.|\\(?:fff|ff|f|mf|mp|ppp|pp|p)(?![a-zA-Z])|\s)+\s*$")
 
 # Dynamic marking regex — ordered longest-first so alternation matches
 # ``\fff`` before ``\ff`` before ``\f``.  Negative lookahead prevents
@@ -80,18 +86,45 @@ def _deduplicate_dynamics(content: str) -> str:
     return "".join(result)
 
 
+def _clean_articulation_clusters(content: str) -> str:
+    """Fix garbled articulation/dynamic sequences from LLM output.
+
+    The LLM sometimes produces invalid sequences like:
+
+    - ``-.-.`` (duplicate staccato)
+    - ``\\f-.f-.`` (dynamic + staccato + orphaned f + staccato)
+    - ``-.\\f-.`` (staccato + dynamic + redundant staccato)
+    - ``-.f-.`` (staccato + orphaned f-dynamic + staccato)
+
+    Order of substitutions matters — complex patterns before simpler ones.
+    """
+    # \dynamic-.f-. → \dynamic  (e.g. \f-.f-. → \f)
+    content = re.sub(r"(\\(?:fff|ff|f|mf|mp|ppp|pp|p))(?![a-zA-Z])-\.f-\.", r"\1", content)
+    # -.\dynamic-. → -.\dynamic  (redundant staccato after dynamic)
+    content = re.sub(r"(-\.)(\\(?:fff|ff|f|mf|mp|ppp|pp|p))(?![a-zA-Z])-\.", r"\1\2", content)
+    # -.f-. → -.  (orphaned f-dynamic without backslash + staccato)
+    content = re.sub(r"(-\.)f-\.", r"\1", content)
+    # -.-. → -.  (duplicate consecutive staccato)
+    content = re.sub(r"(-\.){2,}", "-.", content)
+    return content
+
+
 def _sanitize_music_content(content: str) -> str:
     """Strip LLM artifacts from instrument music content.
 
-    Three categories of artifacts are removed:
+    Five categories of artifacts are removed:
 
     1. **Mangled commands** -- LLMs echo ``\\time``, ``\\key``, ``\\tempo``,
        ``\\set``, ``\\dynamicUp`` etc. with staccato dots injected
        (``\\time-. 4/4``, ``\\se-.t Sta-.f-.f-..mid-.i...``).
     2. **Misplaced global commands** -- clean ``\\time 4/4``, ``\\key g \\minor``
        etc. that belong in the global block, not in instrument variables.
-    3. **Bare opening braces** -- a lone ``{`` line from the LLM echoing
+    3. **Bare braces** -- a lone ``{`` or ``}`` line from the LLM echoing
        variable wrapper syntax.
+    4. **Garbled articulation clusters** -- doubled staccato ``-.-.``,
+       orphaned dynamics ``-.f-.``, etc.
+    5. **Orphaned articulation lines** -- lines containing only dynamics
+       and/or staccato with no actual notes or rests.
     """
     lines = content.split("\n")
     cleaned = []
@@ -102,8 +135,15 @@ def _sanitize_music_content(content: str) -> str:
             continue
         if _BARE_OPEN_BRACE_RE.match(line):
             continue
+        if _BARE_CLOSE_BRACE_RE.match(line):
+            continue
         cleaned.append(line)
     result = "\n".join(cleaned).strip()
+    # Fix garbled articulation/dynamic clusters
+    result = _clean_articulation_clusters(result)
+    # Strip orphaned articulation-only lines (no notes or rests)
+    lines = result.split("\n")
+    result = "\n".join(line for line in lines if not _ORPHANED_ARTIC_RE.match(line))
     return result if result else "R1"
 
 

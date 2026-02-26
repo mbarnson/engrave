@@ -54,7 +54,6 @@ def _make_mock_router():
             for msg in messages:
                 if isinstance(msg, dict) and msg.get("role") == "user":
                     prompt = msg.get("content", "")
-                    break
 
         var_pattern = re.compile(r"^([a-zA-Z]\w*)\s*=\s*\{", re.MULTILINE)
         var_names = var_pattern.findall(prompt)

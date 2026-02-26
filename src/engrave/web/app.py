@@ -302,6 +302,7 @@ async def _generate_and_render(
         compiler=compiler,
         output_dir=str(job_dir),
         user_hints=hints,
+        max_concurrent_groups=settings.pipeline.max_concurrent_groups,
     )
 
     if not gen_result.success:

@@ -7,7 +7,6 @@ collects per-input results with timing.
 
 from __future__ import annotations
 
-import asyncio
 import logging
 import time
 from dataclasses import asdict, dataclass, field
@@ -69,7 +68,7 @@ def discover_inputs(test_dir: Path) -> list[tuple[Path, str]]:
     return inputs
 
 
-def _check_llm_connectivity() -> str | None:
+async def _check_llm_connectivity() -> str | None:
     """Verify LLM provider is reachable.
 
     Returns None on success or an error message string on failure.
@@ -80,12 +79,9 @@ def _check_llm_connectivity() -> str | None:
 
         settings = Settings()
         router = InferenceRouter(settings)
-        result = asyncio.run(
-            router.complete(
-                role="generator",
-                messages=[{"role": "user", "content": "Say 'ok' and nothing else."}],
-                max_tokens=5,
-            )
+        result = await router.complete(
+            role="generator",
+            messages=[{"role": "user", "content": "Say 'ok' and nothing else."}],
         )
         if result:
             return None
@@ -126,6 +122,7 @@ async def _run_audio_pipeline(input_path: Path, job_dir: Path) -> Path:
         router=router,
         compiler=compiler,
         output_dir=str(job_dir / "generation"),
+        max_concurrent_groups=settings.pipeline.max_concurrent_groups,
     )
 
     if not gen_result.success:
@@ -183,6 +180,7 @@ async def _run_midi_pipeline(input_path: Path, job_dir: Path) -> Path:
         router=router,
         compiler=compiler,
         output_dir=str(gen_dir),
+        max_concurrent_groups=settings.pipeline.max_concurrent_groups,
     )
 
     if not gen_result.success:
@@ -286,11 +284,56 @@ def _run_checks(
     return results
 
 
+async def _run_single_input(
+    input_path: Path,
+    pipeline_type: str,
+    test_dir: Path,
+) -> InputResult:
+    """Process a single test input through the appropriate pipeline.
+
+    Each input creates its own Router/Compiler — fully independent.
+    vllm-mlx queues excess requests server-side.
+    """
+    input_t0 = time.monotonic()
+    error: str | None = None
+    zip_path: Path | None = None
+
+    job_dir = test_dir / ".smoke" / input_path.stem
+    job_dir.mkdir(parents=True, exist_ok=True)
+
+    try:
+        if pipeline_type == "audio":
+            zip_path = await _run_audio_pipeline(input_path, job_dir)
+        else:
+            zip_path = await _run_midi_pipeline(input_path, job_dir)
+    except Exception as exc:
+        error = str(exc)
+        logger.error("Pipeline error for %s: %s", input_path.name, error)
+
+    checks = _run_checks(
+        zip_path,
+        error,
+        expected_pdf_count=1,
+        expected_file_min=2,
+        expected_file_max=2,
+    )
+
+    input_elapsed = time.monotonic() - input_t0
+    return InputResult(
+        input_path=input_path,
+        pipeline_path=pipeline_type,
+        checks=checks,
+        elapsed_seconds=round(input_elapsed, 2),
+        error=error,
+    )
+
+
 async def run_smoke_test(test_dir: Path) -> SmokeResult:
     """Run the full smoke test suite on all inputs in a directory.
 
-    Discovers audio and MIDI files, runs each through the appropriate
-    pipeline path, performs 9 structural checks, and aggregates results.
+    Discovers audio and MIDI files, runs all inputs concurrently through
+    the appropriate pipeline path, performs 9 structural checks, and
+    aggregates results.
 
     Args:
         test_dir: Directory containing test input files.
@@ -298,10 +341,12 @@ async def run_smoke_test(test_dir: Path) -> SmokeResult:
     Returns:
         SmokeResult with per-input results and aggregate totals.
     """
+    import asyncio
+
     t0 = time.monotonic()
 
     # Check LLM connectivity before running any inputs
-    llm_error = _check_llm_connectivity()
+    llm_error = await _check_llm_connectivity()
     if llm_error:
         logger.error("LLM provider not available: %s", llm_error)
         return SmokeResult(
@@ -328,52 +373,22 @@ async def run_smoke_test(test_dir: Path) -> SmokeResult:
         logger.warning("No audio or MIDI inputs found in %s", test_dir)
         return SmokeResult(elapsed_seconds=time.monotonic() - t0)
 
-    results: list[InputResult] = []
+    # Dispatch all inputs concurrently
+    input_coros = [
+        _run_single_input(input_path, pipeline_type, test_dir)
+        for input_path, pipeline_type in discovered
+    ]
+    results: list[InputResult] = await asyncio.gather(*input_coros)
+
+    # Tally
     total_passed = 0
     total_failed = 0
     total_errors = 0
 
-    for input_path, pipeline_type in discovered:
-        input_t0 = time.monotonic()
-        error: str | None = None
-        zip_path: Path | None = None
-
-        # Create per-input job directory
-        job_dir = test_dir / ".smoke" / input_path.stem
-        job_dir.mkdir(parents=True, exist_ok=True)
-
-        try:
-            if pipeline_type == "audio":
-                zip_path = await _run_audio_pipeline(input_path, job_dir)
-            else:
-                zip_path = await _run_midi_pipeline(input_path, job_dir)
-        except Exception as exc:
-            error = str(exc)
-            logger.error("Pipeline error for %s: %s", input_path.name, error)
-
-        # Run checks -- direct compilation produces score.ly + score.pdf (2 files)
-        checks = _run_checks(
-            zip_path,
-            error,
-            expected_pdf_count=1,
-            expected_file_min=2,
-            expected_file_max=2,
-        )
-
-        input_elapsed = time.monotonic() - input_t0
-        input_result = InputResult(
-            input_path=input_path,
-            pipeline_path=pipeline_type,
-            checks=checks,
-            elapsed_seconds=round(input_elapsed, 2),
-            error=error,
-        )
-        results.append(input_result)
-
-        # Tally
-        if error:
+    for input_result in results:
+        if input_result.error:
             total_errors += 1
-        for check in checks:
+        for check in input_result.checks:
             if check.passed:
                 total_passed += 1
             else:
