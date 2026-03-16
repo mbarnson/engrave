@@ -52,7 +52,7 @@ class TestMusicDefinitions:
 
     def test_definitions_has_version_header(self) -> None:
         output = _generate_definitions()
-        assert output.startswith('\\version "2.24.4"')
+        assert output.startswith('\\version "2.24.0"')
 
     def test_definitions_has_global_music(self) -> None:
         output = _generate_definitions()
@@ -88,7 +88,7 @@ class TestConductorScore:
 
     def test_conductor_score_has_version_header(self) -> None:
         output = _generate_score()
-        assert output.startswith('\\version "2.24.4"')
+        assert output.startswith('\\version "2.24.0"')
 
     def test_conductor_score_has_staff_groups(self) -> None:
         output = _generate_score()

@@ -296,7 +296,7 @@ class TestValidateGeneration:
             side_effect=FileNotFoundError("LilyPond not found"),
         ):
             result = validate_generation(
-                ly_source='\\version "2.24.4"\n\\score { }',
+                ly_source='\\version "2.24.0"\n\\score { }',
                 original_midi_path="/nonexistent.mid",
                 instrument_names=["Trumpet"],
                 compiler=None,
@@ -318,7 +318,7 @@ class TestValidateGeneration:
         )
 
         result = validate_generation(
-            ly_source='\\version "2.24.4"\n\\score { \\layout { } }',
+            ly_source='\\version "2.24.0"\n\\score { \\layout { } }',
             original_midi_path=str(ref_midi),
             instrument_names=["Trumpet"],
             compiler=mock_compiler,
@@ -354,7 +354,7 @@ class TestValidateGeneration:
             mock_tmpdir.return_value.__exit__ = lambda s, *a: None
 
             result = validate_generation(
-                ly_source='\\version "2.24.4"\n\\score { \\layout { } }',
+                ly_source='\\version "2.24.0"\n\\score { \\layout { } }',
                 original_midi_path=str(ref_midi),
                 instrument_names=["Trumpet"],
                 compiler=mock_compiler,

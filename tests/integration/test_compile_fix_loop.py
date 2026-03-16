@@ -11,8 +11,8 @@ from pytest_bdd import given, scenario, then, when
 from engrave.lilypond.compiler import RawCompileResult
 from engrave.lilypond.fixer import compile_with_fix_loop
 
-VALID_SOURCE = '\\version "2.24.4"\n\\relative c\' { c4 d e f | g2 g | }\n'
-BROKEN_SOURCE = '\\version "2.24.4"\n\\relative c\' { c4 d e f\n'
+VALID_SOURCE = '\\version "2.24.0"\n\\relative c\' { c4 d e f | g2 g | }\n'
+BROKEN_SOURCE = '\\version "2.24.0"\n\\relative c\' { c4 d e f\n'
 PARSEABLE_ERROR = "/tmp/test.ly:3:1: error: unmatched '{'\n{\n"
 
 # Different errors for max-attempts scenario
@@ -108,7 +108,7 @@ def mock_llm_different_broken():
     router = AsyncMock()
     # Return different broken code each time
     broken_variants = [
-        f'\\version "2.24.4"\n\\relative c\' {{ c4 d e f variant{i}\n' for i in range(5)
+        f'\\version "2.24.0"\n\\relative c\' {{ c4 d e f variant{i}\n' for i in range(5)
     ]
     router.complete.side_effect = broken_variants
     return router

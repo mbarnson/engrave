@@ -25,7 +25,7 @@ from engrave.lilypond.compiler import RawCompileResult
 
 # A minimal converted LilyPond source that musicxml2ly would produce
 _CONVERTED_LY = r"""
-\version "2.24.4"
+\version "2.24.0"
 
 \header {
   title = "Simple Test Score"

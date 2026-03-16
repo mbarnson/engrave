@@ -22,7 +22,7 @@ class TestCompileSuccess:
             mock_run.return_value = MagicMock(returncode=0, stdout="", stderr="")
             compiler = LilyPondCompiler(timeout=30)
             result = compiler.compile(
-                '\\version "2.24.4"\n\\relative c\' { c4 }', output_dir=tmp_path
+                '\\version "2.24.0"\n\\relative c\' { c4 }', output_dir=tmp_path
             )
             assert isinstance(result, RawCompileResult)
             assert result.success is True
@@ -89,6 +89,6 @@ class TestCompileTimeout:
         ):
             mock_run.side_effect = subprocess.TimeoutExpired(cmd=["lilypond"], timeout=30)
             compiler = LilyPondCompiler(timeout=30)
-            result = compiler.compile('\\version "2.24.4"\n{ c4 }', output_dir=tmp_path)
+            result = compiler.compile('\\version "2.24.0"\n{ c4 }', output_dir=tmp_path)
             assert result.success is False
             assert "timed out" in result.stderr.lower()

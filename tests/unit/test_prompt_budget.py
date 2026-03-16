@@ -128,7 +128,7 @@ class TestBuildSectionPrompt:
         messages = build_section_prompt(
             section_midi={"trumpet": "bar 1: c4(q) d4(q)"},
             coherence=CoherenceState(),
-            rag_examples=["\\version \"2.24.4\"\nc''4 d'' e'' f''"],
+            rag_examples=["\\version \"2.24.0\"\nc''4 d'' e'' f''"],
             template="trumpet = {\n  \n}\n\n\\score {\n  <<\n  >>\n}",
         )
         assert isinstance(messages, list)
@@ -143,7 +143,7 @@ class TestBuildSectionPrompt:
         messages = build_section_prompt(
             section_midi={"trumpet": "bar 1: c4(q) d4(q)"},
             coherence=CoherenceState(),
-            rag_examples=["\\version \"2.24.4\"\nc''4 d'' e'' f''"],
+            rag_examples=["\\version \"2.24.0\"\nc''4 d'' e'' f''"],
             template="trumpet = {\n  \n}\n\n\\score {\n  <<\n  >>\n}",
         )
         combined = _all_content(messages)

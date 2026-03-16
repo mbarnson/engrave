@@ -24,7 +24,7 @@ class TestBuildScoreTemplate:
             start_bar=1,
             end_bar=8,
         )
-        assert '\\version "2.24.4"' in template
+        assert '\\version "2.24.0"' in template
 
     def test_build_score_template_has_variables(self):
         template = build_score_template(

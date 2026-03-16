@@ -61,7 +61,7 @@ def _create_test_zip(tmp_path: Path) -> Path:
     zip_path = tmp_path / "test_output.zip"
     with zipfile.ZipFile(zip_path, "w") as zf:
         zf.writestr("score.pdf", b"fake pdf content")
-        zf.writestr("score.ly", '\\version "2.24.4"\n{ c\' }')
+        zf.writestr("score.ly", '\\version "2.24.0"\n{ c\' }')
     return zip_path
 
 

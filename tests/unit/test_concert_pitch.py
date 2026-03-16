@@ -44,6 +44,6 @@ class TestConcertPitchConstraints:
         # No transposition
         assert "\\transpose" not in template
         # Has version header (indicates complete template)
-        assert '\\version "2.24.4"' in template
+        assert '\\version "2.24.0"' in template
         # Has variable declaration pattern (name = { })
         assert "= {" in template

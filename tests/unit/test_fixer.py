@@ -34,7 +34,7 @@ PARSEABLE_ERROR_3 = "/tmp/test.ly:7:1: error: missing brace\n  more stuff\n"
 PARSEABLE_ERROR_4 = "/tmp/test.ly:9:5: error: unknown command\n  \\badcmd\n"
 PARSEABLE_ERROR_5 = "/tmp/test.ly:11:2: error: type check failure\n  oops\n"
 
-VALID_LILYPOND = '\\version "2.24.4"\n\\relative c\' { c4 d e f | g2 g | }\n'
+VALID_LILYPOND = '\\version "2.24.0"\n\\relative c\' { c4 d e f | g2 g | }\n'
 
 
 class TestSuccessOnFirstCompile:

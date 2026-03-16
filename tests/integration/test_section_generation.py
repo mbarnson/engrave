@@ -111,7 +111,7 @@ class TestSectionAssembly:
         ly = result.ly_source
 
         # Single \version header
-        assert ly.count('\\version "2.24.4"') == 1
+        assert ly.count('\\version "2.24.0"') == 1
 
         # Single \score block
         assert ly.count("\\score") == 1

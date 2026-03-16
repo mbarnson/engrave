@@ -86,7 +86,7 @@ def _create_test_zip(
         # Score PDF
         zf.writestr("score.pdf", _make_fake_pdf(pdf_size))
         # Score LY
-        zf.writestr("score.ly", '\\version "2.24.4"\n{ c\'4 }')
+        zf.writestr("score.ly", '\\version "2.24.0"\n{ c\'4 }')
         # Music definitions LY (no matching PDF expected)
         zf.writestr("music-definitions.ly", "globalMusic = { }\n")
 
@@ -97,7 +97,7 @@ def _create_test_zip(
                 zf.writestr(f"{name}.pdf", b"")
             else:
                 zf.writestr(f"{name}.pdf", _make_fake_pdf(pdf_size))
-            zf.writestr(f"{name}.ly", f'\\version "2.24.4"\n{{ c\'{i} }}')
+            zf.writestr(f"{name}.ly", f'\\version "2.24.0"\n{{ c\'{i} }}')
 
         # MIDI file
         zf.writestr("score.mid", b"\x00" * 100)
@@ -109,7 +109,7 @@ def _create_test_zip(
 
         # Orphan LY file (no matching PDF)
         if include_ly_without_pdf:
-            zf.writestr("orphan-part.ly", '\\version "2.24.4"\n{ c\'4 }')
+            zf.writestr("orphan-part.ly", '\\version "2.24.0"\n{ c\'4 }')
 
     return zip_path
 

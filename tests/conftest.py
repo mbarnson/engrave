@@ -141,7 +141,7 @@ def mock_router():
     Override complete.return_value or complete.side_effect in tests.
     """
     router = AsyncMock()
-    router.complete.return_value = '\\version "2.24.4"\n\\relative c\' { c4 d e f | g2 g | }\n'
+    router.complete.return_value = '\\version "2.24.0"\n\\relative c\' { c4 d e f | g2 g | }\n'
     return router
 
 

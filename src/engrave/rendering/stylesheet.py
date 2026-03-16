@@ -10,10 +10,10 @@ from __future__ import annotations
 # Version
 # ---------------------------------------------------------------------------
 
-LILYPOND_VERSION: str = "2.24.4"
-"""Target LilyPond stable release."""
+LILYPOND_VERSION: str = "2.24.0"
+"""Target LilyPond stable release (minimum supported)."""
 
-VERSION_HEADER: str = '\\version "2.24.4"\n'
+VERSION_HEADER: str = '\\version "2.24.0"\n'
 """Version declaration placed at the top of every generated ``.ly`` file."""
 
 # ---------------------------------------------------------------------------

@@ -9,7 +9,7 @@ from engrave.corpus.ingest.mutopia import (
 
 # Sample Mutopia header block for testing
 _SAMPLE_HEADER = r"""
-\version "2.24.4"
+\version "2.24.0"
 
 \header {
   mutopiatitle = "Invention No. 1 in C Major"
