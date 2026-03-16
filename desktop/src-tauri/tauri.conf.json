@@ -21,7 +21,7 @@
       }
     ],
     "security": {
-      "csp": "default-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' blob: data:; script-src 'self' 'unsafe-inline'"
+      "csp": "default-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' blob: data:; script-src 'self' 'unsafe-inline'; connect-src 'self' https:"
     }
   },
   "bundle": {
@@ -35,8 +35,22 @@
       "icons/icon.ico"
     ],
     "macOS": {
-      "minimumSystemVersion": "10.15"
-    }
+      "minimumSystemVersion": "10.15",
+      "frameworks": [],
+      "signingIdentity": null
+    },
+    "windows": {
+      "digestAlgorithm": "sha256",
+      "wix": {
+        "language": "en-US"
+      }
+    },
+    "linux": {
+      "deb": {
+        "depends": ["libwebkit2gtk-4.1-0", "libappindicator3-1"]
+      }
+    },
+    "createUpdaterArtifacts": true
   },
   "plugins": {
     "shell": {
@@ -53,6 +67,12 @@
           "args": true
         }
       ]
+    },
+    "updater": {
+      "endpoints": [
+        "https://github.com/mbarnson/engrave/releases/latest/download/latest.json"
+      ],
+      "pubkey": ""
     }
   }
 }
