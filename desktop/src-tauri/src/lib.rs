@@ -2,7 +2,6 @@ use serde::{Deserialize, Serialize};
 
 mod keychain;
 mod midi;
-mod oauth;
 mod pipeline;
 
 // --- Data types shared with the frontend ---
@@ -39,35 +38,12 @@ pub struct MeasureFixResult {
     pub pdf_paths: Vec<String>,
 }
 
-// --- OAuth Tauri Commands ---
+// --- Tauri Commands ---
 
 #[tauri::command]
-async fn start_oauth() -> Result<String, String> {
-    oauth::start_oauth_flow().await
+async fn check_claude_auth() -> Result<bool, String> {
+    Ok(keychain::is_claude_installed() && keychain::is_claude_authenticated())
 }
-
-#[tauri::command]
-async fn get_auth_status() -> Result<oauth::AuthStatus, String> {
-    oauth::get_auth_status()
-}
-
-#[tauri::command]
-async fn is_authenticated() -> Result<bool, String> {
-    let status = oauth::get_auth_status()?;
-    Ok(status.authenticated && status.token_valid)
-}
-
-#[tauri::command]
-async fn logout() -> Result<(), String> {
-    oauth::logout()
-}
-
-#[tauri::command]
-async fn get_valid_token() -> Result<Option<String>, String> {
-    oauth::get_valid_token().await
-}
-
-// --- MIDI & Pipeline Commands ---
 
 #[tauri::command]
 async fn analyze_midi(path: String) -> Result<Vec<MidiTrack>, String> {
@@ -169,11 +145,7 @@ pub fn run() {
         .plugin(tauri_plugin_os::init())
         .plugin(tauri_plugin_updater::Builder::new().build())
         .invoke_handler(tauri::generate_handler![
-            start_oauth,
-            get_auth_status,
-            is_authenticated,
-            logout,
-            get_valid_token,
+            check_claude_auth,
             analyze_midi,
             generate,
             fix_measure,

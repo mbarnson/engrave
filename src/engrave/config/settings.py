@@ -36,9 +36,8 @@ class ProviderConfig(BaseModel):
 class AgentSdkConfig(BaseModel):
     """Configuration for the Agent SDK provider (Anthropic API via anthropic SDK).
 
-    Used by desktop app users who authenticate via the Tauri frontend.
-    The API key can be set at config time or injected at runtime via
-    ``InferenceRouter.set_agent_sdk_key()``.
+    Legacy: desktop app now uses claude_pipe provider (Claude Code CLI).
+    Retained for backward compatibility with existing config files.
     """
 
     api_key: str | None = None

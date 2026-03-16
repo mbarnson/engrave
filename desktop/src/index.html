@@ -18,15 +18,16 @@
     <!-- Settings Modal -->
     <div id="settings-modal" class="modal hidden">
       <div class="modal-content">
-        <h2>Account</h2>
-        <div id="auth-status-section">
-          <p id="auth-status-text" class="status-text"></p>
-        </div>
+        <h2>Claude Code</h2>
+        <p class="modal-desc">
+          Engrave uses Claude Code for AI generation.
+          Sign in once with <code>claude login</code> in your terminal.
+        </p>
         <div class="modal-actions">
-          <button id="sign-in-settings-btn" class="btn primary">Sign in with Claude</button>
-          <button id="sign-out-btn" class="btn danger hidden">Sign Out</button>
+          <button id="recheck-auth-btn" class="btn primary">Check Auth Status</button>
           <button id="close-settings-btn" class="btn">Close</button>
         </div>
+        <p id="auth-status" class="status-text"></p>
       </div>
     </div>
 
@@ -141,15 +142,17 @@
       </div>
     </main>
 
-    <!-- Sign-in overlay (first launch) -->
-    <div id="sign-in-overlay" class="overlay hidden">
+    <!-- No-auth overlay (first launch / not signed in) -->
+    <div id="no-auth-overlay" class="overlay hidden">
       <div class="overlay-content">
         <h2>Welcome to Engrave</h2>
-        <p>Sign in with your Claude account to get started.</p>
-        <p class="hint-text">
-          Requires a Claude Pro or Max subscription.
-        </p>
-        <button id="overlay-sign-in-btn" class="btn primary large">Sign in with Claude</button>
+        <p>To get started, install and sign in to Claude Code.</p>
+        <ol class="setup-steps">
+          <li>Install Claude Code: <code>npm install -g @anthropic-ai/claude-code</code></li>
+          <li>Sign in: <code>claude login</code></li>
+          <li>Click "Check" below to verify</li>
+        </ol>
+        <button id="overlay-recheck-btn" class="btn primary large">Check Auth Status</button>
         <p id="overlay-status" class="status-text"></p>
       </div>
     </div>

@@ -1,6 +1,5 @@
 // Engrave Desktop — Frontend Application
 // Uses Tauri's IPC to communicate with the Rust backend.
-// Authentication via OAuth PKCE flow with Claude.
 
 const { invoke } = window.__TAURI__.core;
 const { listen } = window.__TAURI__.event;
@@ -27,7 +26,7 @@ const tracksSection = $("#tracks-section");
 const progressSection = $("#progress-section");
 const resultsSection = $("#results-section");
 const settingsModal = $("#settings-modal");
-const signInOverlay = $("#sign-in-overlay");
+const noAuthOverlay = $("#no-auth-overlay");
 const errorBanner = $("#error-banner");
 
 // --- Instrument options for the track editor ---
@@ -78,87 +77,17 @@ function fileExtIcon(name) {
   return "📁";
 }
 
-// --- OAuth Authentication ---
+// --- Claude Code Auth Check ---
 
-async function checkAuth() {
+async function checkClaudeAuth() {
   try {
-    const status = await invoke("get_auth_status");
-    updateAuthUI(status);
-    if (!status.authenticated) {
-      signInOverlay.classList.remove("hidden");
+    const isAuthed = await invoke("check_claude_auth");
+    if (!isAuthed) {
+      noAuthOverlay.classList.remove("hidden");
     }
   } catch (e) {
-    console.warn("Auth check failed:", e);
-  }
-}
-
-function updateAuthUI(status) {
-  const statusText = $("#auth-status-text");
-  const signInBtn = $("#sign-in-settings-btn");
-  const signOutBtn = $("#sign-out-btn");
-
-  if (status.authenticated && status.token_valid) {
-    statusText.textContent = "Signed in with Claude";
-    statusText.className = "status-text success";
-    signInBtn.classList.add("hidden");
-    signOutBtn.classList.remove("hidden");
-  } else if (status.authenticated && !status.token_valid) {
-    statusText.textContent = "Session expired — please sign in again";
-    statusText.className = "status-text error";
-    signInBtn.classList.remove("hidden");
-    signOutBtn.classList.remove("hidden");
-  } else {
-    statusText.textContent = "Not signed in";
-    statusText.className = "status-text";
-    signInBtn.classList.remove("hidden");
-    signOutBtn.classList.add("hidden");
-  }
-}
-
-async function startOAuth(statusEl) {
-  if (statusEl) {
-    statusEl.textContent = "Opening browser...";
-    statusEl.className = "status-text";
-  }
-
-  try {
-    const authUrl = await invoke("start_oauth");
-    if (statusEl) {
-      statusEl.textContent = "Complete sign-in in your browser...";
-    }
-
-    // Poll for auth completion
-    let attempts = 0;
-    const maxAttempts = 60; // 5 minutes at 5s intervals
-    const pollInterval = setInterval(async () => {
-      attempts++;
-      try {
-        const status = await invoke("get_auth_status");
-        if (status.authenticated && status.token_valid) {
-          clearInterval(pollInterval);
-          if (statusEl) {
-            statusEl.textContent = "Signed in successfully!";
-            statusEl.className = "status-text success";
-          }
-          updateAuthUI(status);
-          signInOverlay.classList.add("hidden");
-        }
-      } catch (e) {
-        // Ignore polling errors
-      }
-      if (attempts >= maxAttempts) {
-        clearInterval(pollInterval);
-        if (statusEl) {
-          statusEl.textContent = "Sign-in timed out. Please try again.";
-          statusEl.className = "status-text error";
-        }
-      }
-    }, 5000);
-  } catch (e) {
-    if (statusEl) {
-      statusEl.textContent = `Sign-in failed: ${e}`;
-      statusEl.className = "status-text error";
-    }
+    console.warn("Claude auth check failed:", e);
+    // Don't block — may work if claude is available at generation time
   }
 }
 
@@ -166,8 +95,14 @@ async function startOAuth(statusEl) {
 $("#settings-btn").addEventListener("click", async () => {
   settingsModal.classList.remove("hidden");
   try {
-    const status = await invoke("get_auth_status");
-    updateAuthUI(status);
+    const isAuthed = await invoke("check_claude_auth");
+    if (isAuthed) {
+      $("#auth-status").textContent = "Claude Code is authenticated";
+      $("#auth-status").className = "status-text success";
+    } else {
+      $("#auth-status").textContent = "Claude Code is not set up";
+      $("#auth-status").className = "status-text error";
+    }
   } catch (e) {
     // Ignore
   }
@@ -177,25 +112,43 @@ $("#close-settings-btn").addEventListener("click", () => {
   settingsModal.classList.add("hidden");
 });
 
-// Sign in from settings
-$("#sign-in-settings-btn").addEventListener("click", () => {
-  startOAuth($("#auth-status-text"));
-});
-
-// Sign out
-$("#sign-out-btn").addEventListener("click", async () => {
+$("#recheck-auth-btn").addEventListener("click", async () => {
+  const statusEl = $("#auth-status");
+  statusEl.textContent = "Checking...";
+  statusEl.className = "status-text";
   try {
-    await invoke("logout");
-    const status = await invoke("get_auth_status");
-    updateAuthUI(status);
+    const isAuthed = await invoke("check_claude_auth");
+    if (isAuthed) {
+      statusEl.textContent = "Claude Code is authenticated";
+      statusEl.className = "status-text success";
+    } else {
+      statusEl.textContent = "Not authenticated — run 'claude login' in your terminal";
+      statusEl.className = "status-text error";
+    }
   } catch (e) {
-    showError(`Sign out failed: ${e}`);
+    statusEl.textContent = `Check failed: ${e}`;
+    statusEl.className = "status-text error";
   }
 });
 
-// First-launch overlay sign in
-$("#overlay-sign-in-btn").addEventListener("click", () => {
-  startOAuth($("#overlay-status"));
+// First-launch overlay
+$("#overlay-recheck-btn").addEventListener("click", async () => {
+  const statusEl = $("#overlay-status");
+  statusEl.textContent = "Checking...";
+  try {
+    const isAuthed = await invoke("check_claude_auth");
+    if (isAuthed) {
+      statusEl.textContent = "Authenticated!";
+      statusEl.className = "status-text success";
+      setTimeout(() => noAuthOverlay.classList.add("hidden"), 600);
+    } else {
+      statusEl.textContent = "Not authenticated yet — run 'claude login' first";
+      statusEl.className = "status-text error";
+    }
+  } catch (e) {
+    statusEl.textContent = `Check failed: ${e}`;
+    statusEl.className = "status-text error";
+  }
 });
 
 // Close modal on backdrop click
@@ -335,11 +288,11 @@ $("#generate-btn").addEventListener("click", async () => {
     return;
   }
 
-  // Check auth first
+  // Check Claude auth first
   try {
-    const authenticated = await invoke("is_authenticated");
-    if (!authenticated) {
-      signInOverlay.classList.remove("hidden");
+    const isAuthed = await invoke("check_claude_auth");
+    if (!isAuthed) {
+      noAuthOverlay.classList.remove("hidden");
       return;
     }
   } catch (e) {
@@ -595,5 +548,5 @@ $("#new-job-btn").addEventListener("click", () => {
 // --- Init ---
 
 document.addEventListener("DOMContentLoaded", () => {
-  checkAuth();
+  checkClaudeAuth();
 });

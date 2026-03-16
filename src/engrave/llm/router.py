@@ -14,6 +14,7 @@ if TYPE_CHECKING:
 logger = logging.getLogger(__name__)
 
 _AGENT_SDK_PREFIX = "agent_sdk/"
+_CLAUDE_PIPE_PREFIX = "claude_pipe/"
 
 
 def _inject_no_think(messages: list[dict]) -> list[dict]:
@@ -104,6 +105,17 @@ class InferenceRouter:
         provider = model.split("/")[0] if "/" in model else "unknown"
 
         logger.info("Routing role '%s' to model '%s'", role, model)
+
+        # Dispatch claude_pipe/ models to the Claude Code CLI (pipe mode).
+        if model.startswith(_CLAUDE_PIPE_PREFIX):
+            from engrave.llm.claude_pipe import claude_pipe_complete
+
+            return await claude_pipe_complete(
+                role_config=role_config,
+                messages=messages,
+                temperature=temperature,
+                max_tokens=max_tokens or role_config.max_tokens,
+            )
 
         # Dispatch agent_sdk/ models to the Anthropic SDK directly.
         if model.startswith(_AGENT_SDK_PREFIX):
