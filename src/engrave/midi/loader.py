@@ -28,9 +28,7 @@ class _LenientKeySignatureDict(dict):
             return "C"
 
 
-_mido_meta._key_signature_decode = _LenientKeySignatureDict(
-    _mido_meta._key_signature_decode
-)
+_mido_meta._key_signature_decode = _LenientKeySignatureDict(_mido_meta._key_signature_decode)
 
 # General MIDI instrument names (program 0-127)
 GM_INSTRUMENTS: dict[int, str] = {
