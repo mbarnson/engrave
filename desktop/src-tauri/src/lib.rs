@@ -31,6 +31,13 @@ pub struct GenerationResult {
     pub pdf_paths: Vec<String>,
 }
 
+#[derive(Debug, Serialize, Deserialize, Clone)]
+pub struct MeasureFixResult {
+    pub success: bool,
+    pub error: Option<String>,
+    pub pdf_paths: Vec<String>,
+}
+
 // --- Tauri Commands ---
 
 #[tauri::command]
@@ -124,6 +131,20 @@ async fn get_output_files(output_dir: String) -> Result<Vec<String>, String> {
     Ok(files)
 }
 
+#[tauri::command]
+async fn fix_measure(
+    app: tauri::AppHandle,
+    ly_path: String,
+    instrument: String,
+    bar: u32,
+    hint: String,
+    output_dir: String,
+) -> Result<MeasureFixResult, String> {
+    pipeline::run_measure_fix(&app, &ly_path, &instrument, bar, &hint, &output_dir)
+        .await
+        .map_err(|e| e.to_string())
+}
+
 // --- App setup ---
 
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
@@ -139,6 +160,7 @@ pub fn run() {
             has_api_key,
             analyze_midi,
             generate,
+            fix_measure,
             read_pdf_base64,
             get_output_files,
         ])

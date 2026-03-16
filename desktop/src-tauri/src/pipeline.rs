@@ -4,7 +4,7 @@
 //! rather than embedding the Python runtime. This keeps the Tauri binary
 //! small and avoids Python/Rust FFI complexity.
 
-use crate::GenerationResult;
+use crate::{GenerationResult, MeasureFixResult};
 use std::collections::HashMap;
 use std::path::{Path, PathBuf};
 use tauri::Emitter;
@@ -151,6 +151,110 @@ pub async fn run_generation(
         success: true,
         output_dir: Some(output_dir.to_string_lossy().to_string()),
         zip_path,
+        error: None,
+        pdf_paths,
+    })
+}
+
+/// Run a per-measure fix on a compiled .ly file, then re-render.
+///
+/// Steps:
+/// 1. `engrave fix-measure <ly_path> -i <instrument> -b <bar> --hint <hint>`
+/// 2. `engrave render <output_dir>` to regenerate PDFs
+pub async fn run_measure_fix(
+    app: &tauri::AppHandle,
+    ly_path: &str,
+    instrument: &str,
+    bar: u32,
+    hint: &str,
+    output_dir: &str,
+) -> Result<MeasureFixResult, Box<dyn std::error::Error + Send + Sync>> {
+    let engrave = find_engrave_cli();
+
+    if !Path::new(ly_path).exists() {
+        return Err(format!("LilyPond file not found: {ly_path}").into());
+    }
+
+    // --- Step 1: Fix the measure ---
+    emit_progress(app, "fix-measure", &format!("Fixing bar {bar} for {instrument}..."), 10.0);
+
+    let mut cmd = Command::new(&engrave);
+    cmd.arg("fix-measure")
+        .arg(ly_path)
+        .arg("--instrument")
+        .arg(instrument)
+        .arg("--bar")
+        .arg(bar.to_string())
+        .arg("--hint")
+        .arg(hint);
+
+    // Pass API key from keychain to subprocess
+    if let Ok(Some(key)) = crate::keychain::load_api_key() {
+        cmd.env("ANTHROPIC_API_KEY", &key);
+    }
+
+    let fix_output = cmd.output().await?;
+
+    if !fix_output.status.success() {
+        let stderr = String::from_utf8_lossy(&fix_output.stderr);
+        let stdout = String::from_utf8_lossy(&fix_output.stdout);
+        return Ok(MeasureFixResult {
+            success: false,
+            error: Some(format!(
+                "Measure fix failed:\n{}\n{}",
+                stdout.trim(),
+                stderr.trim()
+            )),
+            pdf_paths: vec![],
+        });
+    }
+
+    emit_progress(app, "fix-measure", "Measure fixed, re-rendering...", 50.0);
+
+    // --- Step 2: Re-render PDFs ---
+    emit_progress(app, "render", "Re-rendering PDFs...", 60.0);
+
+    let stem = Path::new(ly_path)
+        .file_stem()
+        .unwrap_or_default()
+        .to_string_lossy();
+
+    let render_output = Command::new(&engrave)
+        .arg("render")
+        .arg(output_dir)
+        .arg("--title")
+        .arg(stem.as_ref())
+        .output()
+        .await?;
+
+    if !render_output.status.success() {
+        let stderr = String::from_utf8_lossy(&render_output.stderr);
+        emit_progress(
+            app,
+            "render",
+            &format!("Render warning: {}", stderr.trim()),
+            80.0,
+        );
+    }
+
+    // --- Collect updated PDF files ---
+    emit_progress(app, "complete", "Collecting updated files...", 90.0);
+
+    let mut pdf_paths = Vec::new();
+    if let Ok(entries) = std::fs::read_dir(output_dir) {
+        for entry in entries.flatten() {
+            let path = entry.path();
+            if path.extension().and_then(|e| e.to_str()) == Some("pdf") {
+                pdf_paths.push(path.to_string_lossy().to_string());
+            }
+        }
+    }
+    pdf_paths.sort();
+
+    emit_progress(app, "complete", "Measure fix complete!", 100.0);
+
+    Ok(MeasureFixResult {
+        success: true,
         error: None,
         pdf_paths,
     })

@@ -11,6 +11,8 @@ const { open: dialogOpen, save: dialogSave } = window.__TAURI__.dialog;
 let currentMidiPath = null;
 let currentTracks = [];
 let currentOutputDir = null;
+let currentLyPath = null;
+let currentInstrumentLabels = [];
 
 // --- DOM refs ---
 
@@ -322,6 +324,12 @@ $("#generate-btn").addEventListener("click", async () => {
 
   const hints = $("#hints-input").value.trim() || null;
 
+  // Capture instrument labels for measure fix panel
+  currentInstrumentLabels = [];
+  for (const sel of $$("#tracks-list select")) {
+    currentInstrumentLabels.push(sel.value);
+  }
+
   showSection(progressSection);
 
   try {
@@ -333,6 +341,11 @@ $("#generate-btn").addEventListener("click", async () => {
 
     if (result.success) {
       currentOutputDir = result.output_dir;
+      // Track the .ly file path for measure fixes
+      if (currentMidiPath) {
+        const stem = currentMidiPath.split("/").pop().split("\\").pop().replace(/\.(mid|midi)$/i, "");
+        currentLyPath = currentOutputDir + "/" + stem + ".ly";
+      }
       await showResults(result);
     } else {
       showError(result.error || "Generation failed");
@@ -413,6 +426,17 @@ async function showResults(result) {
     previewPdf(pdfFiles[0]);
   }
 
+  // Populate measure fix instrument selector
+  const fixInstrument = $("#fix-instrument");
+  fixInstrument.innerHTML = "";
+  for (const name of currentInstrumentLabels) {
+    const opt = document.createElement("option");
+    opt.value = name;
+    opt.textContent = name;
+    fixInstrument.appendChild(opt);
+  }
+  $("#fix-status").textContent = "";
+
   // Download ZIP button
   const zipBtn = $("#download-zip-btn");
   if (result.zip_path) {
@@ -447,11 +471,91 @@ async function previewPdf(path) {
   }
 }
 
+// --- Measure Fix ---
+
+$("#fix-measure-btn").addEventListener("click", async () => {
+  const instrument = $("#fix-instrument").value;
+  const bar = parseInt($("#fix-bar").value, 10);
+  const hint = $("#fix-hint").value.trim();
+  const statusEl = $("#fix-status");
+
+  if (!instrument) {
+    statusEl.textContent = "Select an instrument";
+    statusEl.className = "status-text error";
+    return;
+  }
+  if (!bar || bar < 1) {
+    statusEl.textContent = "Enter a valid bar number";
+    statusEl.className = "status-text error";
+    return;
+  }
+  if (!hint) {
+    statusEl.textContent = "Describe what needs fixing";
+    statusEl.className = "status-text error";
+    return;
+  }
+  if (!currentLyPath || !currentOutputDir) {
+    statusEl.textContent = "No generated output to fix";
+    statusEl.className = "status-text error";
+    return;
+  }
+
+  statusEl.textContent = "Fixing measure...";
+  statusEl.className = "status-text";
+  $("#fix-measure-btn").disabled = true;
+
+  try {
+    const result = await invoke("fix_measure", {
+      lyPath: currentLyPath,
+      instrument,
+      bar,
+      hint,
+      outputDir: currentOutputDir,
+    });
+
+    if (result.success) {
+      statusEl.textContent = `Fixed bar ${bar} for ${instrument}`;
+      statusEl.className = "status-text success";
+
+      // Refresh PDF preview with updated files
+      if (result.pdf_paths && result.pdf_paths.length > 0) {
+        const pdfTabs = $("#pdf-tabs");
+        pdfTabs.innerHTML = "";
+        for (const pdfPath of result.pdf_paths) {
+          const name = pdfPath.split("/").pop().split("\\").pop();
+          const tab = document.createElement("button");
+          tab.className = "pdf-tab";
+          tab.textContent = name.replace(".pdf", "");
+          tab.addEventListener("click", () => {
+            for (const t of $$(".pdf-tab")) t.classList.remove("active");
+            tab.classList.add("active");
+            previewPdf(pdfPath);
+          });
+          pdfTabs.appendChild(tab);
+        }
+        // Preview first PDF
+        pdfTabs.firstChild?.classList.add("active");
+        previewPdf(result.pdf_paths[0]);
+      }
+    } else {
+      statusEl.textContent = result.error || "Fix failed";
+      statusEl.className = "status-text error";
+    }
+  } catch (e) {
+    statusEl.textContent = `Error: ${e}`;
+    statusEl.className = "status-text error";
+  } finally {
+    $("#fix-measure-btn").disabled = false;
+  }
+});
+
 // New job
 $("#new-job-btn").addEventListener("click", () => {
   currentMidiPath = null;
   currentTracks = [];
   currentOutputDir = null;
+  currentLyPath = null;
+  currentInstrumentLabels = [];
   fileInput.value = "";
   $("#hints-input").value = "";
   showSection(uploadSection);

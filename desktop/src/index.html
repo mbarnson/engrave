@@ -109,13 +109,34 @@
             </div>
           </div>
 
-          <!-- File List -->
+          <!-- File List & Measure Fix -->
           <div class="files-panel">
             <h3>Output Files</h3>
             <div id="file-list" class="file-list">
               <!-- Populated by JS -->
             </div>
             <button id="download-zip-btn" class="btn primary">Download All (ZIP)</button>
+
+            <!-- Measure Fix Panel -->
+            <div id="measure-fix-panel" class="measure-fix-panel">
+              <h3>Fix a Measure</h3>
+              <div class="fix-row">
+                <label for="fix-instrument">Instrument:</label>
+                <select id="fix-instrument">
+                  <!-- Populated by JS after generation -->
+                </select>
+              </div>
+              <div class="fix-row">
+                <label for="fix-bar">Bar #:</label>
+                <input type="number" id="fix-bar" min="1" value="1" />
+              </div>
+              <div class="fix-row">
+                <label for="fix-hint">What needs fixing?</label>
+                <textarea id="fix-hint" rows="2" placeholder="e.g., rhythm should be dotted quarter, eighth, half"></textarea>
+              </div>
+              <button id="fix-measure-btn" class="btn primary">Fix Measure</button>
+              <p id="fix-status" class="status-text"></p>
+            </div>
           </div>
         </div>
       </section>

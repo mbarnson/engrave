@@ -487,6 +487,67 @@ main {
 
 .error-banner .icon-btn { color: white; }
 
+/* Measure Fix Panel */
+.measure-fix-panel {
+  margin-top: 16px;
+  padding-top: 16px;
+  border-top: 1px solid var(--border);
+}
+
+.measure-fix-panel h3 {
+  font-size: 14px;
+  color: var(--text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  margin-bottom: 12px;
+}
+
+.fix-row {
+  margin-bottom: 10px;
+}
+
+.fix-row label {
+  display: block;
+  font-size: 13px;
+  color: var(--text-muted);
+  margin-bottom: 4px;
+}
+
+.fix-row select,
+.fix-row input[type="number"] {
+  width: 100%;
+  padding: 6px 10px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  background: var(--bg);
+  color: var(--text);
+  font-size: 13px;
+}
+
+.fix-row textarea {
+  width: 100%;
+  padding: 8px 10px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  background: var(--bg);
+  color: var(--text);
+  font-size: 13px;
+  font-family: var(--font);
+  resize: vertical;
+}
+
+.fix-row select:focus,
+.fix-row input:focus,
+.fix-row textarea:focus {
+  outline: none;
+  border-color: var(--border-focus);
+}
+
+#fix-measure-btn {
+  width: 100%;
+  margin-top: 4px;
+}
+
 /* Scrollbar */
 ::-webkit-scrollbar { width: 6px; height: 6px; }
 ::-webkit-scrollbar-track { background: transparent; }

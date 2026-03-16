@@ -600,6 +600,76 @@ def render(
         raise typer.Exit(code=1) from e
 
 
+@app.command("fix-measure")
+def fix_measure(
+    ly_file: str = typer.Argument(..., help="Path to the assembled .ly file"),
+    instrument: str = typer.Option(..., "--instrument", "-i", help="Instrument name (e.g. 'Trumpet')"),
+    bar: int = typer.Option(..., "--bar", "-b", help="1-based bar number to fix"),
+    hint: str = typer.Option(..., "--hint", help="Correction instruction for the measure"),
+    output: str | None = typer.Option(
+        None, "--output", "-o", help="Output .ly path (default: overwrite input)"
+    ),
+) -> None:
+    """Re-generate a single measure for one instrument using an LLM fix.
+
+    Reads the .ly file, sends the target instrument's part with the bar
+    number and user hint to the LLM, splices the fix back, recompiles
+    through the fix loop, and writes the result.
+    """
+    import asyncio
+    from pathlib import Path
+
+    from rich.console import Console
+
+    console = Console()
+    source_path = Path(ly_file)
+
+    if not source_path.exists():
+        console.print(f"[red]Error:[/red] File not found: {ly_file}")
+        raise typer.Exit(code=1)
+
+    ly_source = source_path.read_text()
+
+    try:
+        from engrave.config.settings import Settings
+        from engrave.generation.measure_fix import fix_measure as do_fix
+        from engrave.lilypond.compiler import LilyPondCompiler
+        from engrave.llm.router import InferenceRouter
+
+        settings = Settings()
+        router = InferenceRouter(settings)
+        compiler = LilyPondCompiler(timeout=settings.lilypond.compile_timeout)
+
+        result = asyncio.run(
+            do_fix(
+                ly_source=ly_source,
+                instrument_name=instrument,
+                bar_number=bar,
+                user_hint=hint,
+                router=router,
+                compiler=compiler,
+            )
+        )
+
+        if result.success:
+            out_path = Path(output) if output else source_path
+            out_path.write_text(result.ly_source)
+            console.print(f"[green]Success:[/green] Fixed bar {bar} for {instrument}")
+            console.print(f"  Output: {out_path}")
+        else:
+            console.print(f"[red]Fix failed:[/red] {result.error}")
+            raise typer.Exit(code=1)
+
+    except typer.Exit:
+        raise
+    except FileNotFoundError as e:
+        console.print(f"[red]Error:[/red] {e}")
+        raise typer.Exit(code=1) from e
+    except Exception as e:
+        console.print(f"[red]Error:[/red] {e}")
+        raise typer.Exit(code=1) from e
+
+
 @app.command("process-audio")
 def process_audio(
     input_source: str = typer.Argument(
