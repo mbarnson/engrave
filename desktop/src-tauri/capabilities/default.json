@@ -9,7 +9,6 @@
     "dialog:default",
     "dialog:allow-open",
     "dialog:allow-save",
-    "os:default",
-    "updater:default"
+    "os:default"
   ]
 }

@@ -50,7 +50,7 @@
         "depends": ["libwebkit2gtk-4.1-0", "libappindicator3-1"]
       }
     },
-    "createUpdaterArtifacts": true
+    "createUpdaterArtifacts": false
   },
   "plugins": {
     "shell": {
@@ -67,12 +67,6 @@
           "args": true
         }
       ]
-    },
-    "updater": {
-      "endpoints": [
-        "https://github.com/mbarnson/engrave/releases/latest/download/latest.json"
-      ],
-      "pubkey": ""
     }
   }
 }
