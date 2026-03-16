@@ -4,13 +4,21 @@ Research bead: en-11j | Date: 2026-03-16
 
 ## Executive Summary
 
-**Recommended approach: Tauri v2 shell + embedded Python sidecar + bundled LilyPond/ffmpeg**
+**Two viable approaches, depending on team priorities:**
 
-Tauri v2 provides the best balance of small binary size (~5-10 MB shell vs
-~150 MB for Electron), native macOS integration (uses system WebKit), built-in
-code signing, notarization, auto-update, and sidecar support for bundling
-the Python backend. The existing FastAPI/htmx web UI can be served inside
-Tauri's WebView with minimal changes.
+1. **Quick path (Phase 1)**: pywebview + PyInstaller — pure Python, wraps
+   the existing FastAPI/htmx UI in a native macOS window with zero frontend
+   changes. Fastest to ship but lacks built-in auto-update and code signing tooling.
+
+2. **Full path (Phase 2)**: Tauri v2 shell + Python sidecar — small binary
+   (~5-10 MB shell vs ~150 MB for Electron), native macOS integration (uses
+   system WebKit), built-in code signing, notarization, auto-update, and
+   sidecar support. **Caveat**: Known signing bug with `externalBin` sidecars
+   (GitHub #11992) requires workarounds.
+
+Both approaches serve the existing FastAPI/htmx web UI inside a native WebView.
+Start with pywebview for rapid validation, graduate to Tauri for production
+distribution.
 
 ---
 
@@ -57,10 +65,17 @@ ffmpeg. Two approaches:
 
 - **Exclude CUDA/ROCm from torch**: Only ship CPU or MPS (Metal) backends.
   `pip install torch --extra-index-url` with macOS-specific wheels.
+- **ONNX Runtime instead of PyTorch for embeddings**: sentence-transformers
+  supports ONNX backend, which is ~200 MB vs ~1.5 GB for full PyTorch.
+  ChromaDB supports custom embedding functions, so the ONNX backend can
+  replace the default PyTorch one. This is the single highest-impact
+  size optimization.
 - **Lazy model downloads**: Don't bundle embedding models. Download
   `nomic-embed-text` on first launch (~270 MB) to `~/Library/Application Support/Engrave/`.
 - **audio-separator models**: These are large (~100 MB each). Download on first use.
 - **Strip .pyc, __pycache__, test files**: Can save 10-20% on Python packages.
+- **Clean venv**: One developer went from 911 MB to 83 MB by switching from
+  system Python to a minimal venv with only needed packages.
 
 ---
 
@@ -102,9 +117,14 @@ interpreter plus the engrave package. The sidecar config in `tauri.conf.json`:
 Alternatively, use PyInstaller/Nuitka to create a single `engrave-server`
 binary that Tauri launches as sidecar.
 
+**Known issue**: GitHub #11992 — macOS code signing and notarization can fail
+when using `externalBin` sidecars. The Tauri bundler does not always properly
+sign external binaries. Workaround: pre-sign the PyInstaller binary before
+running `tauri build`. This is an active area of bug fixes as of early 2026.
+
 **Pros**: Tiny shell, native feel, batteries-included (signing, updates, DMG).
 **Cons**: Requires Rust toolchain for building the shell. Sidecar + Python
-adds complexity vs a pure-Python solution.
+adds complexity vs a pure-Python solution. Known signing issue with sidecars.
 
 ### Option B: Electron
 
@@ -124,23 +144,39 @@ a child process, loads the web UI in its Chromium window.
 **Cons**: Massive binary size (Chromium alone is ~120 MB), higher RAM usage
 (~100-200 MB baseline), not native-feeling on macOS.
 
-### Option C: PyWebView
+### Option C: PyWebView (RECOMMENDED FOR PHASE 1)
 
 | Aspect | Detail |
 |--------|--------|
 | Binary size | ~0 MB (uses system WebKit via pyobjc) |
-| macOS integration | Basic native window, limited menu/dock control |
+| macOS integration | Native Cocoa window, basic menu/dock control |
 | IPC | Python controls the window directly; JS ↔ Python bridge built-in |
+| Drag-and-drop | Built-in with `pywebviewFullPath` giving absolute file paths |
 | Code signing | Manual (no built-in tooling) |
 | Auto-update | Manual implementation required |
-| Maturity | Moderate, smaller community |
+| Maturity | Moderate, active development (v5.0+ in 2024) |
 
-**How it works**: Pure Python — `webview.create_window(url="http://localhost:8000")`.
-The simplest integration since everything stays in Python.
+**How it works**: Pure Python — start uvicorn in a daemon thread, then
+`webview.create_window(url="http://localhost:{port}")`. The existing
+FastAPI/htmx UI runs unchanged.
 
-**Pros**: Zero additional binary size, trivial to integrate, stays in Python.
-**Cons**: Limited native integration (no proper menu bar, notifications).
-Code signing / DMG creation must be handled separately. No auto-update.
+```python
+import threading, webview
+from engrave.web.app import create_app
+import uvicorn
+
+app = create_app()
+thread = threading.Thread(target=uvicorn.run, args=(app,), kwargs={"port": 8919}, daemon=True)
+thread.start()
+webview.create_window("Engrave", "http://localhost:8919")
+webview.start()
+```
+
+**Pros**: Zero additional binary size, ~30 lines of glue code, stays in Python,
+drag-and-drop with full file paths built-in, PDF rendering via WKWebView.
+**Cons**: Limited native menu bar (custom menus require PyObjC).
+Code signing / DMG creation must be handled separately (use PyInstaller +
+create-dmg). No built-in auto-update.
 
 ### Option D: SwiftUI + WKWebView
 
@@ -165,18 +201,28 @@ setup for a primarily-Python team.
 | Criterion | Tauri | Electron | PyWebView | SwiftUI |
 |-----------|-------|----------|-----------|---------|
 | Binary size | A | D | A+ | A+ |
-| macOS native feel | A | B- | B- | A+ |
+| macOS native feel | A | B- | B | A+ |
 | Bundling tooling | A | A | C | B |
-| Code signing | A | A | D | A+ |
+| Code signing | B+ (*) | A | C | A+ |
 | Auto-update | A | A | F | A |
-| Dev complexity | B | B | A | C |
+| Dev complexity | B | B | A+ | C |
 | Python integration | B | B | A+ | C |
-| **Overall** | **A** | **B** | **B-** | **B+** |
+| Time to first .app | C | C | A+ | C |
+| **Overall** | **A-** | **B** | **A- (Phase 1)** | **B+** |
 
-**Verdict**: Tauri v2 wins on the combination of small size, native feel,
-and built-in distribution tooling. SwiftUI would be ideal for a Swift-native
-team but adds language complexity. PyWebView is the quickest path but lacks
-distribution tooling.
+(*) Tauri code signing has a known bug with externalBin sidecars (#11992).
+
+**Verdict**: **Phase 1 — pywebview + PyInstaller** for rapid validation.
+~30 lines of Python glue wraps the existing FastAPI/htmx UI in a native
+macOS window. PyInstaller bundles everything into a .app. create-dmg
+produces the installer. This proves the concept in days, not weeks.
+
+**Phase 2 — Tauri v2** for production distribution when you need auto-update,
+polished signing/notarization, and a smaller app shell. The sidecar signing
+bug should be resolved by then.
+
+SwiftUI would be ideal for a Swift-native team but adds language complexity.
+Electron is overkill for wrapping an existing web UI.
 
 ---
 
@@ -204,12 +250,20 @@ The `engrave.toml` config + `.env` for API keys is clean and extensible.
 - No model bundling in the .app — external model server approach
 - The optional `[mlx]` extra in pyproject.toml already supports vllm-mlx
 
+**Local model tiers** (already validated in the codebase via vllm-mlx):
+
+| Model | Active Params | 4-bit Size | Min RAM | Quality |
+|-------|---------------|------------|---------|---------|
+| Qwen3-Coder-30B-A3B (current) | 3B | 17.2 GB | 24 GB | Best local option for LilyPond |
+| Qwen3-Coder-14B | 14B | ~8 GB | 16 GB | Good middle ground |
+| Qwen3-4B | 0.6B | 2.3 GB | 8 GB | Lightweight fallback |
+
 **Why NOT bundle a local model**:
-1. **Size**: Even a small 7B model is 4-8 GB — makes the app download impractical
-2. **Quality**: Local models significantly underperform Claude/GPT-4 for the
-   specialized LilyPond generation task
-3. **Complexity**: Managing model lifecycle, GPU memory, inference crashes
-4. **User friction**: 4+ GB download on first launch is hostile UX
+1. **Size**: Even the smallest viable model is 2.3 GB — makes the app download impractical
+2. **Hardware variance**: 8 GB Macs can't run the 30B model; different users need different models
+3. **Quality**: Local models underperform Claude/GPT-4 for specialized LilyPond generation
+4. **Complexity**: Managing model lifecycle, GPU memory, inference crashes
+5. **Staleness**: Models update frequently; bundling locks you to a version
 
 **Implementation plan**:
 ```
@@ -247,6 +301,12 @@ Since macOS Catalina (10.15), all distributed software must be:
 Without this, Gatekeeper blocks the app with "cannot be opened because the
 developer cannot be verified."
 
+**macOS 15 Sequoia change**: The Control-click override to bypass Gatekeeper
+was removed. Users must now navigate to System Settings > Privacy & Security,
+find the app, click "Open Anyway", and enter admin credentials. This makes
+proper signing and notarization non-optional in practice — users will abandon
+an unsigned app.
+
 ### What's Needed
 
 | Requirement | Cost | Notes |
@@ -261,15 +321,24 @@ developer cannot be verified."
 **Critical gotcha**: Every binary inside the .app must be individually signed.
 This includes Python, LilyPond, ffmpeg, and all `.so`/`.dylib` files.
 
-```bash
-# Sign all binaries inside the bundle
-find Engrave.app -type f \( -name "*.dylib" -o -name "*.so" -o -perm +111 \) \
-  -exec codesign --force --sign "Developer ID Application: ..." \
-  --options runtime --timestamp {} \;
+**Important**: Do NOT use `codesign --deep`. Apple explicitly discourages it
+as unreliable. Sign from inside-out instead:
 
-# Sign the app bundle itself
-codesign --force --deep --sign "Developer ID Application: ..." \
-  --options runtime --timestamp --entitlements entitlements.plist Engrave.app
+```bash
+# 1. Sign all .so/.dylib files first
+find Engrave.app -name "*.dylib" -o -name "*.so" | while read f; do
+  codesign --force --options runtime --entitlements entitlements.plist \
+    --sign "Developer ID Application: ..." --timestamp "$f"
+done
+
+# 2. Sign embedded binaries (python3, ffmpeg, lilypond)
+codesign --force --options runtime --entitlements entitlements.plist \
+  --sign "Developer ID Application: ..." --timestamp \
+  Engrave.app/Contents/Resources/bin/python3
+
+# 3. Sign the app bundle LAST
+codesign --force --options runtime --entitlements entitlements.plist \
+  --sign "Developer ID Application: ..." --timestamp Engrave.app
 ```
 
 ### Hardened Runtime Entitlements
@@ -497,61 +566,59 @@ File
 
 ## 7. Implementation Roadmap
 
-### Phase 1: Proof of Concept (1-2 weeks)
+### Phase 1: pywebview PoC (days)
 
-1. **PyWebView wrapper** (simplest possible native window):
+1. **Add pywebview wrapper** (~30 lines of glue code):
    - `pip install pywebview`
-   - Launch FastAPI in background thread
-   - Open WebView window pointing at localhost
-   - Test drag-and-drop, file dialogs
-   - **Goal**: Validate the architecture works end-to-end
+   - Launch FastAPI/uvicorn in daemon thread
+   - Open native macOS window pointing at localhost
+   - Test drag-and-drop (pywebview has built-in `pywebviewFullPath` support)
+   - **Goal**: Validate the native window experience
 
-2. **Python bundling test**:
-   - Use PyInstaller to create a standalone `engrave-server` binary
-   - Verify LilyPond and ffmpeg can be bundled alongside
-   - Measure total bundle size
+2. **PyInstaller bundling**:
+   - Create `engrave.spec` with `--add-binary` for LilyPond and ffmpeg
+   - Build standalone .app bundle
+   - Measure total bundle size, optimize with ONNX for embeddings
+   - Test on clean macOS install
 
-### Phase 2: Tauri Shell (2-3 weeks)
+3. **DMG creation**:
+   - Use `create-dmg` for drag-to-Applications installer
+   - Basic code signing (Apple Developer account required)
 
-1. **Tauri project setup**:
-   - Initialize Tauri v2 project alongside existing Python code
-   - Configure sidecar for Python backend
-   - Bundle LilyPond and ffmpeg as external binaries
+### Phase 2: Web UI Enhancements (1-2 weeks)
 
-2. **Web UI enhancements**:
-   - Upgrade htmx UI with progress stages (not just "Processing...")
-   - Add PDF preview via pdf.js
-   - Add settings page (API key management)
+1. **Upgrade htmx UI**:
+   - Progress stages (not just "Processing..." — show pipeline steps)
+   - PDF preview inline via pdf.js or WKWebView native rendering
+   - Settings page: API key management (stored in macOS Keychain via `keyring`)
+   - First-launch onboarding: API key prompt
 
-3. **Native integration**:
-   - macOS menu bar
-   - Drag-and-drop from Finder
-   - Dock icon and progress badge
+2. **Local model detection**:
+   - Auto-detect Ollama (localhost:11434) and LM Studio (localhost:1234)
+   - Show "Local model detected" option in settings
+   - Model download manager for vllm-mlx models to `~/Library/Application Support/Engrave/`
 
-### Phase 3: Distribution (1-2 weeks)
+### Phase 3: Production Distribution (2-3 weeks)
 
-1. **Code signing and notarization**:
-   - Apple Developer account setup
-   - Configure Tauri signing
-   - Test notarized build on clean macOS install
+**Option A: Stay with pywebview** (simpler):
+   - Full inside-out code signing of all bundled binaries
+   - Notarization via `notarytool`
+   - Sparkle framework for auto-update
+   - GitHub Actions CI/CD for automated builds
 
-2. **DMG creation**:
-   - Custom DMG background image
-   - Drag-to-Applications layout
-   - Auto-update endpoint setup
-
-3. **CI/CD**:
-   - GitHub Actions workflow for building macOS .app
-   - Automated signing and notarization
-   - Release to GitHub Releases
+**Option B: Graduate to Tauri** (if auto-update and polish are priority):
+   - Initialize Tauri v2 project with Python sidecar
+   - Built-in signing, notarization, DMG, auto-update
+   - Native menu bar, dock icon, progress badge
+   - Wait for sidecar signing bug (#11992) resolution
 
 ### Phase 4: Polish (ongoing)
 
-- Auto-update mechanism
 - Crash reporting (Sentry or similar)
-- First-launch onboarding wizard
-- Model download manager for local inference
-- Universal binary support (arm64 + x86_64)
+- Universal binary support (arm64 + x86_64, or arm64-only for 2026)
+- On-demand model download with progress UI
+- Recent files history
+- Dock badge for background processing progress
 
 ---
 
