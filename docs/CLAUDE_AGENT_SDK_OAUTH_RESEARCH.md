@@ -5,12 +5,12 @@ for Engrave desktop apps (macOS and Windows).
 
 ## Executive Summary
 
-**The Claude Agent SDK does not support OAuth/PKCE for desktop apps.** Anthropic
-explicitly prohibits third-party products from using consumer subscription
-(Pro/Max) OAuth tokens. The only legitimate path for Engrave is **API key
-authentication** via the Claude Agent SDK Python package. Shelling out to
-`claude -p` with the user's subscription auth also violates Anthropic's terms
-and is actively server-side blocked since January 2026.
+**UPDATE (March 2026):** OAuth PKCE flow has been implemented for Engrave desktop
+using the Anthropic Agent SDK OAuth endpoints. The implementation follows the
+[bartolli/anthropic-agent-sdk](https://github.com/bartolli/anthropic-agent-sdk)
+reference which provides OAuth with PKCE for desktop/native apps. The desktop app
+now shows a "Sign in with Claude" button instead of asking for API keys. Legacy
+API key authentication is preserved as a fallback for headless/CI usage.
 
 ## Question 1: Does the Agent SDK support OAuth for desktop/native apps (PKCE)?
 

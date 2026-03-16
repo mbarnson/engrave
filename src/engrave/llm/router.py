@@ -50,17 +50,27 @@ class InferenceRouter:
         self._roles: dict[str, RoleConfig] = validate_and_resolve_roles(
             settings.roles, settings.providers
         )
+        self._agent_sdk_auth_token: str | None = None
         self._agent_sdk_key: str | None = None
+
+    def set_agent_sdk_auth(self, auth_token: str) -> None:
+        """Inject an OAuth bearer token for the agent_sdk provider at runtime.
+
+        Called by the Tauri frontend after the user completes the OAuth flow.
+        This token takes priority over config/env values for all
+        ``agent_sdk/`` model requests.
+        """
+        self._agent_sdk_auth_token = auth_token
+        logger.info("Agent SDK OAuth token updated at runtime")
 
     def set_agent_sdk_key(self, api_key: str) -> None:
         """Inject an API key for the agent_sdk provider at runtime.
 
-        Called by the Tauri frontend after the user enters their API key.
-        This key takes priority over config/env values for all
-        ``agent_sdk/`` model requests.
+        Legacy method for backwards compatibility. Prefer
+        :meth:`set_agent_sdk_auth` with OAuth tokens.
         """
         self._agent_sdk_key = api_key
-        logger.info("Agent SDK API key updated at runtime")
+        logger.info("Agent SDK API key updated at runtime (legacy)")
 
     async def complete(
         self,
@@ -104,6 +114,7 @@ class InferenceRouter:
                 messages=messages,
                 temperature=temperature,
                 max_tokens=max_tokens or role_config.max_tokens,
+                auth_token_override=self._agent_sdk_auth_token,
                 api_key_override=self._agent_sdk_key,
             )
 

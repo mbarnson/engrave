@@ -11,8 +11,9 @@ api_base = "http://localhost:8000/v1"
 # api_base = "https://api.runpod.ai/v2/YOUR-ENDPOINT-ID/openai/v1"
 
 [providers.agent_sdk]
-# API key for Anthropic API (desktop app users).
-# Set via ENGRAVE_PROVIDERS__AGENT_SDK__API_KEY env var or Tauri frontend.
+# Desktop app authenticates via OAuth (Sign in with Claude).
+# OAuth token is passed via ANTHROPIC_AUTH_TOKEN env var at runtime.
+# Legacy API key fallback: ENGRAVE_PROVIDERS__AGENT_SDK__API_KEY or .env
 # api_key = "sk-ant-..."
 default_model = "claude-haiku-4-5-20251001"
 

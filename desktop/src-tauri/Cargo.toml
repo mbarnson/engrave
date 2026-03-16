@@ -20,9 +20,14 @@ serde = { version = "1", features = ["derive"] }
 serde_json = "1"
 keyring = { version = "3", features = ["apple-native", "windows-native", "linux-native"] }
 midly = "0.5"
-tokio = { version = "1", features = ["process", "io-util"] }
+tokio = { version = "1", features = ["process", "io-util", "net", "time"] }
 base64 = "0.22"
 tauri-plugin-updater = "2"
+reqwest = { version = "0.12", features = ["json"] }
+sha2 = "0.10"
+rand = "0.9"
+urlencoding = "2"
+open = "5"
 
 [features]
 devtools = ["tauri/devtools"]

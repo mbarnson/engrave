@@ -2,6 +2,7 @@ use serde::{Deserialize, Serialize};
 
 mod keychain;
 mod midi;
+mod oauth;
 mod pipeline;
 
 // --- Data types shared with the frontend ---
@@ -38,22 +39,35 @@ pub struct MeasureFixResult {
     pub pdf_paths: Vec<String>,
 }
 
-// --- Tauri Commands ---
+// --- OAuth Tauri Commands ---
 
 #[tauri::command]
-async fn save_api_key(key: String) -> Result<(), String> {
-    keychain::save_api_key(&key).map_err(|e| e.to_string())
+async fn start_oauth() -> Result<String, String> {
+    oauth::start_oauth_flow().await
 }
 
 #[tauri::command]
-async fn delete_api_key() -> Result<(), String> {
-    keychain::delete_api_key().map_err(|e| e.to_string())
+async fn get_auth_status() -> Result<oauth::AuthStatus, String> {
+    oauth::get_auth_status()
 }
 
 #[tauri::command]
-async fn has_api_key() -> Result<bool, String> {
-    keychain::has_api_key().map_err(|e| e.to_string())
+async fn is_authenticated() -> Result<bool, String> {
+    let status = oauth::get_auth_status()?;
+    Ok(status.authenticated && status.token_valid)
 }
+
+#[tauri::command]
+async fn logout() -> Result<(), String> {
+    oauth::logout()
+}
+
+#[tauri::command]
+async fn get_valid_token() -> Result<Option<String>, String> {
+    oauth::get_valid_token().await
+}
+
+// --- MIDI & Pipeline Commands ---
 
 #[tauri::command]
 async fn analyze_midi(path: String) -> Result<Vec<MidiTrack>, String> {
@@ -155,9 +169,11 @@ pub fn run() {
         .plugin(tauri_plugin_os::init())
         .plugin(tauri_plugin_updater::Builder::new().build())
         .invoke_handler(tauri::generate_handler![
-            save_api_key,
-            delete_api_key,
-            has_api_key,
+            start_oauth,
+            get_auth_status,
+            is_authenticated,
+            logout,
+            get_valid_token,
             analyze_midi,
             generate,
             fix_measure,

@@ -1,5 +1,6 @@
 // Engrave Desktop — Frontend Application
 // Uses Tauri's IPC to communicate with the Rust backend.
+// Authentication via OAuth PKCE flow with Claude.
 
 const { invoke } = window.__TAURI__.core;
 const { listen } = window.__TAURI__.event;
@@ -26,7 +27,7 @@ const tracksSection = $("#tracks-section");
 const progressSection = $("#progress-section");
 const resultsSection = $("#results-section");
 const settingsModal = $("#settings-modal");
-const noKeyOverlay = $("#no-key-overlay");
+const signInOverlay = $("#sign-in-overlay");
 const errorBanner = $("#error-banner");
 
 // --- Instrument options for the track editor ---
@@ -77,35 +78,87 @@ function fileExtIcon(name) {
   return "📁";
 }
 
-// --- API Key Management ---
+// --- OAuth Authentication ---
 
-async function checkApiKey() {
+async function checkAuth() {
   try {
-    const hasKey = await invoke("has_api_key");
-    if (!hasKey) {
-      noKeyOverlay.classList.remove("hidden");
+    const status = await invoke("get_auth_status");
+    updateAuthUI(status);
+    if (!status.authenticated) {
+      signInOverlay.classList.remove("hidden");
     }
   } catch (e) {
-    console.warn("Keychain check failed:", e);
-    // Don't block — user can still set key via settings
+    console.warn("Auth check failed:", e);
   }
 }
 
-async function saveApiKey(key, statusEl) {
-  if (!key || !key.startsWith("sk-ant-")) {
-    statusEl.textContent = "Key must start with sk-ant-";
-    statusEl.className = "status-text error";
-    return false;
+function updateAuthUI(status) {
+  const statusText = $("#auth-status-text");
+  const signInBtn = $("#sign-in-settings-btn");
+  const signOutBtn = $("#sign-out-btn");
+
+  if (status.authenticated && status.token_valid) {
+    statusText.textContent = "Signed in with Claude";
+    statusText.className = "status-text success";
+    signInBtn.classList.add("hidden");
+    signOutBtn.classList.remove("hidden");
+  } else if (status.authenticated && !status.token_valid) {
+    statusText.textContent = "Session expired — please sign in again";
+    statusText.className = "status-text error";
+    signInBtn.classList.remove("hidden");
+    signOutBtn.classList.remove("hidden");
+  } else {
+    statusText.textContent = "Not signed in";
+    statusText.className = "status-text";
+    signInBtn.classList.remove("hidden");
+    signOutBtn.classList.add("hidden");
   }
+}
+
+async function startOAuth(statusEl) {
+  if (statusEl) {
+    statusEl.textContent = "Opening browser...";
+    statusEl.className = "status-text";
+  }
+
   try {
-    await invoke("save_api_key", { key });
-    statusEl.textContent = "Key saved securely";
-    statusEl.className = "status-text success";
-    return true;
+    const authUrl = await invoke("start_oauth");
+    if (statusEl) {
+      statusEl.textContent = "Complete sign-in in your browser...";
+    }
+
+    // Poll for auth completion
+    let attempts = 0;
+    const maxAttempts = 60; // 5 minutes at 5s intervals
+    const pollInterval = setInterval(async () => {
+      attempts++;
+      try {
+        const status = await invoke("get_auth_status");
+        if (status.authenticated && status.token_valid) {
+          clearInterval(pollInterval);
+          if (statusEl) {
+            statusEl.textContent = "Signed in successfully!";
+            statusEl.className = "status-text success";
+          }
+          updateAuthUI(status);
+          signInOverlay.classList.add("hidden");
+        }
+      } catch (e) {
+        // Ignore polling errors
+      }
+      if (attempts >= maxAttempts) {
+        clearInterval(pollInterval);
+        if (statusEl) {
+          statusEl.textContent = "Sign-in timed out. Please try again.";
+          statusEl.className = "status-text error";
+        }
+      }
+    }, 5000);
   } catch (e) {
-    statusEl.textContent = `Failed to save: ${e}`;
-    statusEl.className = "status-text error";
-    return false;
+    if (statusEl) {
+      statusEl.textContent = `Sign-in failed: ${e}`;
+      statusEl.className = "status-text error";
+    }
   }
 }
 
@@ -113,13 +166,8 @@ async function saveApiKey(key, statusEl) {
 $("#settings-btn").addEventListener("click", async () => {
   settingsModal.classList.remove("hidden");
   try {
-    const hasKey = await invoke("has_api_key");
-    if (hasKey) {
-      $("#api-key-input").value = "";
-      $("#api-key-input").placeholder = "••••••••  (key stored in keychain)";
-      $("#key-status").textContent = "API key is configured";
-      $("#key-status").className = "status-text success";
-    }
+    const status = await invoke("get_auth_status");
+    updateAuthUI(status);
   } catch (e) {
     // Ignore
   }
@@ -129,43 +177,26 @@ $("#close-settings-btn").addEventListener("click", () => {
   settingsModal.classList.add("hidden");
 });
 
-$("#save-key-btn").addEventListener("click", async () => {
-  const key = $("#api-key-input").value.trim();
-  await saveApiKey(key, $("#key-status"));
+// Sign in from settings
+$("#sign-in-settings-btn").addEventListener("click", () => {
+  startOAuth($("#auth-status-text"));
 });
 
-$("#delete-key-btn").addEventListener("click", async () => {
+// Sign out
+$("#sign-out-btn").addEventListener("click", async () => {
   try {
-    await invoke("delete_api_key");
-    $("#api-key-input").value = "";
-    $("#key-status").textContent = "Key removed";
-    $("#key-status").className = "status-text";
+    await invoke("logout");
+    const status = await invoke("get_auth_status");
+    updateAuthUI(status);
   } catch (e) {
-    showError(`Failed to delete key: ${e}`);
+    showError(`Sign out failed: ${e}`);
   }
 });
 
-$("#toggle-key-vis").addEventListener("click", () => {
-  const input = $("#api-key-input");
-  input.type = input.type === "password" ? "text" : "password";
+// First-launch overlay sign in
+$("#overlay-sign-in-btn").addEventListener("click", () => {
+  startOAuth($("#overlay-status"));
 });
-
-// First-launch overlay
-$("#overlay-save-btn").addEventListener("click", async () => {
-  const key = $("#overlay-api-key").value.trim();
-  const ok = await saveApiKey(key, $("#overlay-status"));
-  if (ok) {
-    setTimeout(() => noKeyOverlay.classList.add("hidden"), 600);
-  }
-});
-
-// Open Anthropic console links
-for (const link of $$("#platform-link, #overlay-platform-link")) {
-  link.addEventListener("click", (e) => {
-    e.preventDefault();
-    shellOpen("https://console.anthropic.com/settings/keys");
-  });
-}
 
 // Close modal on backdrop click
 settingsModal.addEventListener("click", (e) => {
@@ -304,11 +335,11 @@ $("#generate-btn").addEventListener("click", async () => {
     return;
   }
 
-  // Check API key first
+  // Check auth first
   try {
-    const hasKey = await invoke("has_api_key");
-    if (!hasKey) {
-      noKeyOverlay.classList.remove("hidden");
+    const authenticated = await invoke("is_authenticated");
+    if (!authenticated) {
+      signInOverlay.classList.remove("hidden");
       return;
     }
   } catch (e) {
@@ -564,5 +595,5 @@ $("#new-job-btn").addEventListener("click", () => {
 // --- Init ---
 
 document.addEventListener("DOMContentLoaded", () => {
-  checkApiKey();
+  checkAuth();
 });

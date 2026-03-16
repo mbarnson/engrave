@@ -18,22 +18,15 @@
     <!-- Settings Modal -->
     <div id="settings-modal" class="modal hidden">
       <div class="modal-content">
-        <h2>API Key</h2>
-        <p class="modal-desc">
-          Enter your Anthropic API key from
-          <a href="#" id="platform-link">console.anthropic.com</a>.
-          Stored securely in your OS keychain.
-        </p>
-        <div class="key-input-row">
-          <input type="password" id="api-key-input" placeholder="sk-ant-..." autocomplete="off" />
-          <button id="toggle-key-vis" class="icon-btn" title="Show/hide">👁</button>
+        <h2>Account</h2>
+        <div id="auth-status-section">
+          <p id="auth-status-text" class="status-text"></p>
         </div>
         <div class="modal-actions">
-          <button id="save-key-btn" class="btn primary">Save Key</button>
-          <button id="delete-key-btn" class="btn danger">Remove Key</button>
+          <button id="sign-in-settings-btn" class="btn primary">Sign in with Claude</button>
+          <button id="sign-out-btn" class="btn danger hidden">Sign Out</button>
           <button id="close-settings-btn" class="btn">Close</button>
         </div>
-        <p id="key-status" class="status-text"></p>
       </div>
     </div>
 
@@ -148,18 +141,15 @@
       </div>
     </main>
 
-    <!-- No-key overlay (first launch) -->
-    <div id="no-key-overlay" class="overlay hidden">
+    <!-- Sign-in overlay (first launch) -->
+    <div id="sign-in-overlay" class="overlay hidden">
       <div class="overlay-content">
         <h2>Welcome to Engrave</h2>
-        <p>To get started, enter your Anthropic API key.</p>
+        <p>Sign in with your Claude account to get started.</p>
         <p class="hint-text">
-          Get one at <a href="#" id="overlay-platform-link">console.anthropic.com</a>
+          Requires a Claude Pro or Max subscription.
         </p>
-        <div class="key-input-row">
-          <input type="password" id="overlay-api-key" placeholder="sk-ant-..." autocomplete="off" />
-        </div>
-        <button id="overlay-save-btn" class="btn primary large">Save & Continue</button>
+        <button id="overlay-sign-in-btn" class="btn primary large">Sign in with Claude</button>
         <p id="overlay-status" class="status-text"></p>
       </div>
     </div>

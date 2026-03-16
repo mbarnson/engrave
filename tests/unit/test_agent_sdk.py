@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import os
 from unittest.mock import AsyncMock, MagicMock, patch
 
 import pytest
@@ -69,7 +70,7 @@ class TestAgentSdkComplete:
             yield mock_mod, mock_client
 
     @pytest.mark.asyncio
-    async def test_calls_anthropic_with_correct_params(
+    async def test_calls_anthropic_with_api_key(
         self, role_config: RoleConfig, mock_anthropic
     ) -> None:
         mock_mod, mock_client = mock_anthropic
@@ -89,6 +90,69 @@ class TestAgentSdkComplete:
         assert call_kwargs["max_tokens"] == 1024
         assert call_kwargs["temperature"] == 0.3
         assert call_kwargs["messages"] == [{"role": "user", "content": "Fix this LilyPond"}]
+
+    @pytest.mark.asyncio
+    async def test_oauth_token_creates_bearer_client(
+        self, role_config: RoleConfig, mock_anthropic
+    ) -> None:
+        """OAuth auth_token_override creates client with Bearer header."""
+        mock_mod, _mock_client = mock_anthropic
+
+        await agent_sdk_complete(
+            role_config=role_config,
+            messages=[{"role": "user", "content": "test"}],
+            temperature=0.3,
+            max_tokens=1024,
+            auth_token_override="oauth-test-token",
+        )
+
+        # Should create client with Bearer auth header
+        mock_mod.AsyncAnthropic.assert_called_once_with(
+            api_key="oauth",
+            default_headers={"Authorization": "Bearer oauth-test-token"},
+        )
+
+    @pytest.mark.asyncio
+    async def test_oauth_token_takes_priority_over_api_key(
+        self, role_config: RoleConfig, mock_anthropic
+    ) -> None:
+        """When both OAuth token and API key are available, OAuth wins."""
+        mock_mod, _mock_client = mock_anthropic
+
+        await agent_sdk_complete(
+            role_config=role_config,
+            messages=[{"role": "user", "content": "test"}],
+            temperature=0.3,
+            max_tokens=1024,
+            auth_token_override="oauth-token",
+            api_key_override="sk-ant-key",
+        )
+
+        # OAuth token should be used, not the API key
+        mock_mod.AsyncAnthropic.assert_called_once_with(
+            api_key="oauth",
+            default_headers={"Authorization": "Bearer oauth-token"},
+        )
+
+    @pytest.mark.asyncio
+    async def test_env_auth_token_used_when_no_override(
+        self, role_config: RoleConfig, mock_anthropic, monkeypatch
+    ) -> None:
+        """ANTHROPIC_AUTH_TOKEN env var is used when no override is provided."""
+        mock_mod, _mock_client = mock_anthropic
+        monkeypatch.setenv("ANTHROPIC_AUTH_TOKEN", "env-oauth-token")
+
+        await agent_sdk_complete(
+            role_config=role_config,
+            messages=[{"role": "user", "content": "test"}],
+            temperature=0.3,
+            max_tokens=1024,
+        )
+
+        mock_mod.AsyncAnthropic.assert_called_once_with(
+            api_key="oauth",
+            default_headers={"Authorization": "Bearer env-oauth-token"},
+        )
 
     @pytest.mark.asyncio
     async def test_returns_text_content(self, role_config: RoleConfig, mock_anthropic) -> None:
@@ -136,16 +200,19 @@ class TestAgentSdkComplete:
         mock_mod.AsyncAnthropic.assert_called_once_with(api_key="sk-ant-runtime-key")
 
     @pytest.mark.asyncio
-    async def test_raises_auth_error_when_no_key(self) -> None:
+    async def test_raises_auth_error_when_no_credential(self) -> None:
         role_config = RoleConfig(model="agent_sdk/haiku", api_key=None)
 
-        with pytest.raises(AuthenticationError) as exc_info:
-            await agent_sdk_complete(
-                role_config=role_config,
-                messages=[{"role": "user", "content": "test"}],
-                temperature=0.3,
-                max_tokens=1024,
-            )
+        with patch.dict(os.environ, {}, clear=True):
+            # Ensure ANTHROPIC_AUTH_TOKEN is not set
+            os.environ.pop("ANTHROPIC_AUTH_TOKEN", None)
+            with pytest.raises(AuthenticationError) as exc_info:
+                await agent_sdk_complete(
+                    role_config=role_config,
+                    messages=[{"role": "user", "content": "test"}],
+                    temperature=0.3,
+                    max_tokens=1024,
+                )
         assert exc_info.value.requires_reauth is True
         assert exc_info.value.provider == "agent_sdk"
 
@@ -285,7 +352,26 @@ supported_formats = ["mp3", "wav", "aiff", "flac"]
         assert call_kwargs["max_tokens"] == 4096
 
     @pytest.mark.asyncio
-    async def test_runtime_key_injection(self, agent_sdk_settings) -> None:
+    async def test_runtime_oauth_token_injection(self, agent_sdk_settings) -> None:
+        """set_agent_sdk_auth passes OAuth token to agent_sdk_complete."""
+        from engrave.llm.router import InferenceRouter
+
+        router = InferenceRouter(agent_sdk_settings)
+        router.set_agent_sdk_auth("oauth-runtime-token")
+
+        with patch("engrave.llm.agent_sdk.agent_sdk_complete", new_callable=AsyncMock) as mock_fn:
+            mock_fn.return_value = "result"
+            await router.complete(
+                role="desktop_fixer",
+                messages=[{"role": "user", "content": "test"}],
+            )
+
+        call_kwargs = mock_fn.call_args.kwargs
+        assert call_kwargs["auth_token_override"] == "oauth-runtime-token"
+
+    @pytest.mark.asyncio
+    async def test_legacy_runtime_key_injection(self, agent_sdk_settings) -> None:
+        """set_agent_sdk_key still works for backwards compatibility."""
         from engrave.llm.router import InferenceRouter
 
         router = InferenceRouter(agent_sdk_settings)

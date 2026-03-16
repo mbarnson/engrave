@@ -78,9 +78,17 @@ pub async fn run_generation(
         cmd.arg("--hints").arg(hints_text);
     }
 
-    // Pass API key from keychain to subprocess
-    if let Ok(Some(key)) = crate::keychain::load_api_key() {
-        cmd.env("ANTHROPIC_API_KEY", &key);
+    // Pass OAuth token from keychain to subprocess (preferred),
+    // falling back to legacy API key for migration.
+    match crate::oauth::get_valid_token().await {
+        Ok(Some(token)) => {
+            cmd.env("ANTHROPIC_AUTH_TOKEN", &token);
+        }
+        _ => {
+            if let Ok(Some(key)) = crate::keychain::load_legacy_api_key() {
+                cmd.env("ANTHROPIC_API_KEY", &key);
+            }
+        }
     }
 
     let gen_output = cmd.output().await?;
@@ -188,9 +196,17 @@ pub async fn run_measure_fix(
         .arg("--hint")
         .arg(hint);
 
-    // Pass API key from keychain to subprocess
-    if let Ok(Some(key)) = crate::keychain::load_api_key() {
-        cmd.env("ANTHROPIC_API_KEY", &key);
+    // Pass OAuth token from keychain to subprocess (preferred),
+    // falling back to legacy API key for migration.
+    match crate::oauth::get_valid_token().await {
+        Ok(Some(token)) => {
+            cmd.env("ANTHROPIC_AUTH_TOKEN", &token);
+        }
+        _ => {
+            if let Ok(Some(key)) = crate::keychain::load_legacy_api_key() {
+                cmd.env("ANTHROPIC_API_KEY", &key);
+            }
+        }
     }
 
     let fix_output = cmd.output().await?;
