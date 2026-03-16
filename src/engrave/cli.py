@@ -603,7 +603,9 @@ def render(
 @app.command("fix-measure")
 def fix_measure(
     ly_file: str = typer.Argument(..., help="Path to the assembled .ly file"),
-    instrument: str = typer.Option(..., "--instrument", "-i", help="Instrument name (e.g. 'Trumpet')"),
+    instrument: str = typer.Option(
+        ..., "--instrument", "-i", help="Instrument name (e.g. 'Trumpet')"
+    ),
     bar: int = typer.Option(..., "--bar", "-b", help="1-based bar number to fix"),
     hint: str = typer.Option(..., "--hint", help="Correction instruction for the measure"),
     output: str | None = typer.Option(
