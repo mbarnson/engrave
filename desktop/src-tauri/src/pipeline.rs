@@ -53,7 +53,10 @@ pub async fn run_generation(
 
     // Create output directory next to the MIDI file
     let stem = midi.file_stem().unwrap_or_default().to_string_lossy();
-    let output_dir = midi.parent().unwrap_or(Path::new(".")).join(format!("{stem}_output"));
+    let output_dir = midi
+        .parent()
+        .unwrap_or(Path::new("."))
+        .join(format!("{stem}_output"));
     std::fs::create_dir_all(&output_dir)?;
 
     let ly_output = output_dir.join(format!("{stem}.ly"));

@@ -1,4 +1,19 @@
 repos:
+  # === General ===
+  - repo: https://github.com/pre-commit/pre-commit-hooks
+    rev: v5.0.0
+    hooks:
+      - id: trailing-whitespace
+      - id: end-of-file-fixer
+      - id: check-yaml
+      - id: check-toml
+      - id: check-json
+      - id: check-merge-conflict
+      - id: check-added-large-files
+        args: [--maxkb=500]
+      - id: detect-private-key
+
+  # === Python: Ruff (lint + format) ===
   - repo: https://github.com/astral-sh/ruff-pre-commit
     rev: v0.14.3
     hooks:
@@ -6,7 +21,27 @@ repos:
         args: [--fix]
       - id: ruff-format
 
+  # === Python: uv lock check ===
   - repo: https://github.com/astral-sh/uv-pre-commit
     rev: 0.9.30
     hooks:
       - id: uv-lock
+
+  # === Python: Security (bandit) ===
+  - repo: https://github.com/PyCQA/bandit
+    rev: 1.9.0
+    hooks:
+      - id: bandit
+        args: [-c, pyproject.toml]
+        additional_dependencies: ["bandit[toml]"]
+        files: ^src/
+
+  # === Rust: cargo fmt (check only — clippy requires Tauri system libs) ===
+  - repo: local
+    hooks:
+      - id: cargo-fmt
+        name: cargo fmt
+        entry: cargo fmt --manifest-path desktop/src-tauri/Cargo.toml --
+        language: system
+        types: [rust]
+        pass_filenames: false

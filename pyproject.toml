@@ -79,6 +79,10 @@ ignore = [
 [tool.ruff.lint.isort]
 known-first-party = ["engrave"]
 
+[tool.bandit]
+exclude_dirs = ["tests"]
+skips = ["B101", "B110", "B314", "B404", "B405", "B603", "B607"]
+
 [tool.pytest.ini_options]
 testpaths = ["tests"]
 asyncio_mode = "auto"

@@ -26,6 +26,7 @@ def _get_client(api_key: str) -> anthropic.AsyncAnthropic:
     """Return a cached AsyncAnthropic client for the given API key."""
     return anthropic.AsyncAnthropic(api_key=api_key)
 
+
 # Anthropic model aliases — allow short names in config
 _MODEL_ALIASES: dict[str, str] = {
     "haiku": "claude-haiku-4-5-20251001",

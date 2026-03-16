@@ -71,16 +71,13 @@ async fn read_pdf_base64(path: String) -> Result<String, String> {
     use std::fs;
 
     // Validate the path is a PDF within a known output directory (ends with _output/)
-    let canonical = fs::canonicalize(&path)
-        .map_err(|e| format!("Invalid path: {e}"))?;
-    let is_in_output_dir = canonical
-        .ancestors()
-        .any(|ancestor| {
-            ancestor
-                .file_name()
-                .map(|n| n.to_string_lossy().ends_with("_output"))
-                .unwrap_or(false)
-        });
+    let canonical = fs::canonicalize(&path).map_err(|e| format!("Invalid path: {e}"))?;
+    let is_in_output_dir = canonical.ancestors().any(|ancestor| {
+        ancestor
+            .file_name()
+            .map(|n| n.to_string_lossy().ends_with("_output"))
+            .unwrap_or(false)
+    });
     if !is_in_output_dir {
         return Err("Access denied: path must be within an engrave output directory".to_string());
     }
@@ -105,7 +102,10 @@ async fn get_output_files(output_dir: String) -> Result<Vec<String>, String> {
         let path = entry.path();
         if let Some(ext) = path.extension() {
             let ext = ext.to_string_lossy().to_lowercase();
-            if matches!(ext.as_str(), "pdf" | "ly" | "zip" | "mid" | "midi" | "musicxml") {
+            if matches!(
+                ext.as_str(),
+                "pdf" | "ly" | "zip" | "mid" | "midi" | "musicxml"
+            ) {
                 files.push(path.to_string_lossy().to_string());
             }
         }
