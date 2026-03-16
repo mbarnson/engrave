@@ -389,6 +389,25 @@ def generate(
             console.print(f"  Sections: {result.sections_completed}/{result.total_sections}")
             console.print(f"  Instruments: {', '.join(result.instrument_names)}")
             console.print(f"  Output: {output_path}")
+
+            # Display validation results
+            if result.validation and result.validation.success and result.validation.parts:
+                console.print(
+                    f"\n[bold]Quality Validation[/bold] (overall: {result.validation.overall_confidence_pct}% match)"
+                )
+                for part in result.validation.parts:
+                    if part.confidence_pct >= 90:
+                        style = "green"
+                    elif part.confidence_pct >= 80:
+                        style = "yellow"
+                    else:
+                        style = "red"
+                    label = f"  [{style}]{part.part_name}: {part.confidence_pct}% match[/{style}]"
+                    if part.needs_review:
+                        label += " -- review recommended"
+                    console.print(label)
+            elif result.validation and not result.validation.success:
+                console.print(f"\n[dim]Validation skipped: {result.validation.error}[/dim]")
         else:
             console.print("[red]Generation failed[/red]")
             console.print(

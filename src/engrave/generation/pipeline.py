@@ -54,6 +54,7 @@ from engrave.midi.tokenizer import tokenize_section_for_prompt
 
 if TYPE_CHECKING:
     from engrave.audio.description import AudioDescription
+    from engrave.generation.validation import ValidationResult
     from engrave.lilypond.compiler import LilyPondCompiler
     from engrave.llm.router import InferenceRouter
     from engrave.rendering.ensemble import BigBandPreset
@@ -96,6 +97,7 @@ class GenerationResult:
     failure_record: FailureRecord | None = None
     instrument_names: list[str] = field(default_factory=list)
     json_sections: list[list[dict] | None] = field(default_factory=list)
+    validation: ValidationResult | None = None
 
 
 def _build_instrument_names(
@@ -901,6 +903,36 @@ async def generate_from_midi(
 
     assembled = assemble_sections(section_sources, instrument_names, analysis)
 
+    # 10. Post-generation quality validation
+    from engrave.generation.validation import validate_generation
+
+    validation: ValidationResult | None = None
+    try:
+        validation = validate_generation(
+            ly_source=assembled,
+            original_midi_path=midi_path,
+            instrument_names=instrument_names,
+            compiler=compiler,
+        )
+        if validation.success:
+            logger.info(
+                "Validation: overall confidence %d%%",
+                validation.overall_confidence_pct,
+            )
+            for part in validation.parts:
+                logger.log(
+                    logging.WARNING if part.needs_review else logging.INFO,
+                    "  %s: %d%% match (F1=%.2f, drift=%.1f st)",
+                    part.part_name,
+                    part.confidence_pct,
+                    part.f1,
+                    part.pitch_drift_semitones,
+                )
+        else:
+            logger.warning("Validation skipped: %s", validation.error)
+    except Exception:
+        logger.warning("Post-generation validation failed; continuing without it")
+
     return GenerationResult(
         success=True,
         ly_source=assembled,
@@ -908,6 +940,7 @@ async def generate_from_midi(
         total_sections=total_sections,
         instrument_names=instrument_names,
         json_sections=json_sections,
+        validation=validation,
     )
 
 

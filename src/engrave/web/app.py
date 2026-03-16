@@ -135,9 +135,45 @@ def create_app() -> FastAPI:
             )
 
         if job["status"] == JobStatus.COMPLETE:
+            # Build validation HTML if available
+            validation_html = ""
+            job_dir = Path("jobs") / f"web_{job_id}"
+            validation_path = job_dir / "validation.json"
+            if validation_path.exists():
+                import json
+
+                try:
+                    vdata = json.loads(validation_path.read_text())
+                    parts_html = []
+                    for p in vdata.get("parts", []):
+                        pct = p["confidence_pct"]
+                        name = html_escape(p["name"])
+                        if pct >= 90:
+                            color = "#16a34a"
+                        elif pct >= 80:
+                            color = "#ca8a04"
+                        else:
+                            color = "#dc2626"
+                        review = " &mdash; review recommended" if p.get("needs_review") else ""
+                        parts_html.append(
+                            f'<div style="color:{color};margin:0.2em 0">'
+                            f"{name}: {pct}% match{review}</div>"
+                        )
+                    overall = vdata.get("overall_confidence_pct", 0)
+                    validation_html = (
+                        f'<div style="margin-top:1em;padding:0.8em;'
+                        f'border:1px solid #ddd;border-radius:6px">'
+                        f"<strong>Quality Validation</strong> "
+                        f"(overall: {overall}% match)<br>"
+                        f"{''.join(parts_html)}</div>"
+                    )
+                except Exception:
+                    pass
+
             # HTTP 286 stops htmx polling.
             return HTMLResponse(
                 f'<div id="status"><p>Complete!</p>'
+                f"{validation_html}"
                 f'<a href="/download/{job_id}" '
                 f'style="display:inline-block;margin-top:0.5em;padding:0.4em 1.2em;'
                 f'background:#2563eb;color:#fff;border-radius:4px;text-decoration:none">'
@@ -320,6 +356,25 @@ async def _generate_and_render(
 
     if not compile_result.success:
         logger.error("Score compilation failed: %s", compile_result.stderr[:500])
+
+    # Save validation results as JSON for the status endpoint
+    if gen_result.validation and gen_result.validation.success:
+        import json
+
+        validation_data = {
+            "overall_confidence_pct": gen_result.validation.overall_confidence_pct,
+            "parts": [
+                {
+                    "name": p.part_name,
+                    "confidence_pct": p.confidence_pct,
+                    "f1": round(p.f1, 3),
+                    "needs_review": p.needs_review,
+                }
+                for p in gen_result.validation.parts
+            ],
+        }
+        validation_path = job_dir / "validation.json"
+        validation_path.write_text(json.dumps(validation_data, indent=2))
 
     # Package ZIP with whatever we have (PDF if compilation succeeded, .ly always).
     title_slug = midi_path.stem
