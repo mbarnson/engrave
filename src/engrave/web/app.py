@@ -18,7 +18,7 @@ import logging
 import shutil
 import time
 import uuid
-from enum import Enum
+from enum import StrEnum
 from html import escape as html_escape
 from pathlib import Path
 
@@ -32,7 +32,7 @@ logger = logging.getLogger(__name__)
 PIPELINE_TIMEOUT_SECONDS = 60 * 60
 
 
-class JobStatus(str, Enum):
+class JobStatus(StrEnum):
     """Pipeline job lifecycle states."""
 
     PENDING = "pending"

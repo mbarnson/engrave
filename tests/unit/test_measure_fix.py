@@ -5,12 +5,10 @@ from __future__ import annotations
 import pytest
 
 from engrave.generation.measure_fix import (
-    MeasureFixResult,
     _build_measure_fix_prompt,
     _extract_variable,
     _splice_variable,
 )
-
 
 # --- Sample LilyPond source for testing ---
 
