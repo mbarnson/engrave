@@ -82,7 +82,7 @@ pub fn analyze_midi(path: &str) -> Result<Vec<MidiTrack>, Box<dyn std::error::Er
                 TrackEventKind::Midi { channel, message } => {
                     let ch = channel.as_int();
                     match message {
-                        MidiMessage::NoteOn { vel, .. } if vel > 0.into() => {
+                        MidiMessage::NoteOn { vel, .. } if vel.as_int() > 0 => {
                             note_count += 1;
                             *channels.entry(ch).or_insert(0) += 1;
                         }
