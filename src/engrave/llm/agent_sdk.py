@@ -7,7 +7,6 @@ exchange).
 
 from __future__ import annotations
 
-import functools
 import logging
 from typing import TYPE_CHECKING
 
@@ -21,10 +20,22 @@ if TYPE_CHECKING:
 logger = logging.getLogger(__name__)
 
 
-@functools.lru_cache(maxsize=4)
+_client_cache: dict[int, anthropic.AsyncAnthropic] = {}
+
+
 def _get_client(api_key: str) -> anthropic.AsyncAnthropic:
-    """Return a cached AsyncAnthropic client for the given API key."""
-    return anthropic.AsyncAnthropic(api_key=api_key)
+    """Return a cached AsyncAnthropic client for the given API key.
+
+    Keyed on the hash of the API key to avoid retaining the plaintext key
+    string as a cache key in memory.
+    """
+    key_hash = hash(api_key)
+    if key_hash not in _client_cache:
+        # Evict oldest if cache grows beyond 4 entries
+        while len(_client_cache) >= 4:
+            _client_cache.pop(next(iter(_client_cache)))
+        _client_cache[key_hash] = anthropic.AsyncAnthropic(api_key=api_key)
+    return _client_cache[key_hash]
 
 
 # Anthropic model aliases — allow short names in config

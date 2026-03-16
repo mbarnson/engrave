@@ -92,10 +92,21 @@ async fn read_pdf_base64(path: String) -> Result<String, String> {
 
 #[tauri::command]
 async fn get_output_files(output_dir: String) -> Result<Vec<String>, String> {
-    let dir = PathBuf::from(&output_dir);
+    let dir = std::fs::canonicalize(&output_dir)
+        .map_err(|e| format!("Invalid path: {e}"))?;
+
+    // Validate path is an engrave output directory (ends with _output)
+    let is_output_dir = dir
+        .file_name()
+        .map(|n| n.to_string_lossy().ends_with("_output"))
+        .unwrap_or(false);
+    if !is_output_dir {
+        return Err("Access denied: path must be an engrave output directory".to_string());
+    }
     if !dir.is_dir() {
         return Err(format!("Not a directory: {output_dir}"));
     }
+
     let mut files = Vec::new();
     for entry in std::fs::read_dir(&dir).map_err(|e| e.to_string())? {
         let entry = entry.map_err(|e| e.to_string())?;

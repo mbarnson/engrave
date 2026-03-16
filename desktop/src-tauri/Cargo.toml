@@ -12,7 +12,7 @@ crate-type = ["staticlib", "cdylib", "rlib"]
 tauri-build = { version = "2", features = [] }
 
 [dependencies]
-tauri = { version = "2", features = ["devtools"] }
+tauri = { version = "2", features = [] }
 tauri-plugin-shell = "2"
 tauri-plugin-dialog = "2"
 tauri-plugin-os = "2"
@@ -23,3 +23,6 @@ midly = "0.5"
 tokio = { version = "1", features = ["process", "io-util"] }
 base64 = "0.22"
 tauri-plugin-updater = "2"
+
+[features]
+devtools = ["tauri/devtools"]

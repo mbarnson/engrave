@@ -66,8 +66,9 @@ access to at least one inference provider.
 
 ### Claude (desktop app users)
 
-Sign in with your Claude account via OAuth. Requires an active Claude
-subscription. The desktop app handles authentication automatically.
+Enter your Anthropic API key in the desktop app settings. The key is stored
+securely in your OS keychain (macOS Keychain, Windows Credential Manager,
+or Linux Secret Service). Get a key at https://console.anthropic.com/settings/keys
 
 ### API keys (CLI users)
 

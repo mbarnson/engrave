@@ -19,6 +19,7 @@ import shutil
 import time
 import uuid
 from enum import Enum
+from html import escape as html_escape
 from pathlib import Path
 
 from fastapi import FastAPI, Form, Request, UploadFile
@@ -145,7 +146,7 @@ def create_app() -> FastAPI:
             )
 
         # FAILED
-        error_msg = job.get("error", "Unknown error")
+        error_msg = html_escape(job.get("error", "Unknown error"))
         return HTMLResponse(
             f'<div id="status"><p style="color:#dc2626">Error: {error_msg}</p></div>',
             status_code=286,
