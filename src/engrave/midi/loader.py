@@ -11,8 +11,26 @@ import logging
 from dataclasses import dataclass, field
 
 import mido
+import mido.midifiles.meta as _mido_meta
 
 logger = logging.getLogger(__name__)
+
+
+# Monkey-patch mido's key signature lookup to tolerate invalid values.
+# Some DAW-exported MIDI files contain out-of-range key signature bytes
+# (e.g. 18 sharps) that mido cannot decode, causing a hard crash.
+class _LenientKeySignatureDict(dict):
+    def __getitem__(self, key):
+        try:
+            return super().__getitem__(key)
+        except KeyError:
+            logger.warning("Unknown MIDI key signature %s, defaulting to C major", key)
+            return "C"
+
+
+_mido_meta._key_signature_decode = _LenientKeySignatureDict(
+    _mido_meta._key_signature_decode
+)
 
 # General MIDI instrument names (program 0-127)
 GM_INSTRUMENTS: dict[int, str] = {

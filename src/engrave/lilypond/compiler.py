@@ -48,7 +48,9 @@ class LilyPondCompiler:
             return path
 
         # Common fallback locations
+        home = Path.home()
         for candidate in [
+            str(home / "bin" / "lilypond"),
             "/opt/homebrew/bin/lilypond",
             "/usr/local/bin/lilypond",
             "/usr/bin/lilypond",

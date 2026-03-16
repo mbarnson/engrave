@@ -120,8 +120,6 @@ async def claude_pipe_complete(
         "-p",
         "--model",
         model_id,
-        "--max-tokens",
-        str(max_tokens),
     ]
 
     logger.info("claude_pipe: model=%s, prompt_len=%d", model_id, len(prompt))

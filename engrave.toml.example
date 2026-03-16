@@ -16,17 +16,18 @@ api_base = "http://localhost:1234/v1"
 # --- Role-based model mapping ---
 # Each role maps to a provider+model. Swap models by changing one line.
 # Model strings use LiteLLM provider prefixes:
+#   claude_pipe/<model>    - Claude via `claude -p` pipe mode (default)
 #   lm_studio/<model>      - Local LM Studio
 #   anthropic/<model>      - Anthropic API
 #   openai/<model>         - OpenAI API
 #   hosted_vllm/<model>    - RunPod/vLLM endpoint
 
 [roles.compile_fixer]
-model = "lm_studio/qwen3-coder-next"
+model = "claude_pipe/haiku"
 tags = ["code"]
 
 [roles.generator]
-model = "lm_studio/qwen3-coder-next"
+model = "claude_pipe/haiku"
 tags = ["code", "lilypond"]
 
 [roles.describer]

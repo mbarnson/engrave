@@ -4,8 +4,8 @@ Provides MIDI loading, normalization, musical analysis, text tokenization,
 and section boundary detection.
 """
 
+from engrave.midi.loader import MidiTrackInfo, NoteEvent, load_midi  # noqa: I001 (first to apply mido patch)
 from engrave.midi.analyzer import MidiAnalysis, analyze_midi
-from engrave.midi.loader import MidiTrackInfo, NoteEvent, load_midi
 from engrave.midi.sections import SectionBoundary, detect_sections
 from engrave.midi.tokenizer import tokenize_section_for_prompt
 

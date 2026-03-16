@@ -61,31 +61,29 @@ LilyPond install:
 
 ## Auth
 
-Engrave uses an LLM for notation generation and error fixing. You need
-access to at least one inference provider.
-
-### Claude (desktop app users)
-
-Enter your Anthropic API key in the desktop app settings. The key is stored
-securely in your OS keychain (macOS Keychain, Windows Credential Manager,
-or Linux Secret Service). Get a key at https://console.anthropic.com/settings/keys
-
-### API keys (CLI users)
-
-Copy `.env.example` to `.env` and fill in your keys:
+Engrave uses an LLM for notation generation and error fixing. The default
+backend pipes prompts through `claude -p` (Claude Code's pipe mode), so
+you need Claude Code installed and authenticated:
 
 ```
-cp .env.example .env
+npm install -g @anthropic-ai/claude-code
+claude login
 ```
 
-Supported providers:
+Once logged in, Engrave calls `claude -p --model <model>` under the hood --
+no API keys needed.
 
-| Provider | Env variable | Notes |
-|----------|-------------|-------|
-| Anthropic | `ENGRAVE_PROVIDERS__ANTHROPIC_API_KEY` | Claude models |
-| OpenAI | `ENGRAVE_PROVIDERS__OPENAI_API_KEY` | GPT models |
-| RunPod | `ENGRAVE_PROVIDERS__RUNPOD__API_KEY` | Self-hosted vLLM |
-| LM Studio | (none -- local) | Local models at localhost:1234 |
+### Alternative providers (CLI users)
+
+For local or self-hosted models, copy `.env.example` to `.env` and configure
+`engrave.toml` to point roles at alternative providers:
+
+| Provider | Config | Notes |
+|----------|--------|-------|
+| Claude (pipe mode) | `claude_pipe/haiku` | Default. Uses `claude -p` |
+| LM Studio | `[providers.lm_studio]` | Local models at localhost:1234 |
+| vLLM / MLX | `[providers.vllm_mlx]` | Local models at localhost:8000 |
+| RunPod | `[providers.runpod]` | Self-hosted vLLM |
 
 Provider routing and model selection are configured in `engrave.toml`.
 Each LLM role (generator, compile_fixer, describer) maps to a specific
@@ -208,7 +206,7 @@ Everything goes into a ZIP.
 
 | Role | Purpose | Default model |
 |------|---------|---------------|
-| generator | LilyPond notation from MIDI | Qwen3-Coder-30B (local) |
+| generator | LilyPond notation from MIDI | Claude Haiku (via `claude -p`) |
 | compile_fixer | Fix LilyPond compilation errors | Qwen3-Coder-30B (local) |
 | describer | Audio description for context | Claude Opus |
 
