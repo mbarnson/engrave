@@ -31,15 +31,39 @@ logger = logging.getLogger(__name__)
 # Mapping from common pitch names (English, LilyPond) to LilyPond format.
 _KEY_ROOT_MAP: dict[str, str] = {
     # Natural notes
-    "c": "c", "d": "d", "e": "e", "f": "f", "g": "g", "a": "a", "b": "b",
+    "c": "c",
+    "d": "d",
+    "e": "e",
+    "f": "f",
+    "g": "g",
+    "a": "a",
+    "b": "b",
     # English sharps/flats -> LilyPond
-    "c#": "cis", "d#": "dis", "f#": "fis", "g#": "gis", "a#": "ais",
-    "db": "des", "eb": "ees", "gb": "ges", "ab": "aes", "bb": "bes",
-    "cb": "ces", "fb": "fes",
+    "c#": "cis",
+    "d#": "dis",
+    "f#": "fis",
+    "g#": "gis",
+    "a#": "ais",
+    "db": "des",
+    "eb": "ees",
+    "gb": "ges",
+    "ab": "aes",
+    "bb": "bes",
+    "cb": "ces",
+    "fb": "fes",
     # LilyPond names pass through
-    "cis": "cis", "dis": "dis", "fis": "fis", "gis": "gis", "ais": "ais",
-    "des": "des", "ees": "ees", "ges": "ges", "aes": "aes", "bes": "bes",
-    "ces": "ces", "fes": "fes",
+    "cis": "cis",
+    "dis": "dis",
+    "fis": "fis",
+    "gis": "gis",
+    "ais": "ais",
+    "des": "des",
+    "ees": "ees",
+    "ges": "ges",
+    "aes": "aes",
+    "bes": "bes",
+    "ces": "ces",
+    "fes": "fes",
 }
 
 _KEY_RESPONSE_PATTERN = re.compile(
@@ -259,9 +283,7 @@ async def detect_key_via_llm(
     sample_end = min(sample_bars, total_bars)
     bar_range = (1, sample_end)
 
-    midi_text = tokenize_tracks_for_key_detection(
-        tracks, ticks_per_beat, time_sig, bar_range
-    )
+    midi_text = tokenize_tracks_for_key_detection(tracks, ticks_per_beat, time_sig, bar_range)
     if not midi_text:
         return None
 
@@ -269,9 +291,7 @@ async def detect_key_via_llm(
         {"role": "system", "content": KEY_DETECTION_SYSTEM_PROMPT},
         {
             "role": "user",
-            "content": build_key_detection_user_prompt(
-                midi_text, time_sig, bar_range, total_bars
-            ),
+            "content": build_key_detection_user_prompt(midi_text, time_sig, bar_range, total_bars),
         },
     ]
 
@@ -286,12 +306,8 @@ async def detect_key_via_llm(
         if key:
             logger.info("LLM key detection: %s (raw: %r)", key, response.strip())
         else:
-            logger.warning(
-                "LLM key detection: unparseable response %r", response.strip()
-            )
+            logger.warning("LLM key detection: unparseable response %r", response.strip())
         return key
     except Exception as exc:
-        logger.warning(
-            "LLM key detection failed, falling back to Krumhansl-Kessler: %s", exc
-        )
+        logger.warning("LLM key detection failed, falling back to Krumhansl-Kessler: %s", exc)
         return None

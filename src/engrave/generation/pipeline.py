@@ -160,7 +160,6 @@ def _extract_analysis_properties(analysis: MidiAnalysis) -> tuple[str, str, int]
     return key_sig, time_sig, tempo_bpm
 
 
-
 def _filter_notes_for_section(
     track: MidiTrackInfo,
     start_bar: int,
