@@ -13,6 +13,8 @@ if TYPE_CHECKING:
 
 logger = logging.getLogger(__name__)
 
+_AGENT_SDK_PREFIX = "agent_sdk/"
+
 
 def _inject_no_think(messages: list[dict]) -> list[dict]:
     """Append '/no_think' to the last user message.
@@ -48,6 +50,17 @@ class InferenceRouter:
         self._roles: dict[str, RoleConfig] = validate_and_resolve_roles(
             settings.roles, settings.providers
         )
+        self._agent_sdk_key: str | None = None
+
+    def set_agent_sdk_key(self, api_key: str) -> None:
+        """Inject an API key for the agent_sdk provider at runtime.
+
+        Called by the Tauri frontend after the user enters their API key.
+        This key takes priority over config/env values for all
+        ``agent_sdk/`` model requests.
+        """
+        self._agent_sdk_key = api_key
+        logger.info("Agent SDK API key updated at runtime")
 
     async def complete(
         self,
@@ -81,6 +94,18 @@ class InferenceRouter:
         provider = model.split("/")[0] if "/" in model else "unknown"
 
         logger.info("Routing role '%s' to model '%s'", role, model)
+
+        # Dispatch agent_sdk/ models to the Anthropic SDK directly.
+        if model.startswith(_AGENT_SDK_PREFIX):
+            from engrave.llm.agent_sdk import agent_sdk_complete
+
+            return await agent_sdk_complete(
+                role_config=role_config,
+                messages=messages,
+                temperature=temperature,
+                max_tokens=max_tokens or role_config.max_tokens,
+                api_key_override=self._agent_sdk_key,
+            )
 
         try:
             # Disable thinking mode for Qwen3 models served via vllm-mlx.

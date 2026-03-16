@@ -17,6 +17,21 @@ class ProviderError(Exception):
         super().__init__(f"Provider '{provider}' failed for model '{model}': {original_error}")
 
 
+class AuthenticationError(ProviderError):
+    """Raised when the provider rejects the API key or token.
+
+    Signals that the user needs to re-authenticate (e.g., re-enter API key
+    in the desktop app settings).  The ``requires_reauth`` flag tells the
+    caller whether a re-auth prompt is appropriate.
+    """
+
+    requires_reauth: bool = True
+
+    def __init__(self, provider: str, model: str, original_error: Exception) -> None:
+        super().__init__(provider, model, original_error)
+        self.requires_reauth = True
+
+
 class RoleNotFoundError(Exception):
     """Raised when a requested pipeline role is not configured.
 

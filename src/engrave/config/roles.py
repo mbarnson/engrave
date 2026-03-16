@@ -26,6 +26,8 @@ def _resolve_provider_for_role(
     elif model.startswith("hosted_vllm/"):
         role_config.api_base = role_config.api_base or providers.vllm_mlx.api_base
         role_config.api_key = role_config.api_key or providers.vllm_mlx.api_key
+    elif model.startswith("agent_sdk/"):
+        role_config.api_key = role_config.api_key or providers.agent_sdk.api_key
     elif model.startswith("anthropic/"):
         role_config.api_key = role_config.api_key or providers.anthropic_api_key
     elif model.startswith("openai/"):

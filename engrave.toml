@@ -10,6 +10,12 @@ api_base = "http://localhost:8000/v1"
 [providers.runpod]
 # api_base = "https://api.runpod.ai/v2/YOUR-ENDPOINT-ID/openai/v1"
 
+[providers.agent_sdk]
+# API key for Anthropic API (desktop app users).
+# Set via ENGRAVE_PROVIDERS__AGENT_SDK__API_KEY env var or Tauri frontend.
+# api_key = "sk-ant-..."
+default_model = "claude-haiku-4-5-20251001"
+
 [roles.compile_fixer]
 model = "hosted_vllm/mlx-community/Qwen3-Coder-30B-A3B-Instruct-4bit-dwq-v2"
 max_tokens = 4096

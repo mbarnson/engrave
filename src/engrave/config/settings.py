@@ -33,12 +33,25 @@ class ProviderConfig(BaseModel):
     api_key: str | None = None
 
 
+class AgentSdkConfig(BaseModel):
+    """Configuration for the Agent SDK provider (Anthropic API via anthropic SDK).
+
+    Used by desktop app users who authenticate via the Tauri frontend.
+    The API key can be set at config time or injected at runtime via
+    ``InferenceRouter.set_agent_sdk_key()``.
+    """
+
+    api_key: str | None = None
+    default_model: str = "claude-haiku-4-5-20251001"
+
+
 class ProvidersConfig(BaseModel):
     """All provider configurations."""
 
     lm_studio: ProviderConfig = ProviderConfig()
     vllm_mlx: ProviderConfig = ProviderConfig()
     runpod: ProviderConfig = ProviderConfig()
+    agent_sdk: AgentSdkConfig = AgentSdkConfig()
     anthropic_api_key: str | None = None
     openai_api_key: str | None = None
 
