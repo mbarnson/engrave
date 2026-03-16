@@ -185,9 +185,13 @@ class TestCLIProcessAudio:
 
     def test_cli_help_shows_options(self) -> None:
         """CLI process-audio --help displays expected options."""
-        result = self.runner.invoke(app, ["process-audio", "--help"])
+        result = self.runner.invoke(app, ["process-audio", "--help"], color=False)
 
         assert result.exit_code == 0
-        assert "--output-dir" in result.output
-        assert "--no-separate" in result.output
-        assert "--steps" in result.output
+        # Strip ANSI escape codes in case typer still emits them
+        import re
+
+        output = re.sub(r"\x1b\[[0-9;]*m", "", result.output)
+        assert "--output-dir" in output
+        assert "--no-separate" in output
+        assert "--steps" in output

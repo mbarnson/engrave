@@ -7,7 +7,7 @@ from unittest.mock import AsyncMock, MagicMock, patch
 import pytest
 
 from engrave.config.settings import RoleConfig
-from engrave.llm.agent_sdk import _resolve_model, agent_sdk_complete
+from engrave.llm.agent_sdk import _client_cache, _resolve_model, agent_sdk_complete
 from engrave.llm.exceptions import AuthenticationError, ProviderError
 
 
@@ -21,10 +21,10 @@ class TestModelResolution:
         assert _resolve_model("agent_sdk/haiku") == "claude-haiku-4-5-20251001"
 
     def test_resolves_sonnet_alias(self) -> None:
-        assert _resolve_model("agent_sdk/sonnet") == "claude-sonnet-4-20250514"
+        assert _resolve_model("agent_sdk/sonnet") == "claude-sonnet-4-6"
 
     def test_resolves_opus_alias(self) -> None:
-        assert _resolve_model("agent_sdk/opus") == "claude-opus-4-20250514"
+        assert _resolve_model("agent_sdk/opus") == "claude-opus-4-6"
 
     def test_unknown_model_passes_through(self) -> None:
         assert _resolve_model("agent_sdk/claude-future-model") == "claude-future-model"
@@ -41,9 +41,10 @@ class TestAgentSdkComplete:
             api_key="sk-ant-test-key",
         )
 
-    @pytest.fixture
+    @pytest.fixture(autouse=False)
     def mock_anthropic(self):
         """Patch anthropic.AsyncAnthropic and return the mock client."""
+        _client_cache.clear()
         with patch("engrave.llm.agent_sdk.anthropic") as mock_mod:
             mock_client = AsyncMock()
             mock_mod.AsyncAnthropic.return_value = mock_client
