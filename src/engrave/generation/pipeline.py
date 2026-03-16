@@ -26,6 +26,7 @@ from __future__ import annotations
 import asyncio
 import json
 import logging
+import re
 from dataclasses import dataclass, field
 from pathlib import Path
 from typing import TYPE_CHECKING
@@ -34,6 +35,7 @@ from engrave.generation.assembler import assemble_sections
 from engrave.generation.audit import AuditLog, FieldResolution
 from engrave.generation.coherence import CoherenceState
 from engrave.generation.failure_log import FailureRecord
+from engrave.generation.key_detection import detect_key_via_llm
 from engrave.generation.prompts import (
     build_json_generation_suffix,
     build_section_prompt,
@@ -156,6 +158,7 @@ def _extract_analysis_properties(analysis: MidiAnalysis) -> tuple[str, str, int]
     tempo_bpm = int(analysis.tempo_changes[0][0]) if analysis.tempo_changes else 120
 
     return key_sig, time_sig, tempo_bpm
+
 
 
 def _filter_notes_for_section(
@@ -657,13 +660,25 @@ async def generate_from_midi(
     # 3. Build instrument names
     instrument_names = _build_instrument_names(tracks, user_labels)
 
-    # 4. Extract analysis properties
+    # 4. Extract analysis properties (K-K key estimate as fallback)
     key_sig, time_sig_str, tempo_bpm = _extract_analysis_properties(analysis)
 
     # Parse time signature for tokenizer
     ts_parts = time_sig_str.split("/")
     time_sig_tuple = (int(ts_parts[0]), int(ts_parts[1]))
     beats_per_bar = time_sig_tuple[0] * (4.0 / time_sig_tuple[1])
+
+    # 4b. LLM-based key detection (overrides K-K estimate when available)
+    llm_key = await detect_key_via_llm(
+        router=router,
+        tracks=tracks,
+        ticks_per_beat=analysis.ticks_per_beat,
+        time_sig=time_sig_tuple,
+        total_bars=analysis.total_bars,
+    )
+    if llm_key is not None:
+        logger.info("Using LLM-detected key: %s (K-K fallback was: %s)", llm_key, key_sig)
+        key_sig = llm_key
 
     # 5. Detect sections
     sections = detect_sections(midi_path)
@@ -954,8 +969,6 @@ def _extract_var_content(section_source: str, var_name: str) -> str:
 
     Looks for ``varName = { ... }`` and returns the inner content.
     """
-    import re
-
     pattern = re.compile(
         rf"^{re.escape(var_name)}\s*=\s*\{{(.*?)\n\}}",
         re.MULTILINE | re.DOTALL,

@@ -1,12 +1,57 @@
-"""Unit tests for engrave.midi.analyzer -- Musical analysis from MIDI."""
+"""Unit tests for engrave.midi.analyzer and pipeline LLM key detection."""
 
 from __future__ import annotations
 
 from pathlib import Path
 
+import pytest
+
+from engrave.generation.key_detection import parse_llm_key_response
 from engrave.midi.analyzer import MidiAnalysis, analyze_midi
 
 FIXTURES = Path(__file__).parent.parent / "fixtures"
+
+
+class TestParseKeyResponse:
+    """Tests for parse_llm_key_response -- LLM output to LilyPond key format."""
+
+    @pytest.mark.parametrize(
+        "response,expected",
+        [
+            ("Bb major", "bes \\major"),
+            ("F# minor", "fis \\minor"),
+            ("C major", "c \\major"),
+            ("Eb minor", "ees \\minor"),
+            ("key: Ab major", "aes \\major"),
+            ("Key signature: D minor", "d \\minor"),
+            ("key = G major", "g \\major"),
+            ("The key is Bb major.", "bes \\major"),
+            ("bes \\major", "bes \\major"),
+            ("A major", "a \\major"),
+            ("Db major", "des \\major"),
+            ("F minor", "f \\minor"),
+            # LilyPond native format (preferred prompt output)
+            ("fis \\minor", "fis \\minor"),
+            ("ees \\major", "ees \\major"),
+            ("g \\major", "g \\major"),
+            ("d \\minor", "d \\minor"),
+            ("aes \\major", "aes \\major"),
+        ],
+    )
+    def test_valid_responses(self, response: str, expected: str):
+        assert parse_llm_key_response(response) == expected
+
+    @pytest.mark.parametrize(
+        "response",
+        [
+            "",
+            "I don't know",
+            "42",
+            "the tempo is 120",
+        ],
+    )
+    def test_invalid_responses(self, response: str):
+        assert parse_llm_key_response(response) is None
 
 
 class TestAnalyzer:

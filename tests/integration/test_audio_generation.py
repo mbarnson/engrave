@@ -133,18 +133,17 @@ class TestPipelineWithAudioDescription:
 
         assert result.success is True
 
-        # Check that at least one prompt was captured
-        assert len(captured_prompts) >= 1
+        # Check that prompts were captured (first is key detection, then section generation)
+        assert len(captured_prompts) >= 2
 
-        # The first prompt should contain the DEFINITIVE section with user hints
-        first_prompt = captured_prompts[0]
-        assert "=== DEFINITIVE" in first_prompt
-        assert "shout chorus at bar 17" in first_prompt
+        # Find the first section-generation prompt (skip key detection prompt)
+        gen_prompt = next(p for p in captured_prompts if "=== DEFINITIVE" in p)
+        assert "shout chorus at bar 17" in gen_prompt
 
-        # The first prompt should contain the CONTEXTUAL section with audio description
-        assert "=== CONTEXTUAL" in first_prompt
+        # The section prompt should contain the CONTEXTUAL section with audio description
+        assert "=== CONTEXTUAL" in gen_prompt
         # Audio description NL text should include track summary on first section
-        assert "Bb major" in first_prompt or "142 BPM" in first_prompt
+        assert "Bb major" in gen_prompt or "142 BPM" in gen_prompt
 
 
 class TestMidiOnlyPath:
@@ -165,14 +164,15 @@ class TestMidiOnlyPath:
         )
 
         assert result.success is True
-        assert len(captured_prompts) >= 1
+        # Prompts: first is key detection, then section generation calls
+        assert len(captured_prompts) >= 2
 
-        first_prompt = captured_prompts[0]
-        assert "No user hints provided." in first_prompt
-        assert "No audio analysis available." in first_prompt
-        assert "=== DEFINITIVE" in first_prompt
-        assert "=== CONTEXTUAL" in first_prompt
-        assert "=== RAW INPUT" in first_prompt
+        # Find the first section-generation prompt (skip key detection prompt)
+        gen_prompt = next(p for p in captured_prompts if "=== DEFINITIVE" in p)
+        assert "No user hints provided." in gen_prompt
+        assert "No audio analysis available." in gen_prompt
+        assert "=== CONTEXTUAL" in gen_prompt
+        assert "=== RAW INPUT" in gen_prompt
 
 
 class TestAuditLog:

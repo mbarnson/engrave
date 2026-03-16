@@ -36,8 +36,11 @@ class MidiAnalysis:
     ticks_per_beat: int = 480
 
 
-def _estimate_key(pm: pretty_midi.PrettyMIDI) -> str:
+def estimate_key_krumhansl(pm: pretty_midi.PrettyMIDI) -> str:
     """Estimate key signature from MIDI using Krumhansl-Kessler profiles.
+
+    Statistical fallback for key detection.  The primary method is LLM-based
+    analysis of tokenized notes (see ``pipeline._detect_key_via_llm``).
 
     Computes chroma vector from all notes, correlates with major and minor
     profiles for each pitch class, returns the best match as a LilyPond key string.
@@ -123,8 +126,8 @@ def analyze_midi(path: str) -> MidiAnalysis:
         else:
             instruments.append(pretty_midi.program_to_instrument_name(inst.program))
 
-    # Estimate key
-    key_signature = _estimate_key(pm)
+    # Estimate key (Krumhansl-Kessler statistical fallback; LLM override in pipeline)
+    key_signature = estimate_key_krumhansl(pm)
 
     # Estimate total bars from duration and first time signature
     total_duration = pm.get_end_time()

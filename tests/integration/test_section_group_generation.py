@@ -230,10 +230,10 @@ class TestJointSectionGroupDispatch:
         assert len(ly_calls) >= 1
 
         # Total calls should be far fewer than 4 * sections * 2 (LilyPond + JSON)
-        # With 1 group, expect 2 calls per section (1 LilyPond + 1 JSON)
+        # With 1 group, expect 2 calls per section (1 LilyPond + 1 JSON) + 1 key detection
         total_sections = result.total_sections
-        # Calls should be <= 2 per section (LilyPond + JSON) not 8 (4 instruments * 2)
-        assert len(call_log) <= total_sections * 2
+        # Calls should be <= 2 per section (LilyPond + JSON) + 1 key detection call
+        assert len(call_log) <= total_sections * 2 + 1
 
         # Output should contain all 4 trumpet variables
         assert result.ly_source
@@ -276,9 +276,9 @@ class TestMixedGroupAndIndividualDispatch:
         # Each temporal section should produce 3 generation groups:
         # 1 trumpet group + 1 piano individual + 1 bass individual
         # Each group dispatches 2 calls (LilyPond + JSON)
-        # So per temporal section: 6 calls (3 groups * 2)
+        # So per temporal section: 6 calls (3 groups * 2) + 1 key detection call
         total_sections = result.total_sections
-        expected_max = total_sections * 6
+        expected_max = total_sections * 6 + 1
         assert len(call_log) <= expected_max
 
         # Verify a call containing all 4 trumpets (joint call)
