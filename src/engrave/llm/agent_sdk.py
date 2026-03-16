@@ -7,6 +7,7 @@ exchange).
 
 from __future__ import annotations
 
+import functools
 import logging
 from typing import TYPE_CHECKING
 
@@ -19,11 +20,17 @@ if TYPE_CHECKING:
 
 logger = logging.getLogger(__name__)
 
+
+@functools.lru_cache(maxsize=4)
+def _get_client(api_key: str) -> anthropic.AsyncAnthropic:
+    """Return a cached AsyncAnthropic client for the given API key."""
+    return anthropic.AsyncAnthropic(api_key=api_key)
+
 # Anthropic model aliases — allow short names in config
 _MODEL_ALIASES: dict[str, str] = {
     "haiku": "claude-haiku-4-5-20251001",
-    "sonnet": "claude-sonnet-4-20250514",
-    "opus": "claude-opus-4-20250514",
+    "sonnet": "claude-sonnet-4-6",
+    "opus": "claude-opus-4-6",
 }
 
 
@@ -76,7 +83,7 @@ async def agent_sdk_complete(
             ),
         )
 
-    client = anthropic.AsyncAnthropic(api_key=api_key)
+    client = _get_client(api_key)
 
     # Convert OpenAI-format messages to Anthropic format.
     # Anthropic Messages API uses a separate `system` parameter.

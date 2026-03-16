@@ -40,11 +40,6 @@ async fn save_api_key(key: String) -> Result<(), String> {
 }
 
 #[tauri::command]
-async fn load_api_key() -> Result<Option<String>, String> {
-    keychain::load_api_key().map_err(|e| e.to_string())
-}
-
-#[tauri::command]
 async fn delete_api_key() -> Result<(), String> {
     keychain::delete_api_key().map_err(|e| e.to_string())
 }
@@ -74,7 +69,26 @@ async fn generate(
 #[tauri::command]
 async fn read_pdf_base64(path: String) -> Result<String, String> {
     use std::fs;
-    let bytes = fs::read(&path).map_err(|e| format!("Failed to read PDF: {e}"))?;
+
+    // Validate the path is a PDF within a known output directory (ends with _output/)
+    let canonical = fs::canonicalize(&path)
+        .map_err(|e| format!("Invalid path: {e}"))?;
+    let is_in_output_dir = canonical
+        .ancestors()
+        .any(|ancestor| {
+            ancestor
+                .file_name()
+                .map(|n| n.to_string_lossy().ends_with("_output"))
+                .unwrap_or(false)
+        });
+    if !is_in_output_dir {
+        return Err("Access denied: path must be within an engrave output directory".to_string());
+    }
+    if canonical.extension().and_then(|e| e.to_str()) != Some("pdf") {
+        return Err("Access denied: only PDF files can be read".to_string());
+    }
+
+    let bytes = fs::read(&canonical).map_err(|e| format!("Failed to read PDF: {e}"))?;
     use base64::Engine;
     Ok(base64::engine::general_purpose::STANDARD.encode(&bytes))
 }
@@ -110,7 +124,6 @@ pub fn run() {
         .plugin(tauri_plugin_os::init())
         .invoke_handler(tauri::generate_handler![
             save_api_key,
-            load_api_key,
             delete_api_key,
             has_api_key,
             analyze_midi,

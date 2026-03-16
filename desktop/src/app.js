@@ -111,10 +111,11 @@ async function saveApiKey(key, statusEl) {
 $("#settings-btn").addEventListener("click", async () => {
   settingsModal.classList.remove("hidden");
   try {
-    const key = await invoke("load_api_key");
-    if (key) {
-      $("#api-key-input").value = key;
-      $("#key-status").textContent = "Key loaded from keychain";
+    const hasKey = await invoke("has_api_key");
+    if (hasKey) {
+      $("#api-key-input").value = "";
+      $("#api-key-input").placeholder = "••••••••  (key stored in keychain)";
+      $("#key-status").textContent = "API key is configured";
       $("#key-status").className = "status-text success";
     }
   } catch (e) {

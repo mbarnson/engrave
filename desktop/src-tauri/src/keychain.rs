@@ -8,7 +8,7 @@
 use keyring::Entry;
 
 const SERVICE: &str = "com.engrave.desktop";
-const USERNAME: &str = "anthropic-api-key";
+const USERNAME: &str = "api-key";
 
 fn entry() -> Result<Entry, keyring::Error> {
     Entry::new(SERVICE, USERNAME)
