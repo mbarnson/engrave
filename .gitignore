@@ -42,3 +42,14 @@ jobs/
 .DS_Store
 Thumbs.db
 samples/
+
+# Binary artifacts & data
+*.zip
+*.sqlite3
+*.db
+
+# Failure logs (runtime debug data, not source)
+.engrave/failures/
+
+# Test fixtures (generated)
+test-fixtures/
