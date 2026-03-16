@@ -1,0 +1,14 @@
+{
+  "identifier": "default",
+  "description": "Default permissions for the Engrave desktop app",
+  "windows": ["main"],
+  "permissions": [
+    "core:default",
+    "shell:allow-open",
+    "shell:allow-execute",
+    "dialog:default",
+    "dialog:allow-open",
+    "dialog:allow-save",
+    "os:default"
+  ]
+}

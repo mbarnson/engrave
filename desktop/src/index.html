@@ -1,0 +1,149 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Engrave</title>
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+  <div id="app">
+    <!-- Header -->
+    <header class="app-header">
+      <h1>Engrave</h1>
+      <p class="subtitle">AI-powered music engraving</p>
+      <button id="settings-btn" class="icon-btn" title="Settings">⚙</button>
+    </header>
+
+    <!-- Settings Modal -->
+    <div id="settings-modal" class="modal hidden">
+      <div class="modal-content">
+        <h2>API Key</h2>
+        <p class="modal-desc">
+          Enter your Anthropic API key from
+          <a href="#" id="platform-link">console.anthropic.com</a>.
+          Stored securely in your OS keychain.
+        </p>
+        <div class="key-input-row">
+          <input type="password" id="api-key-input" placeholder="sk-ant-..." autocomplete="off" />
+          <button id="toggle-key-vis" class="icon-btn" title="Show/hide">👁</button>
+        </div>
+        <div class="modal-actions">
+          <button id="save-key-btn" class="btn primary">Save Key</button>
+          <button id="delete-key-btn" class="btn danger">Remove Key</button>
+          <button id="close-settings-btn" class="btn">Close</button>
+        </div>
+        <p id="key-status" class="status-text"></p>
+      </div>
+    </div>
+
+    <!-- Main Content -->
+    <main>
+      <!-- Step 1: MIDI Upload -->
+      <section id="upload-section" class="step">
+        <div id="drop-zone" class="drop-zone">
+          <div class="drop-zone-content">
+            <span class="drop-icon">🎵</span>
+            <p>Drop a MIDI file here</p>
+            <p class="drop-hint">or click to browse</p>
+          </div>
+          <input type="file" id="midi-file-input" accept=".mid,.midi" class="hidden" />
+        </div>
+      </section>
+
+      <!-- Step 2: Track Editor -->
+      <section id="tracks-section" class="step hidden">
+        <div class="section-header">
+          <h2>Tracks</h2>
+          <span id="midi-filename" class="filename"></span>
+          <button id="change-file-btn" class="btn small">Change File</button>
+        </div>
+
+        <div class="preset-row">
+          <label for="preset-select">Preset:</label>
+          <select id="preset-select">
+            <option value="custom">Custom</option>
+            <option value="big-band">Big Band</option>
+            <option value="small-combo">Small Combo</option>
+            <option value="string-quartet">String Quartet</option>
+          </select>
+        </div>
+
+        <div id="tracks-list" class="tracks-list">
+          <!-- Populated by JS -->
+        </div>
+
+        <div class="hints-row">
+          <label for="hints-input">Hints (optional):</label>
+          <textarea id="hints-input" rows="2" placeholder="e.g., Swing feel, soli at bar 17, brass shout chorus bar 33"></textarea>
+        </div>
+
+        <button id="generate-btn" class="btn primary large">Generate Sheet Music</button>
+      </section>
+
+      <!-- Step 3: Progress -->
+      <section id="progress-section" class="step hidden">
+        <h2>Generating...</h2>
+        <div class="progress-bar-container">
+          <div id="progress-bar" class="progress-bar" style="width: 0%"></div>
+        </div>
+        <p id="progress-stage" class="progress-text"></p>
+        <p id="progress-detail" class="progress-detail"></p>
+      </section>
+
+      <!-- Step 4: Results -->
+      <section id="results-section" class="step hidden">
+        <div class="section-header">
+          <h2>Results</h2>
+          <button id="new-job-btn" class="btn small">New Job</button>
+        </div>
+
+        <div class="results-layout">
+          <!-- PDF Preview -->
+          <div class="pdf-panel">
+            <div class="pdf-tabs" id="pdf-tabs">
+              <!-- Populated by JS -->
+            </div>
+            <div id="pdf-viewer" class="pdf-viewer">
+              <p class="placeholder-text">Select a PDF to preview</p>
+            </div>
+          </div>
+
+          <!-- File List -->
+          <div class="files-panel">
+            <h3>Output Files</h3>
+            <div id="file-list" class="file-list">
+              <!-- Populated by JS -->
+            </div>
+            <button id="download-zip-btn" class="btn primary">Download All (ZIP)</button>
+          </div>
+        </div>
+      </section>
+
+      <!-- Error display -->
+      <div id="error-banner" class="error-banner hidden">
+        <span id="error-text"></span>
+        <button id="dismiss-error" class="icon-btn">✕</button>
+      </div>
+    </main>
+
+    <!-- No-key overlay (first launch) -->
+    <div id="no-key-overlay" class="overlay hidden">
+      <div class="overlay-content">
+        <h2>Welcome to Engrave</h2>
+        <p>To get started, enter your Anthropic API key.</p>
+        <p class="hint-text">
+          Get one at <a href="#" id="overlay-platform-link">console.anthropic.com</a>
+        </p>
+        <div class="key-input-row">
+          <input type="password" id="overlay-api-key" placeholder="sk-ant-..." autocomplete="off" />
+        </div>
+        <button id="overlay-save-btn" class="btn primary large">Save & Continue</button>
+        <p id="overlay-status" class="status-text"></p>
+      </div>
+    </div>
+  </div>
+
+  <script src="app.js"></script>
+</body>
+</html>
