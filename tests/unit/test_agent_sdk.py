@@ -90,9 +90,7 @@ class TestAgentSdkComplete:
         assert call_kwargs["messages"] == [{"role": "user", "content": "Fix this LilyPond"}]
 
     @pytest.mark.asyncio
-    async def test_returns_text_content(
-        self, role_config: RoleConfig, mock_anthropic
-    ) -> None:
+    async def test_returns_text_content(self, role_config: RoleConfig, mock_anthropic) -> None:
         result = await agent_sdk_complete(
             role_config=role_config,
             messages=[{"role": "user", "content": "test"}],
@@ -102,10 +100,8 @@ class TestAgentSdkComplete:
         assert result == "Generated LilyPond"
 
     @pytest.mark.asyncio
-    async def test_extracts_system_messages(
-        self, role_config: RoleConfig, mock_anthropic
-    ) -> None:
-        mock_mod, mock_client = mock_anthropic
+    async def test_extracts_system_messages(self, role_config: RoleConfig, mock_anthropic) -> None:
+        _mock_mod, mock_client = mock_anthropic
         messages = [
             {"role": "system", "content": "You are a music expert."},
             {"role": "user", "content": "Generate notation"},
@@ -126,7 +122,7 @@ class TestAgentSdkComplete:
     async def test_api_key_override_takes_priority(
         self, role_config: RoleConfig, mock_anthropic
     ) -> None:
-        mock_mod, mock_client = mock_anthropic
+        mock_mod, _mock_client = mock_anthropic
 
         await agent_sdk_complete(
             role_config=role_config,
@@ -153,9 +149,7 @@ class TestAgentSdkComplete:
         assert exc_info.value.provider == "agent_sdk"
 
     @pytest.mark.asyncio
-    async def test_raises_auth_error_on_401(
-        self, role_config: RoleConfig, mock_anthropic
-    ) -> None:
+    async def test_raises_auth_error_on_401(self, role_config: RoleConfig, mock_anthropic) -> None:
         mock_mod, mock_client = mock_anthropic
         mock_client.messages.create.side_effect = mock_mod.AuthenticationError("Invalid API key")
 

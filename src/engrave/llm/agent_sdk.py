@@ -68,10 +68,12 @@ async def agent_sdk_complete(
         raise AuthenticationError(
             "agent_sdk",
             role_config.model,
-            ValueError("No API key configured for agent_sdk provider. "
-                        "Set providers.agent_sdk.api_key in engrave.toml, "
-                        "ENGRAVE_PROVIDERS__AGENT_SDK__API_KEY env var, "
-                        "or call set_agent_sdk_key() at runtime."),
+            ValueError(
+                "No API key configured for agent_sdk provider. "
+                "Set providers.agent_sdk.api_key in engrave.toml, "
+                "ENGRAVE_PROVIDERS__AGENT_SDK__API_KEY env var, "
+                "or call set_agent_sdk_key() at runtime."
+            ),
         )
 
     client = anthropic.AsyncAnthropic(api_key=api_key)
@@ -105,9 +107,7 @@ async def agent_sdk_complete(
             )
 
         # Extract text content from the response
-        text_parts = [
-            block.text for block in response.content if block.type == "text"
-        ]
+        text_parts = [block.text for block in response.content if block.type == "text"]
         return "\n".join(text_parts) if text_parts else ""
 
     except anthropic.AuthenticationError as e:
