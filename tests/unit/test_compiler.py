@@ -58,16 +58,18 @@ class TestFindBinary:
             assert binary == "/usr/local/bin/lilypond"
 
     def test_find_binary_fallback_paths(self) -> None:
-        """Mock shutil.which returning None, mock Path.exists for /opt/homebrew/bin/lilypond."""
+        """Mock shutil.which returning None, mock Path.exists for ~/bin/lilypond."""
         with (
             patch("engrave.lilypond.compiler.shutil.which", return_value=None),
             patch("engrave.lilypond.compiler.Path.exists") as mock_exists,
         ):
-            # First candidate (/opt/homebrew/bin/lilypond) exists
+            # First candidate (~/bin/lilypond) exists
             mock_exists.return_value = True
             compiler = LilyPondCompiler.__new__(LilyPondCompiler)
             binary = compiler._find_binary()
-            assert binary == "/opt/homebrew/bin/lilypond"
+            from pathlib import Path
+
+            assert binary == str(Path.home() / "bin" / "lilypond")
 
     def test_find_binary_not_found(self) -> None:
         """Mock everything returning None/False."""

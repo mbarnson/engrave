@@ -95,8 +95,7 @@ class TestClaudePipeComplete:
             assert "-p" in args
             assert "--model" in args
             assert "claude-haiku-4-5-20251001" in args
-            assert "--max-tokens" in args
-            assert "1024" in args
+            # --max-tokens is not supported by claude -p
 
     @pytest.mark.asyncio
     async def test_returns_stdout_content(self, role_config: RoleConfig) -> None:
