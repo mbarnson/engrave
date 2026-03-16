@@ -53,3 +53,9 @@ samples/
 
 # Test fixtures (generated)
 test-fixtures/
+
+# Gas Town (added by gt)
+.runtime/
+.claude/
+.logs/
+state.json
