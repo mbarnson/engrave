@@ -54,19 +54,7 @@
   },
   "plugins": {
     "shell": {
-      "open": true,
-      "scope": [
-        {
-          "name": "engrave-generate",
-          "cmd": "engrave",
-          "args": true
-        },
-        {
-          "name": "engrave-render",
-          "cmd": "engrave",
-          "args": true
-        }
-      ]
+      "open": true
     }
   }
 }

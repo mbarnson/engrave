@@ -5,7 +5,21 @@
   "permissions": [
     "core:default",
     "shell:allow-open",
-    "shell:allow-execute",
+    {
+      "identifier": "shell:allow-execute",
+      "allow": [
+        {
+          "name": "engrave-generate",
+          "cmd": "engrave",
+          "args": true
+        },
+        {
+          "name": "engrave-render",
+          "cmd": "engrave",
+          "args": true
+        }
+      ]
+    },
     "dialog:default",
     "dialog:allow-open",
     "dialog:allow-save",

@@ -3,6 +3,11 @@ name = "engrave-desktop"
 version = "0.1.0"
 edition = "2021"
 description = "Engrave desktop app — AI-powered music engraving"
+default-run = "Engrave"
+
+[[bin]]
+name = "Engrave"
+path = "src/main.rs"
 
 [lib]
 name = "engrave_desktop_lib"
