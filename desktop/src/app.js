@@ -163,43 +163,8 @@ $("#dismiss-error").addEventListener("click", () => {
 
 // --- MIDI Upload ---
 
-dropZone.addEventListener("click", () => fileInput.click());
-
-dropZone.addEventListener("dragover", (e) => {
-  e.preventDefault();
-  dropZone.classList.add("drag-over");
-});
-
-dropZone.addEventListener("dragleave", () => {
-  dropZone.classList.remove("drag-over");
-});
-
-dropZone.addEventListener("drop", async (e) => {
-  e.preventDefault();
-  dropZone.classList.remove("drag-over");
-
-  const files = e.dataTransfer?.files;
-  if (files && files.length > 0) {
-    const file = files[0];
-    if (file.name.match(/\.(mid|midi)$/i)) {
-      // In Tauri, dropped files give us the path
-      const path = file.path || file.name;
-      await loadMidi(path);
-    } else {
-      showError("Please drop a MIDI file (.mid or .midi)");
-    }
-  }
-});
-
-fileInput.addEventListener("change", async () => {
-  const file = fileInput.files?.[0];
-  if (file) {
-    await loadMidi(file.path || file.name);
-  }
-});
-
-// Also support the dialog picker
-dropZone.addEventListener("dblclick", async () => {
+// Click the drop zone to open a file dialog (Tauri dialog returns full paths)
+dropZone.addEventListener("click", async () => {
   try {
     const selected = await dialogOpen({
       filters: [{ name: "MIDI Files", extensions: ["mid", "midi"] }],
@@ -210,6 +175,28 @@ dropZone.addEventListener("dblclick", async () => {
     }
   } catch (e) {
     // User cancelled
+  }
+});
+
+// Tauri v2 drag-drop: provides full file paths (browser dataTransfer does not)
+listen("tauri://drag-over", () => {
+  dropZone.classList.add("drag-over");
+});
+
+listen("tauri://drag-leave", () => {
+  dropZone.classList.remove("drag-over");
+});
+
+listen("tauri://drag-drop", async (event) => {
+  dropZone.classList.remove("drag-over");
+  const paths = event.payload.paths;
+  if (paths && paths.length > 0) {
+    const path = paths[0];
+    if (path.match(/\.(mid|midi)$/i)) {
+      await loadMidi(path);
+    } else {
+      showError("Please drop a MIDI file (.mid or .midi)");
+    }
   }
 });
 
