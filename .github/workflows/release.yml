@@ -83,7 +83,16 @@ jobs:
       - name: Build engrave CLI binary (PyInstaller)
         run: |
           uv pip install pyinstaller
-          uv run pyinstaller --onefile src/engrave/cli.py -n engrave --distpath desktop/src-tauri/resources
+          uv run pyinstaller --onefile src/engrave/cli.py -n engrave --distpath desktop/src-tauri/resources \
+            --exclude-module torch \
+            --exclude-module torchaudio \
+            --exclude-module torchvision \
+            --exclude-module transformers \
+            --exclude-module sentence_transformers \
+            --exclude-module audio_separator \
+            --exclude-module chromadb \
+            --exclude-module onnxruntime \
+            --exclude-module onnxruntime_gpu
 
       - name: Rename Windows binary for Tauri bundling
         if: matrix.platform == 'windows-latest'
