@@ -1,5 +1,6 @@
 use serde::{Deserialize, Serialize};
 
+mod cli_resolver;
 mod keychain;
 mod midi;
 mod pipeline;

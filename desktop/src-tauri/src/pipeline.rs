@@ -4,6 +4,7 @@
 //! rather than embedding the Python runtime. This keeps the Tauri binary
 //! small and avoids Python/Rust FFI complexity.
 
+use crate::cli_resolver;
 use crate::{GenerationResult, MeasureFixResult};
 use std::collections::HashMap;
 use std::path::{Path, PathBuf};
@@ -12,11 +13,12 @@ use tokio::process::Command;
 
 /// Find the engrave CLI executable.
 ///
-/// Checks (in order):
-/// 1. `ENGRAVE_CLI` environment variable
-/// 2. `engrave` on PATH (via `uv run engrave` or installed globally)
-fn find_engrave_cli() -> String {
-    std::env::var("ENGRAVE_CLI").unwrap_or_else(|_| "engrave".to_string())
+/// Uses the CLI resolver to search well-known paths and login shell,
+/// working around sandboxed PATH in macOS .app bundles.
+fn find_engrave_cli() -> Result<String, String> {
+    cli_resolver::resolve_engrave()
+        .map(|s| s.to_string())
+        .ok_or_else(cli_resolver::engrave_not_found_error)
 }
 
 /// Emit a progress event to the frontend.
@@ -44,7 +46,8 @@ pub async fn run_generation(
     labels: &HashMap<String, String>,
     hints: Option<&str>,
 ) -> Result<GenerationResult, Box<dyn std::error::Error + Send + Sync>> {
-    let engrave = find_engrave_cli();
+    let engrave = find_engrave_cli()
+        .map_err(|e| -> Box<dyn std::error::Error + Send + Sync> { e.into() })?;
     let midi = PathBuf::from(midi_path);
 
     if !midi.exists() {
@@ -164,7 +167,8 @@ pub async fn run_measure_fix(
     hint: &str,
     output_dir: &str,
 ) -> Result<MeasureFixResult, Box<dyn std::error::Error + Send + Sync>> {
-    let engrave = find_engrave_cli();
+    let engrave = find_engrave_cli()
+        .map_err(|e| -> Box<dyn std::error::Error + Send + Sync> { e.into() })?;
 
     if !Path::new(ly_path).exists() {
         return Err(format!("LilyPond file not found: {ly_path}").into());
