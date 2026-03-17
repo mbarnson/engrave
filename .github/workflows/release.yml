@@ -81,6 +81,7 @@ jobs:
         run: choco install lilypond -y
 
       - name: Build engrave CLI binary (PyInstaller)
+        shell: bash
         run: |
           uv pip install pyinstaller
           uv run pyinstaller --onefile src/engrave/cli.py -n engrave --distpath desktop/src-tauri/resources \
