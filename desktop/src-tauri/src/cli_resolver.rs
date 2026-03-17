@@ -152,6 +152,12 @@ fn resolve_bundled_binary(name: &str) -> Option<PathBuf> {
         };
         candidates.push(exe_dir.join("resources").join(&bin_name));
         candidates.push(exe_dir.join(&bin_name));
+
+        // On Windows, also try without .exe — bundled resources may lack the extension
+        if cfg!(target_os = "windows") {
+            candidates.push(exe_dir.join("resources").join(name));
+            candidates.push(exe_dir.join(name));
+        }
     }
 
     candidates.into_iter().find(|p| p.exists())

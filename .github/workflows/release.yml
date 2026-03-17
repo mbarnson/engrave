@@ -86,6 +86,11 @@ jobs:
           uv pip install -e . --system
           pyinstaller --onefile src/engrave/cli.py -n engrave --distpath desktop/src-tauri/resources
 
+      - name: Rename Windows binary for Tauri bundling
+        if: matrix.platform == 'windows-latest'
+        shell: bash
+        run: mv desktop/src-tauri/resources/engrave.exe desktop/src-tauri/resources/engrave
+
       - name: Make engrave binary executable (Unix)
         if: matrix.platform != 'windows-latest'
         run: chmod +x desktop/src-tauri/resources/engrave
