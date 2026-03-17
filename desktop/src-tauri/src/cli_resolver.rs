@@ -117,9 +117,54 @@ fn claude_candidates() -> Vec<PathBuf> {
     candidates
 }
 
+/// Resolve the path to a bundled resource binary shipped inside the Tauri app.
+///
+/// The binary is placed in the `resources/` directory at build time via
+/// `tauri.conf.json`.  At runtime the layout is:
+///
+///   macOS:   Engrave.app/Contents/Resources/<name>
+///   Windows: <install-dir>/<name>.exe   (resources are next to the exe)
+///   Linux:   <exe-dir>/<name>           (AppImage/deb)
+fn resolve_bundled_binary(name: &str) -> Option<PathBuf> {
+    let exe = std::env::current_exe().ok()?;
+
+    let mut candidates = Vec::new();
+
+    // macOS .app bundle: exe is at Contents/MacOS/Engrave
+    // resources live at Contents/Resources/
+    if cfg!(target_os = "macos") {
+        if let Some(macos_dir) = exe.parent() {
+            let resources = macos_dir
+                .parent() // Contents
+                .map(|p| p.join("Resources").join(name));
+            if let Some(p) = resources {
+                candidates.push(p);
+            }
+        }
+    }
+
+    // Windows / Linux: resources/ directory next to the executable
+    if let Some(exe_dir) = exe.parent() {
+        let bin_name = if cfg!(target_os = "windows") {
+            format!("{name}.exe")
+        } else {
+            name.to_string()
+        };
+        candidates.push(exe_dir.join("resources").join(&bin_name));
+        candidates.push(exe_dir.join(&bin_name));
+    }
+
+    candidates.into_iter().find(|p| p.exists())
+}
+
 /// Build candidate paths for the `engrave` CLI.
 fn engrave_candidates() -> Vec<PathBuf> {
     let mut candidates = Vec::new();
+
+    // Bundled binary inside the app package (highest priority)
+    if let Some(bundled) = resolve_bundled_binary("engrave") {
+        candidates.push(bundled);
+    }
 
     if let Some(home) = home_dir() {
         candidates.push(home.join(".local/bin/engrave"));

@@ -80,6 +80,16 @@ jobs:
         if: matrix.platform == 'windows-latest'
         run: choco install lilypond -y
 
+      - name: Build engrave CLI binary (PyInstaller)
+        run: |
+          uv pip install pyinstaller --system
+          uv pip install -e . --system
+          pyinstaller --onefile src/engrave/cli.py -n engrave --distpath desktop/src-tauri/resources
+
+      - name: Make engrave binary executable (Unix)
+        if: matrix.platform != 'windows-latest'
+        run: chmod +x desktop/src-tauri/resources/engrave
+
       - name: Install frontend dependencies
         working-directory: desktop
         run: npm install
