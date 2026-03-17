@@ -30,10 +30,10 @@ jobs:
       matrix:
         include:
           - platform: macos-latest
-            args: --target aarch64-apple-darwin
+            args: --target aarch64-apple-darwin --bundles app
             rust_target: aarch64-apple-darwin
           - platform: macos-latest
-            args: --target x86_64-apple-darwin
+            args: --target x86_64-apple-darwin --bundles app
             rust_target: x86_64-apple-darwin
           - platform: windows-latest
             args: ""
@@ -125,23 +125,8 @@ jobs:
           tauriScript: npx tauri
           args: ${{ matrix.args }}
 
-  # Create universal macOS binary by combining both arch builds
-  create-macos-universal:
-    needs: [create-release, build-tauri]
-    runs-on: macos-latest
-    steps:
-      - uses: actions/checkout@v4
-      - name: Download release artifacts
-        env:
-          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        run: |
-          mkdir -p artifacts
-          gh release download "${{ github.ref_name }}" -D artifacts --pattern "*.dmg" || true
-          echo "Downloaded artifacts:"
-          ls -la artifacts/
-
   publish-release:
-    needs: [create-release, build-tauri, create-macos-universal]
+    needs: [create-release, build-tauri]
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
