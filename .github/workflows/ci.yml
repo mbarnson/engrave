@@ -62,6 +62,9 @@ jobs:
         with:
           workspaces: desktop/src-tauri
 
+      - name: Create dummy resource for cargo check
+        run: mkdir -p desktop/src-tauri/resources && touch desktop/src-tauri/resources/engrave
+
       - name: Check Rust compilation
         working-directory: desktop/src-tauri
         run: cargo check
